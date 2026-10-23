@@ -28,6 +28,12 @@ data class GeneratedValidationResult(val accepted: List<GeneratedDraft>, val rej
 
 object GeneratedStudyDrafts {
     fun validate(candidates: List<GeneratedCandidate>, sources: List<Evidence>): GeneratedValidationResult {
+        // Every generated batch must be grounded in exactly one PDF chapter. The
+        // prompt builder already enforces this; validate again at the untrusted
+        // model-output boundary so callers cannot mix page references across books.
+        if (sources.map { it.chapterId }.distinct().size > 1) {
+            return GeneratedValidationResult(emptyList(), candidates.size)
+        }
         val validSources = sources.mapIndexed { idx, e -> "S${idx+1}" to e }.toMap()
         val results = mutableListOf<GeneratedDraft>()
         var rejected = 0
@@ -52,7 +58,7 @@ object GeneratedStudyDrafts {
                     options.all { it.length in 2..500 } && options.map { it.lowercase() }.distinct().size == options.size &&
                     c.correctIndex in options.indices && explanation.isNotBlank()
             }
-            val key = "${s?.pageIndex}|${c.kind}|${prompt.lowercase()}"
+            val key = "${s?.chapterId}|${s?.pageIndex}|${c.kind}|${prompt.lowercase(java.util.Locale.ROOT)}"
             if (!validBase || !validType || !seen.add(key)) { rejected++; continue }
             results.add(GeneratedDraft(c.copy(prompt = prompt, answer = answer,
                 options = options, explanation = explanation, supportingQuote = quoted), s!!.chapterId, s.pageIndex, quoted))
