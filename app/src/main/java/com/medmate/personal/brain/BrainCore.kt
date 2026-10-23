@@ -183,21 +183,31 @@ object CitationValidator {
         val invalid = used.filter { marker ->
             marker.removePrefix("S").toIntOrNull() !in 1..presentedEvidenceCount
         }.toSet()
-        val correctAbstention = "المعلومة مش كافية بالنص الموجود" in answer
+        // When excerpts exist but do not answer the question, a source-free,
+        // explicit abstention is safer than forcing the model to invent a citation.
+        // Accept only the exact approved abstention (allowing punctuation/spacing),
+        // never a fabricated claim with the phrase tacked on.
+        val answerWithoutCitations = allCitations.replace(answer, "")
+        val normalizedAnswer = answerWithoutCitations.trim()
+            .replace(Regex("[\\p{P}\\p{S}]+"), "")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+        val correctAbstention = normalizedAnswer == "المعلومة مش كافية بالنص الموجود"
         // A response consisting only of [S1] (or punctuation + a marker) is not an
         // explanation. A citation can anchor a claim but cannot replace the claim.
-        val explanationText = allCitations.replace(answer, "")
+        val explanationText = answerWithoutCitations
             .replace(Regex("[\\p{P}\\p{S}\\s]+"), "")
         val hasExplanation = explanationText.length >= 5
         val accepted = invalid.isEmpty() && hasExplanation && (
             if (presentedEvidenceCount == 0) correctAbstention
-            else (!sourceRequired || used.isNotEmpty())
+            else (correctAbstention || !sourceRequired || used.isNotEmpty())
         )
         val reason = when {
             invalid.isNotEmpty() -> "Unknown source markers"
             !hasExplanation -> "No substantive explanation beyond citation markers"
             !accepted && presentedEvidenceCount == 0 -> "No evidence: abstention required"
             !accepted -> "No source citation"
+            correctAbstention -> "Explicit evidence-insufficient abstention; no source claim"
             else -> "Citation markers valid; medical claims still need evaluation"
         }
         return CitationCheck(accepted, used, invalid, reason)
