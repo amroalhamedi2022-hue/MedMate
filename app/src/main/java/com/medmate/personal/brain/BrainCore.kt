@@ -180,7 +180,9 @@ object CitationValidator {
     private val allCitations = Regex("\\[S([1-9]\\d*)]")
     // Catch malformed citation-like tokens even when a different valid marker
     // exists. Otherwise a model can launder a fabricated reference with [S1].
-    private val citationCandidates = Regex("\\[\\s*[sS](?:\\s*\\d[^\\]\\r\\n]{0,64}\\]?|\\s*\\])")
+    // Capture every source-like bracket, including alphabetic/negative IDs and
+    // incomplete tokens. A valid [S1] elsewhere must never hide [Sfoo].
+    private val citationCandidates = Regex("""\[[ \t]*[sS][^\]\r\n]{0,64}\]?""")
     fun check(answer: String, presentedEvidenceCount: Int, sourceRequired: Boolean = true): CitationCheck {
         require(presentedEvidenceCount >= 0)
         val used = allCitations.findAll(answer).map { "S${it.groupValues[1]}" }.toSet()
