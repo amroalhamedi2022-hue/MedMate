@@ -9,6 +9,23 @@ fun main() {
     )
     var checks = 0
     fun verified(cond: Boolean, label: String) { check(cond) { label }; checks++ }
+    // Query-only frequency index must retain lexical ranking and source isolation.
+    val rankedSources = listOf(
+        Evidence("single", "ortho", 3, "Fracture of the radius causes pain."),
+        Evidence("frequent", "ortho", 4, "Fracture fracture fracture of the radius."),
+        Evidence("foreign", "surgery", 0, "Fracture fracture fracture of the radius.")
+    )
+    val ranked = EvidenceRetriever(rankedSources).search("ortho", "fracture radius")
+    verified(ranked.map { it.id } == listOf("frequent", "single"), "frequency ranking and chapter isolation")
+    verified(EvidenceRetriever(rankedSources).search("ortho", "fracture radius", pageIndex = 3)
+        .map { it.id } == listOf("single"), "exact page filter")
+    verified(EvidenceRetriever(rankedSources).search("ortho", "hypothyroidism").isEmpty(),
+        "no unrelated lexical matches")
+    val scopedShort = StudyBrain.search("ortho", pages, "?", onlyPage = 99)
+    verified(scopedShort.status == BrainSearchStatus.TOO_SHORT && scopedShort.shownPages == 0,
+        "short question cannot count unrelated pages")
+    val otherChapterShort = StudyBrain.search("surgery", pages, "?", onlyPage = 0)
+    verified(otherChapterShort.shownPages == 1, "short question reports only selected PDF chapter")
     val english = StudyBrain.search("ortho", pages, "Explain Volkmann's contracture")
     verified(english.status == BrainSearchStatus.FOUND, "English evidence")
     verified(english.evidence.first().pageNumber == 1, "page anchor")
