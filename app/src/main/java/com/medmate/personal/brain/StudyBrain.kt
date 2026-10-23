@@ -12,10 +12,13 @@ enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, TOO
 object StudyBrain {
     fun search(chapterId: String, pages: List<PageSource>, question: String, onlyPage: Int? = null): BrainSearchResult {
         val cleaned = question.trim()
-        if (MedicalText.queryTokens(cleaned).isEmpty())
-            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, pages.count { it.text.isNotBlank() })
+        // Apply chapter/page isolation even for an empty or stopword-only
+        // question. A short query must not report pages from another PDF.
         val valid = pages.filter { it.chapterId == chapterId && (onlyPage == null || it.pageIndex == onlyPage) }
-        if (valid.none { it.text.isNotBlank() })
+        val readablePages = valid.count { it.text.isNotBlank() }
+        if (MedicalText.queryTokens(cleaned).isEmpty())
+            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages)
+        if (readablePages == 0)
             return BrainSearchResult(emptyList(), BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, 0)
         val chunks = PageSegmenter(850).split(valid)
         val results = EvidenceRetriever(chunks).search(chapterId, cleaned, limit = 5)
