@@ -105,11 +105,25 @@ class EvidenceRetriever(private val all: List<Evidence>) {
         if (queryTokens.isEmpty()) return emptyList()
         val eligible = all.filter { it.chapterId == chapterId && (pageIndex == null || it.pageIndex == pageIndex) }
         if (eligible.isEmpty()) return emptyList()
-        val docs = eligible.map { it to MedicalText.tokens(it.text) }
-        val df = queryTokens.associateWith { t -> docs.count { (_, tokens) -> t in tokens } }
+        // Index only the terms needed by this question. A large PDF chapter
+        // can contain thousands of segments: repeatedly searching each full
+        // token list for every query term was unnecessarily quadratic.
+        // The same term frequencies, document frequencies and ranking formula
+        // are retained, without keeping unrelated PDF tokens in memory.
+        val wanted = queryTokens.toHashSet()
+        val docs = eligible.map { evidence ->
+            val counts = HashMap<String, Int>()
+            for (token in MedicalText.tokens(evidence.text)) {
+                if (token in wanted) counts[token] = (counts[token] ?: 0) + 1
+            }
+            evidence to counts
+        }
+        val df = HashMap<String, Int>()
+        for ((_, counts) in docs) {
+            for (term in counts.keys) df[term] = (df[term] ?: 0) + 1
+        }
         val normalizedPhrase = MedicalText.normalize(query).trim()
-        return docs.mapNotNull { (e, tokens) ->
-            val counts = tokens.groupingBy { it }.eachCount()
+        return docs.mapNotNull { (e, counts) ->
             val score = queryTokens.sumOf { t ->
                 val tf = counts[t] ?: 0
                 if (tf == 0) 0.0 else (1.0 + ln(tf.toDouble())) * ln(1.0 + (docs.size + 1.0) / (1.0 + (df[t] ?: 0)))
