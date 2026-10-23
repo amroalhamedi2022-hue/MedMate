@@ -46,7 +46,8 @@ fun main() {
         "unknown source marker cannot piggyback on abstention")
     // A plausible-looking marker must match the exact supplied [S1] syntax.
     // Reject malformed/forged references even if another valid [S1] is present.
-    listOf("[S01]", "[s1]", "[S 1]", "[S1 extra]", "[S1x]", "[S]", "[S1").forEach { bad ->
+    listOf("[S01]", "[s1]", "[S 1]", "[ S1]", "[S1 extra]", "[S1x]", "[S]", "[S1",
+        "[Sfoo]", "[S-1]", "[S:2]", "[Source]").forEach { bad ->
         val checked = CitationValidator.check("شرح طبي من النص [S1] $bad", prompt.presentedEvidence.size)
         verified(!checked.accepted && checked.invalid.isNotEmpty(), "malformed marker $bad")
     }
