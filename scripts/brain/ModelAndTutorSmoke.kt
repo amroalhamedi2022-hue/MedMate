@@ -45,6 +45,23 @@ fun main() {
             for (i in 8..15) this[i] = 0xff.toByte()
         }), temp) }
         expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().copyOf(12)), temp) }
+        // Reject invalid GGUF before reading a large body or reporting progress.
+        // This guards against wasting device storage on a forged multi-GB file.
+        val badHead = gguf().apply { this[8] = 0 }.copyOf(24)
+        val headerOnly = object : InputStream() {
+            var reads = 0
+            override fun read(): Int = error("Unexpected single-byte read")
+            override fun read(bytes: ByteArray, start: Int, length: Int): Int {
+                reads++
+                check(reads == 1) { "Invalid GGUF must abort before requesting body" }
+                badHead.copyInto(bytes, start)
+                return badHead.size
+            }
+        }
+        var progressEvents = 0
+        expectFailure { LocalModelImport.import(headerOnly, temp) { progressEvents++ } }
+        check(headerOnly.reads == 1 && progressEvents == 0)
+        check(temp.listFiles().orEmpty().none { it.name.endsWith(".part") })
         val lengthBefore = first.file.length()
         expectFailure { LocalModelImport.import(ByteArrayInputStream(good), temp) { if (it > 0) error("cancel") } }
         check(first.file.length() == lengthBefore)
@@ -75,6 +92,6 @@ fun main() {
         check(files.size == 1 && files.single().name.endsWith(".gguf"))
         first.file.writeBytes(gguf().apply { this[9] = 1 })
         expectFailure { LocalModelImport.import(ByteArrayInputStream(good), temp) }
-        println("LocalModelImport: 16 checks passed (synthetic GGUF header, no real model)")
+        println("LocalModelImport: synthetic header/import checks passed (no real GGUF inference)")
     } finally { temp.deleteRecursively() }
 }

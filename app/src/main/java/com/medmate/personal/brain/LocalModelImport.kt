@@ -26,6 +26,7 @@ object LocalModelImport {
         val sha = MessageDigest.getInstance("SHA-256")
         var count = 0L
         val head = ByteArray(24) // GGUF magic/version + tensor and metadata counts
+        var headerValidated = false
         try {
             input.use { source ->
                 FileOutputStream(temp).use { output ->
@@ -43,6 +44,13 @@ object LocalModelImport {
                         emptyReads = 0
                         require(count <= MAX_BYTES - n) { "النموذج أكبر من الحد المتاح" }
                         for (i in 0 until n) if (count + i < head.size) head[(count + i).toInt()] = buffer[i]
+                        // Validate as soon as 24 bytes arrive, BEFORE writing the
+                        // rest of a potentially multi-GB malformed upload to disk.
+                        // A provider returning tiny chunks is supported as well.
+                        if (!headerValidated && count + n >= head.size) {
+                            validateHeader(head)
+                            headerValidated = true
+                        }
                         output.write(buffer, 0, n)
                         sha.update(buffer, 0, n)
                         count += n
@@ -52,20 +60,7 @@ object LocalModelImport {
                 }
             }
             require(count >= MIN_BYTES) { "الملف صغير جدًا ليكون نموذج GGUF" }
-            require(head.copyOfRange(0, 4).contentEquals(magic)) { "الملف ليس GGUF" }
-            val version = (head[4].toInt() and 0xff) or ((head[5].toInt() and 0xff) shl 8) or
-                ((head[6].toInt() and 0xff) shl 16) or ((head[7].toInt() and 0xff) shl 24)
-            require(version in 2..3) { "نسخة GGUF غير مدعومة للفحص الأولي ($version)" }
-            // An inference model needs both tensors and metadata. Reject obvious
-            // fake/truncated headers before persisting multi-GB files. This is
-            // only a cheap header sanity check, NOT full GGUF parsing or proof
-            // that llama.cpp can load the model on the device.
-            val header = java.nio.ByteBuffer.wrap(head).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            val tensors = header.getLong(8)
-            val metadata = header.getLong(16)
-            require(tensors in 1..10_000_000L && metadata in 1..1_000_000L) {
-                "ترويسة GGUF غير صالحة: عدد tensors أو metadata غير منطقي"
-            }
+            require(headerValidated) { "ترويسة GGUF ناقصة" }
             val digest = sha.digest().joinToString("") { "%02x".format(it) }
             val target = File(directory, "$digest.gguf")
             if (target.exists()) {
@@ -78,6 +73,23 @@ object LocalModelImport {
             return ImportedGguf(target, digest, count, false)
         } finally {
             temp.delete()
+        }
+    }
+
+    private fun validateHeader(head: ByteArray) {
+        require(head.copyOfRange(0, 4).contentEquals(magic)) { "الملف ليس GGUF" }
+        val version = (head[4].toInt() and 0xff) or ((head[5].toInt() and 0xff) shl 8) or
+            ((head[6].toInt() and 0xff) shl 16) or ((head[7].toInt() and 0xff) shl 24)
+        require(version in 2..3) { "نسخة GGUF غير مدعومة للفحص الأولي ($version)" }
+        // An inference model needs both tensors and metadata. Reject obvious
+        // fake/truncated headers before persisting multi-GB files. This is
+        // only a cheap header sanity check, NOT full GGUF parsing or proof
+        // that llama.cpp can load the model on the device.
+        val header = java.nio.ByteBuffer.wrap(head).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        val tensors = header.getLong(8)
+        val metadata = header.getLong(16)
+        require(tensors in 1..10_000_000L && metadata in 1..1_000_000L) {
+            "ترويسة GGUF غير صالحة: عدد tensors أو metadata غير منطقي"
         }
     }
 
