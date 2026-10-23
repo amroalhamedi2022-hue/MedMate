@@ -1,0 +1,12 @@
+*.iml
+.gradle/
+.idea/
+local.properties
+build/
+**/build/
+*.apk
+*.aab
+.DS_Store
+
+# Signing material bundled privately for continuity; never commit this to a public repo.
+signing/*.keystore
