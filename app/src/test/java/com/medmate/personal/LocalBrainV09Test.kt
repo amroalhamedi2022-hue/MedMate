@@ -28,12 +28,20 @@ class LocalBrainV09Test {
             val sample = ByteArray(256)
             "GGUF".toByteArray().copyInto(sample)
             sample[4] = 3
+            sample[8] = 1 // tensor count
+            sample[16] = 1 // metadata count
             val a = LocalModelImport.import(ByteArrayInputStream(sample), dir)
             val b = LocalModelImport.import(ByteArrayInputStream(sample), dir)
             assertFalse(a.reused)
             assertTrue(b.reused)
             assertEquals(a.sha256, b.sha256)
             assertEquals(1, dir.listFiles()?.size)
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.import(ByteArrayInputStream(sample.copyOf().apply { this[8] = 0 }), dir)
+            }
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.import(ByteArrayInputStream(sample.copyOf().apply { this[16] = 0 }), dir)
+            }
             assertThrows(IllegalArgumentException::class.java) {
                 LocalModelImport.import(ByteArrayInputStream(ByteArray(256)), dir)
             }
