@@ -92,3 +92,5 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Regression added:** `ModelAndTutorSmoke.kt` uses a malicious 24-byte-only provider, asserts rejection after the first read, zero progress callbacks and no orphan `.part` file. Existing synthetic import/reuse/invalid-count tests remain.
 - **Verification:** static source inspection PASS; Kotlin smoke execution **NOT TESTED** in this run, Android Gradle/CI **NOT TESTED**. No APK or model was built, no paid API or personal PDF/GGUF/signing key uploaded. A valid synthetic header is not proof of real llama.cpp compatibility.
 - **Next:** run `bash scripts/test-local-brain-v09.sh` in a source-test-only environment, then finish real native GGUF integration and independent device QA before the single final APK build.
+
+- **Exact production/test commit:** `e6d6a219b9dae73189a814bba60e78067542b3b6` ([PR #1](https://github.com/amroalhamedi2022-hue/MedMate/pull/1)). Source-order static gate **PASS**; Kotlin smoke, Android CI, real GGUF and device **NOT TESTED**. No APK build requested.
