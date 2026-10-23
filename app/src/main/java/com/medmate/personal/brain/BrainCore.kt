@@ -204,9 +204,11 @@ object CitationValidator {
         val explanationText = answerWithoutCitations
             .replace(Regex("[\\p{P}\\p{S}\\s]+"), "")
         val hasExplanation = explanationText.length >= 5
+        // Abstention must be source-free: attaching [S1] to an explicit
+        // no-evidence answer misleadingly implies the PDF supports it.
         val accepted = invalid.isEmpty() && hasExplanation && (
-            if (presentedEvidenceCount == 0) correctAbstention
-            else (correctAbstention || !sourceRequired || used.isNotEmpty())
+            if (correctAbstention) used.isEmpty()
+            else presentedEvidenceCount > 0 && (!sourceRequired || used.isNotEmpty())
         )
         val reason = when {
             malformed.isNotEmpty() -> "Malformed source marker"
