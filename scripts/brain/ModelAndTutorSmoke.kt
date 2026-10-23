@@ -7,6 +7,8 @@ import java.nio.file.Files
 private fun gguf(size: Int = 256): ByteArray = ByteArray(size).also {
     "GGUF".toByteArray(Charsets.US_ASCII).copyInto(it)
     it[4] = 3 // little-endian GGUF version 3
+    it[8] = 1 // one tensor, little endian
+    it[16] = 1 // one metadata entry, little endian
 }
 private fun expectFailure(block: () -> Any) {
     check(runCatching { block() }.isFailure) { "Operation unexpectedly succeeded" }
@@ -37,6 +39,12 @@ fun main() {
         expectFailure { LocalModelImport.import(ByteArrayInputStream("not a gguf".toByteArray()), temp) }
         expectFailure { LocalModelImport.import(ByteArrayInputStream(ByteArray(256)), temp) }
         expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().apply { this[4] = 9 }), temp) }
+        expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().apply { this[8] = 0 }), temp) }
+        expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().apply { this[16] = 0 }), temp) }
+        expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().apply {
+            for (i in 8..15) this[i] = 0xff.toByte()
+        }), temp) }
+        expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().copyOf(12)), temp) }
         val lengthBefore = first.file.length()
         expectFailure { LocalModelImport.import(ByteArrayInputStream(good), temp) { if (it > 0) error("cancel") } }
         check(first.file.length() == lengthBefore)
@@ -67,6 +75,6 @@ fun main() {
         check(files.size == 1 && files.single().name.endsWith(".gguf"))
         first.file.writeBytes(gguf().apply { this[9] = 1 })
         expectFailure { LocalModelImport.import(ByteArrayInputStream(good), temp) }
-        println("LocalModelImport: 12 checks passed")
+        println("LocalModelImport: 16 checks passed (synthetic GGUF header, no real model)")
     } finally { temp.deleteRecursively() }
 }
