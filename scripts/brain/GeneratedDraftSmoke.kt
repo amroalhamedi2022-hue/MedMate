@@ -14,6 +14,23 @@ fun main() {
     check(GeneratedStudyDrafts.validate(listOf(good), emptyList()).accepted.isEmpty())
     check(GeneratedStudyDrafts.validate(listOf(good.copy(supportingQuote = "Completely invented quote")), sources).accepted.isEmpty())
     check(GeneratedStudyDrafts.validate(listOf(good.copy(supportingQuote = "")), sources).accepted.isEmpty())
+    // Real PDF text extraction may insert a line-break hyphen or Unicode ligature.
+    // Both must still point to the same original page, never to a guessed page.
+    val brokenPdf = listOf(Evidence("pdf", "chapter", 12,
+        "A peripheral nerve injury causes significant sensory loss. A ﬁbrous capsule surrounds it."))
+    val splitPdf = listOf(Evidence("pdf", "chapter", 12,
+        "A periph-\nneral nerve injury causes significant sensory loss."))
+    val normalizedCandidate = good.copy(sourceId = "S1", supportingQuote =
+        "A peripheral nerve injury causes significant sensory loss.")
+    check(GeneratedStudyDrafts.validate(listOf(normalizedCandidate), brokenPdf).accepted.single().pageIndex == 12)
+    check(GeneratedStudyDrafts.validate(listOf(normalizedCandidate), splitPdf).accepted.single().pageIndex == 12)
+    // Matching a substring *inside* a longer word is not an actual quotation.
+    val partialWord = good.copy(sourceId = "S1", supportingQuote = "peripheral nerve injur")
+    check(GeneratedStudyDrafts.validate(listOf(partialWord), brokenPdf).accepted.isEmpty())
+    // A typographic PDF ligature must not force rejection of a real citation.
+    val ligatureQuote = good.copy(sourceId = "S1", supportingQuote =
+        "A fibrous capsule surrounds it.")
+    check(GeneratedStudyDrafts.validate(listOf(ligatureQuote), brokenPdf).accepted.single().pageIndex == 12)
     // Model output must never combine sources from separate PDF chapters.
     val mixedChapter = sources + Evidence("c", "another-chapter", 0, "A third valid source excerpt.")
     val mixed = GeneratedStudyDrafts.validate(listOf(good, mcq), mixedChapter)
