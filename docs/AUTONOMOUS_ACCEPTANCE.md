@@ -94,3 +94,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Next:** run `bash scripts/test-local-brain-v09.sh` in a source-test-only environment, then finish real native GGUF integration and independent device QA before the single final APK build.
 
 - **Exact production/test commit:** `e6d6a219b9dae73189a814bba60e78067542b3b6` ([PR #1](https://github.com/amroalhamedi2022-hue/MedMate/pull/1)). Source-order static gate **PASS**; Kotlin smoke, Android CI, real GGUF and device **NOT TESTED**. No APK build requested.
+
+## 2026-10-23 — Safe no-evidence abstention in PDF-grounded Brain (source-only)
+- **Production changed: YES.** `CitationValidator.check` now accepts the exact Arabic insufficient-evidence response even when retrieved PDF excerpts exist but cannot answer the question. It allows harmless surrounding punctuation/spacing, while rejecting fabricated claims that merely append the abstention phrase and rejecting unknown citation markers. This prevents pressure to hallucinate a source marker; it is **not** clinical factual validation.
+- **Production SHA:** `22ff100f871f9590ad27c2145a3c7712bf805e51`; **regression SHA:** `7f38d409124b617543097b751db85fa83eb528fc` on existing draft PR #1.
+- **PASS (isolated Kotlin logic smoke):** `kotlinc /tmp/MedMateCitationSmoke.kt -include-runtime -d /tmp/medmate-citation-smoke.jar && java -jar /tmp/medmate-citation-smoke.jar` — 8 checks on a standalone copy of the changed validator logic (abstention, punctuation, fabricated claim, unknown citation, source-only, citation-only). `scripts/brain/BrainPipelineSmoke.kt` was extended with the corresponding source-level regressions.
+- **NOT TESTED:** full repository `bash scripts/test-brain.sh`, Gradle unit tests, Android compile, CI, real GGUF inference, medical PDF clinical accuracy, physical Pad 5 and independent recheck. **No APK or model was built**. Existing manual-only Android workflow was not dispatched.
+- **Next:** run complete source-only Kotlin smoke from a checkout when available; continue native GGUF integration, model/PDF citation QA, SRS/backup and security without an interim APK.
