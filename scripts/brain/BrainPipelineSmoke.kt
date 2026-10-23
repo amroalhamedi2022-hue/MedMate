@@ -35,6 +35,11 @@ fun main() {
         "punctuated exact abstention accepted")
     verified(CitationValidator.check("المعلومة مش كافية بالنص الموجود", 0).accepted,
         "no-evidence abstention still accepted")
+
+    verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [S1]", prompt.presentedEvidence.size).accepted,
+        "abstention cannot imply a PDF citation supports missing evidence")
+    verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [S1]", prompt.presentedEvidence.size, false).accepted,
+        "abstention remains source-free even when citations are optional")
     verified(!CitationValidator.check("إجابة غير موثقة. المعلومة مش كافية بالنص الموجود", prompt.presentedEvidence.size).accepted,
         "fabricated claim cannot piggyback on abstention")
     verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [S999]", prompt.presentedEvidence.size).accepted,
