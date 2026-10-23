@@ -5,7 +5,7 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 ## 2026-10-24 — Citation marker hardening (source-only)
 - **Production commit** `cf5d591b1a55bf1455efa9de435a0bd41e50c82e`; **test commit** `dd77392ea92c0e685b7b456bc2345b3ad49baa10` (draft PR #1, no main write).
 - **Fix:** `CitationValidator` now identifies all bracketed source-like markers (including malformed alphabetic `[Sfoo]`, negative `[S-1]`, colon `[S:2]`, whitespace `[ S1]` and incomplete `[S1`), so a valid `[S1]` elsewhere cannot conceal a forged citation. This is **syntax verification only**, not clinical claim verification.
-- **PASS:** 7 V8 regex-parity cases against the intended Java regex grammar (valid/invalid marker discrimination). New Kotlin smoke assertions committed in `scripts/brain/BrainPipelineSmoke.kt`.
+- **PASS:** 7 V8 regex-parity cases; additionally compiled and ran an **isolated Kotlin/JVM regex harness** with 12 malformed and 3 valid markers (15 checks, PASS). This verifies the regex on Kotlin/JVM but does not compile the Android project. New Kotlin project smoke assertions committed in `scripts/brain/BrainPipelineSmoke.kt`.
 - **NOT TESTED:** actual Kotlin compilation/smoke script, Gradle unit suite, GitHub CI, Android APK, real GGUF inference, PDF grounding/medical factual correctness on device and independent recheck. Do not treat JS regex parity as Kotlin test execution.
 - **Build policy:** `[skip ci]` on new commits; no build or workflow dispatch requested. No PR workflow run reported at test checkpoint `dd77392e`. Source-only development continues.
 
