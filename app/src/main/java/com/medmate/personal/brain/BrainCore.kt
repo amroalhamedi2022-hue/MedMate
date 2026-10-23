@@ -176,13 +176,19 @@ object MedicalPromptBuilder {
 /** Citation syntax checking only: it does not prove that an AI statement is medically true. */
 data class CitationCheck(val accepted: Boolean, val used: Set<String>, val invalid: Set<String>, val reason: String)
 object CitationValidator {
-    private val allCitations = Regex("\\[S(\\d+)]")
+    // A source ID is exactly [S1], [S2], ... (not [S01], [s1] or [S1 extra]).
+    private val allCitations = Regex("\\[S([1-9]\\d*)]")
+    // Catch malformed citation-like tokens even when a different valid marker
+    // exists. Otherwise a model can launder a fabricated reference with [S1].
+    private val citationCandidates = Regex("\\[\\s*[sS](?:\\s*\\d[^\\]\\r\\n]{0,64}\\]?|\\s*\\])")
     fun check(answer: String, presentedEvidenceCount: Int, sourceRequired: Boolean = true): CitationCheck {
         require(presentedEvidenceCount >= 0)
         val used = allCitations.findAll(answer).map { "S${it.groupValues[1]}" }.toSet()
+        val malformed = citationCandidates.findAll(answer).map { it.value }
+            .filter { !allCitations.matches(it) }.toSet()
         val invalid = used.filter { marker ->
             marker.removePrefix("S").toIntOrNull() !in 1..presentedEvidenceCount
-        }.toSet()
+        }.toSet() + malformed
         // When excerpts exist but do not answer the question, a source-free,
         // explicit abstention is safer than forcing the model to invent a citation.
         // Accept only the exact approved abstention (allowing punctuation/spacing),
@@ -203,6 +209,7 @@ object CitationValidator {
             else (correctAbstention || !sourceRequired || used.isNotEmpty())
         )
         val reason = when {
+            malformed.isNotEmpty() -> "Malformed source marker"
             invalid.isNotEmpty() -> "Unknown source markers"
             !hasExplanation -> "No substantive explanation beyond citation markers"
             !accepted && presentedEvidenceCount == 0 -> "No evidence: abstention required"

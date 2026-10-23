@@ -39,6 +39,15 @@ fun main() {
         "fabricated claim cannot piggyback on abstention")
     verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [S999]", prompt.presentedEvidence.size).accepted,
         "unknown source marker cannot piggyback on abstention")
+    // A plausible-looking marker must match the exact supplied [S1] syntax.
+    // Reject malformed/forged references even if another valid [S1] is present.
+    listOf("[S01]", "[s1]", "[S 1]", "[S1 extra]", "[S1x]", "[S]", "[S1").forEach { bad ->
+        val checked = CitationValidator.check("شرح طبي من النص [S1] $bad", prompt.presentedEvidence.size)
+        verified(!checked.accepted && checked.invalid.isNotEmpty(), "malformed marker $bad")
+    }
+    verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [s1]", prompt.presentedEvidence.size).accepted,
+        "malformed citation cannot piggyback on abstention")
+
     verified(GatewayPolicy.endpoint("https://study.example.org/v1/chat/completions") == "https://study.example.org/v1/chat/completions", "https endpoint")
     listOf("http://study.example.org/v1/chat/completions", "https://u:p@host/v1/chat/completions", "https://host/path?key=x", "https://host/other").forEach { bad ->
         verified(runCatching { GatewayPolicy.endpoint(bad) }.isFailure, "invalid gateway: $bad")
