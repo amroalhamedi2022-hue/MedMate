@@ -29,6 +29,16 @@ fun main() {
     verified(!CitationValidator.check("[S1]", prompt.presentedEvidence.size).accepted, "reject citation-only response")
     verified(!CitationValidator.check("!! [S1] ...", prompt.presentedEvidence.size).accepted, "reject punctuation-only response")
     verified(!CitationValidator.check("[S1]", prompt.presentedEvidence.size).reason.isBlank(), "clear rejection reason")
+    verified(CitationValidator.check("المعلومة مش كافية بالنص الموجود", prompt.presentedEvidence.size).accepted,
+        "source-free abstention allowed when excerpts do not answer")
+    verified(CitationValidator.check("«المعلومة مش كافية بالنص الموجود.»", prompt.presentedEvidence.size).accepted,
+        "punctuated exact abstention accepted")
+    verified(CitationValidator.check("المعلومة مش كافية بالنص الموجود", 0).accepted,
+        "no-evidence abstention still accepted")
+    verified(!CitationValidator.check("إجابة غير موثقة. المعلومة مش كافية بالنص الموجود", prompt.presentedEvidence.size).accepted,
+        "fabricated claim cannot piggyback on abstention")
+    verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [S999]", prompt.presentedEvidence.size).accepted,
+        "unknown source marker cannot piggyback on abstention")
     verified(GatewayPolicy.endpoint("https://study.example.org/v1/chat/completions") == "https://study.example.org/v1/chat/completions", "https endpoint")
     listOf("http://study.example.org/v1/chat/completions", "https://u:p@host/v1/chat/completions", "https://host/path?key=x", "https://host/other").forEach { bad ->
         verified(runCatching { GatewayPolicy.endpoint(bad) }.isFailure, "invalid gateway: $bad")
