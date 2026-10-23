@@ -38,8 +38,28 @@ object GeneratedStudyDrafts {
         val results = mutableListOf<GeneratedDraft>()
         var rejected = 0
         val seen = mutableSetOf<String>()
-        // An exact source excerpt is a stronger anchor than a model-supplied marker alone.
-        fun normalizedQuote(text: String) = text.replace(Regex("\\s+"), " ").trim().lowercase(java.util.Locale.ROOT)
+        // PDF extraction often splits medical terms across a printed line, or
+        // yields Unicode ligatures (e.g. "ﬁ"). Normalize these *only for matching*;
+        // the stored citation always retains the original exact PDF page and text.
+        fun normalizedQuote(text: String): String = java.text.Normalizer
+            .normalize(text, java.text.Normalizer.Form.NFKC)
+            .replace(Regex("(?<=\\p{L})-\\s*\\r?\\n\\s*(?=\\p{L})"), "")
+            .replace("\u00AD", "")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+            .lowercase(java.util.Locale.ROOT)
+        fun quoteOnWordBoundaries(source: String, quote: String): Boolean {
+            if (quote.isBlank()) return false
+            var at = source.indexOf(quote)
+            while (at >= 0) {
+                val end = at + quote.length
+                val before = at == 0 || !source[at - 1].isLetterOrDigit()
+                val after = end == source.length || !source[end].isLetterOrDigit()
+                if (before && after) return true
+                at = source.indexOf(quote, at + 1)
+            }
+            return false
+        }
         for (c in candidates.take(30)) {
             val s = validSources[c.sourceId.removeSurrounding("[", "]")]
             val prompt = c.prompt.trim()
@@ -48,7 +68,7 @@ object GeneratedStudyDrafts {
             val options = c.options.map { it.trim() }
             val quoted = c.supportingQuote.trim()
             val quoteVerifiable = s != null && quoted.length in 16..500 &&
-                normalizedQuote(s.text).contains(normalizedQuote(quoted))
+                quoteOnWordBoundaries(normalizedQuote(s.text), normalizedQuote(quoted))
             val validBase = quoteVerifiable && prompt.length in 8..1500 && answer.length <= 3000 &&
                 explanation.length <= 3000 && !s!!.text.isBlank()
             val validType = when (c.kind) {
