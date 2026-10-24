@@ -1,5 +1,13 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Bounded, single-line student topics in generated study prompts (source-only)
+- **Production commit:** `28da61ab8d244a7515c6be7afda12aabf4722a93`; **smoke commit:** `0cfdfc542654f6aa3458aa03a38e219f7ffdbec6`; **script commit:** `13964a2f1f87c0903f19b7228cb6d8c929976e81`; **JUnit commit:** `efacdd894ff5ad9a3e13bd4b5247dc06f5537bc9` (draft PR #1).
+- **Fix:** `StudyDraftPrompt.prepare` collapses control/format/newline characters from student questions into a single line and caps the inserted topic at 1,200 characters; retains the original question in `PreparedPrompt.question` for identity checking. Direct callers cannot pass more than 20,000 source text characters. This reduces prompt-section spoofing/context overflow but does **not** prove semantic prompt-injection resistance or clinical correctness.
+- **PASS:** Kotlin compiler + JVM executed 7 isolated checks using the production `StudyDraftPrompt.kt` copied from GitHub and minimal matching model stubs; checked forged newline section, source marker continuity, length cap and oversized evidence rejection. Added matching repository smoke/JUnit regressions; `scripts/test-drafts.sh` now compiles the actual prompt class.
+- **FAIL:** 0 in the 7 isolated checks. **NOT TESTED:** full committed `scripts/test-drafts.sh` and JUnit suite, Android Gradle/lint, cloud HTTPS gateway, actual llama.cpp/GGUF, clinical accuracy, Xiaomi Pad 5 RAM/thermal/performance, offline device testing, final APK and SHA-256.
+- **Build policy:** all commits `[skip ci]`, no APK/Actions build dispatched, `main` untouched. Full source and physical-device gates remain open.
+
+
 ## 2026-10-24 — Preserve medical words at PDF segment boundaries (source-only)
 - **Production commit:** `7051c6b5cc3b1674b921f7348c7296d56c7aff0d`; **smoke regression:** `590d4c739a030a4aa00ffb9a01fa2b21ab8144d1`; **JUnit regression:** `21db0e2d417e57b77a8f9579bf7c4231814339ec` (MedMate PR #1 only).
 - **Fix:** PDF paragraph segmentation now prefers a whitespace boundary before the character cap so common medical terms are not silently split into unsearchable fragments. For very long unbroken tokens, it retains bounded, lossless hard splits; chapter/page anchors and 128–6000 character limits are unchanged.
