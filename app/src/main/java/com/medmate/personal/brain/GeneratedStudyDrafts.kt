@@ -31,7 +31,17 @@ object GeneratedStudyDrafts {
         // Every generated batch must be grounded in exactly one PDF chapter. The
         // prompt builder already enforces this; validate again at the untrusted
         // model-output boundary so callers cannot mix page references across books.
-        if (sources.map { it.chapterId }.distinct().size > 1) {
+        // The prompt builder validates evidence before inference, but both
+        // local and cloud output paths call this public validator independently.
+        // A malformed source list must fail closed as a whole: never persist
+        // an invented page (-1), an empty chapter, or an oversized excerpt.
+        // Match StudyDraftPrompt's 20-source / 20k-character input budget.
+        val invalidSources = sources.isEmpty() || sources.size > 20 ||
+            sources.first().chapterId.isBlank() ||
+            sources.any { it.chapterId != sources.first().chapterId ||
+                it.pageIndex < 0 || it.text.isBlank() } ||
+            sources.sumOf { it.text.length.toLong() } > 20_000L
+        if (invalidSources) {
             return GeneratedValidationResult(emptyList(), candidates.size)
         }
         val validSources = sources.mapIndexed { idx, e -> "S${idx+1}" to e }.toMap()
