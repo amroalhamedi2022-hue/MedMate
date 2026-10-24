@@ -30,6 +30,10 @@ object OfflineStudyDrafts {
     private val questionHeader = Regex("^(?:Q(?:uestion)?\\s*[-#.:]?\\s*)(\\d{1,4})[.)\\s:-]+(.{10,})$", RegexOption.IGNORE_CASE)
     private val optionLine = Regex("^([a-eA-E])[.)]\\s*(.{2,})$")
     private val answerLine = Regex("^(?:answer|correct answer|ans)\\s*[:：-]\\s*([a-eA-E])\\s*[.)]?\\s*$", RegexOption.IGNORE_CASE)
+    // Treat every printed answer label as a key attempt. A second key or an
+    // unparseable key (e.g. "Answer: A and C") invalidates the whole MCQ.
+    // Never silently keep an earlier valid key when the book is ambiguous.
+    private val answerHeader = Regex("^(?:answer|correct answer|ans)\\s*[:：-]", RegexOption.IGNORE_CASE)
     private val explanationLine = Regex("^(?:explanation|rationale)\\s*[:：-]\\s*(.*)$", RegexOption.IGNORE_CASE)
     private val definitionLine = Regex(
         "^([A-Z][A-Za-z0-9()/'’ -]{3,68}?)\\s+(?:is defined as|refers to|is characterized by|means)\\s+(.{18,360})$",
@@ -101,6 +105,7 @@ object OfflineStudyDrafts {
             val quoteLines: MutableList<String> = mutableListOf(),
             val options: LinkedHashMap<Char, String> = linkedMapOf(),
             var key: Char? = null,
+            var invalidKey: Boolean = false,
             var explanation: String = "",
             var mode: String = "stem"
         )
@@ -110,7 +115,7 @@ object OfflineStudyDrafts {
             val s = state ?: return
             val letters = s.options.keys.toList()
             val key = s.key
-            if ((letters == listOf('a', 'b', 'c', 'd') || letters == listOf('a', 'b', 'c', 'd', 'e')) && key != null && key in letters &&
+            if ((letters == listOf('a', 'b', 'c', 'd') || letters == listOf('a', 'b', 'c', 'd', 'e')) && key != null && !s.invalidKey && key in letters &&
                 s.stem.length in 12..1200 && s.options.values.all { it.length in 2..1000 } &&
                 s.options.values.map { it.lowercase(Locale.ROOT).trim() }.distinct().size == letters.size
             ) {
@@ -152,7 +157,12 @@ object OfflineStudyDrafts {
                     s.mode = "option"
                 }
                 answer != null -> {
-                    s.key = answer.groupValues[1].lowercase(Locale.ROOT)[0]
+                    if (s.key != null) s.invalidKey = true
+                    else s.key = answer.groupValues[1].lowercase(Locale.ROOT)[0]
+                    s.mode = "answer"
+                }
+                answerHeader.containsMatchIn(line) -> {
+                    s.invalidKey = true
                     s.mode = "answer"
                 }
                 explanation != null -> {
