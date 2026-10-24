@@ -150,3 +150,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Regression commit:** `bcbcb899f1ea16977230d736ba04ad78c87bb227` adds six cases to `scripts/brain/ClinicalTermsSmoke.kt` including English PDF hyphenation and retrieval.
 - **PASS:** compiled and executed five **isolated Kotlin/JVM checks** of the same normalization expressions with `kotlinc` and `java -jar` (LF/CRLF wrapped words, soft hyphen, ordinary compound, paragraph boundary).
 - **NOT TESTED:** full repository `scripts/test-clinical-terms.sh`, Gradle tests, native GGUF inference, clinical correctness, Android build, offline/performance/Pad 5 and independent device recheck. No APK, workflow dispatch, paid API, private PDFs or model weights used. Status: **IN_PROGRESS**.
+
+
+## 2026-10-24 — Surgical plurals in PDF retrieval (source-only)
+- **Production commit:** `9ec00bc88db7ed39bc2aa8874226ab1ec2ea6645`; **smoke test:** `deb8b948dc7f9541ea84b1d45b12223b4f07bc97`; **JUnit regression:** `6565e5fe27c4115fedc87424e95eb7a79a7cea6a` on draft PR #1.
+- **Fix:** explicit English plural normalization for ulcers, perforations, obstructions, intestines, gallbladders, abscesses and adhesions. Query and PDF tokens already share the same canonicalizer; no general stemming, change to rank formula, page scope, or AI-generated clinical claims.
+- **PASS:** compiled and ran 9 isolated Kotlin/JVM assertions with `kotlinc` and `java -jar` against an equivalent standalone copy of the canonicalizer (7 surgical plurals plus two intentionally unchanged irregular words).
+- **NOT TESTED:** newly committed integrated ClinicalTermsSmoke/JUnit execution, full Android Gradle tests/lint, actual PDF corpus clinical relevance, GGUF/native inference, Pad 5 offline/RAM/performance and independent recheck. Isolated smoke is not proof of integration.
+- **Build:** no APK, no workflow dispatch, no merge, no paid API, no private medical data. Status: **IN_PROGRESS**.
