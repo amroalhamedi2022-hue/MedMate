@@ -69,6 +69,11 @@ class CloudBrainGateway {
             .put("messages", JSONArray()
                 .put(JSONObject().put("role", "system").put("content", systemMessage))
                 .put(JSONObject().put("role", "user").put("content", userMessage)))
+        // Claim consent at the final outbound boundary, after validating the
+        // endpoint, token and payload. Failed requests require fresh approval.
+        require(consent.consume(gatewayUrl, model, requestIdentity)) {
+            "الموافقة السحابية استُخدمت أو تغيّر السؤال/المصدر؛ وافق مجددًا"
+        }
         val connection = (URL(safeUrl).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 10_000
