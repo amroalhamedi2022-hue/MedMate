@@ -7,6 +7,15 @@ fun main() {
     check(ClinicalTermNormalizer.canonical("diagnoses") == "diagnoses")
     check(ClinicalTermNormalizer.canonical("analysis") == "analysis")
     check(MedicalText.tokens("Multiple fractures and injuries") == listOf("multiple", "fracture", "injury"))
+    check(MedicalText.tokens("pancre-\natitis") == listOf("pancreatitis"))
+    check(MedicalText.tokens("pancre-\r\natitis") == listOf("pancreatitis"))
+    check(MedicalText.tokens("frac\u00ADtures") == listOf("fracture"))
+    check(MedicalText.tokens("well-being") == listOf("well", "being"))
+    check(MedicalText.tokens("pancre-\n\natitis") == listOf("pancre", "atitis"))
+    check(EvidenceRetriever(listOf(Evidence("hyphen:0", "hyphen", 0,
+        "Acute pancre-\natitis and frac\u00ADtures are discussed.")))
+        .search("hyphen", "pancreatitis").first().id == "hyphen:0")
+
     val pages = listOf(
         Evidence("c:0:0", "c", 0, "Multiple fractures of the radius require evaluation."),
         Evidence("c:1:0", "c", 1, "The patient has a nerve injury.")
@@ -34,5 +43,5 @@ fun main() {
     check(surgery.search("surgery", "انسداد الأمعاء", pageIndex = 1).first().id == "s:1")
     check(surgery.search("surgery", "التهاب البنكرياس", pageIndex = 1).isEmpty())
     check(surgery.search("ortho", "انسداد الأمعاء").isEmpty())
-    println("PASS: 21 clinical morphology, Arabic surgery aliases and PDF-scope checks")
+    println("PASS: clinical morphology, PDF hyphenation, Arabic aliases and scope checks")
 }
