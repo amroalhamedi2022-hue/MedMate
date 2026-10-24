@@ -286,3 +286,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **FAIL:** none in the isolated 9 checks. **NOT TESTED:** full Kotlin smoke/JUnit, Android Compose/Gradle/lint, AAR resolution/ABI packaging, actual GGUF inference, PDF clinical grounding, physical Pad 5 RAM/thermal/offline, final APK and SHA-256.
 - **Purposeful build question (authorized 2026-10-24):** does the real Android Gradle project compile with the pinned native llama AAR and run its unit/lint gates? Isolated Kotlin cannot verify Android dependency resolution or Compose/ABI packaging. One targeted PR-branch CI build is justified, **not proof of GGUF inference or a final release**. Do not claim CI/artifact before observing it.
 - **Scope:** draft MedMate PR #1 only; no `main`, no auto-merge, no paid API, no Library/Handoff. **IN_PROGRESS.**
+
+
+### Targeted Android CI bootstrap failure and corrective run
+- **FAIL (CI environment, before source compilation):** run **40126814109**, source SHA `f394467fbfd0fb4273a4c9745ff61bd13429ae26`, https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40126814109 . The `android-actions/setup-android@v3` step invoked `sdkmanager tools`, but the removed legacy Android SDK `tools` package was unavailable. **No Kotlin/Gradle tests ran; no APK artifact.** This is not a model failure.
+- **Fix:** PR-branch workflow now uses the GitHub-hosted runner's existing Android SDK manager to install `platforms;android-36` and `build-tools;35.0.0`, matching the proven Storylens runner approach. Fix source SHA `07ad6f88355cdff22375d6fc0c779e832739265d`.
+- **Second purposeful CI:** run **40126898764**, https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40126898764 . The SDK step completed and Gradle `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` began; at the time of this checkpoint it was **IN_PROGRESS**, so unit/lint/compile/APK are **NOT TESTED / no result yet**. No private model, user PDF or key uploaded.
+- **Still NOT TESTED:** genuine GGUF inference, clinical PDF citations, real HTTPS consent/no-send, physical Pad 5, model RAM/thermal/offline and final release.
