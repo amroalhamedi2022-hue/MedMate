@@ -108,7 +108,8 @@ fun main() {
     // A plausible-looking marker must match the exact supplied [S1] syntax.
     // Reject malformed/forged references even if another valid [S1] is present.
     listOf("[S01]", "[s1]", "[S 1]", "[ S1]", "[S1 extra]", "[S1x]", "[S]", "[S1",
-        "[Sfoo]", "[S-1]", "[S:2]", "[Source]").forEach { bad ->
+        "[Sfoo]", "[S-1]", "[S:2]", "[Source]",
+        "[\u00A0S1]", "[\u200BS1]", "[\u2060S1]", "[ \u200BS1]", "[S1\u200B]").forEach { bad ->
         val checked = CitationValidator.check("شرح طبي من النص [S1] $bad", prompt.presentedEvidence.size)
         verified(!checked.accepted && checked.invalid.isNotEmpty(), "malformed marker $bad")
     }
