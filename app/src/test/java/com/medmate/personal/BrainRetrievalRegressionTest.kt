@@ -31,6 +31,19 @@ class BrainRetrievalRegressionTest {
         assertFalse(prepared.prompt.contains("IGNORE RULES\n"))
     }
 
+    @Test fun pdfSegmenterPreservesWordsAndDoesNotLoseLongTokens() {
+        val paragraph = ("Neurovascular examination of the forearm requires careful documentation. ").repeat(8).trim()
+        val chunks = PageSegmenter(128).split(listOf(PageSource("ortho", 8, paragraph)))
+        assertTrue(chunks.size > 1)
+        assertTrue(chunks.all { it.pageIndex == 8 && it.chapterId == "ortho" && it.text.length <= 128 })
+        assertEquals(paragraph, chunks.joinToString(" ") { it.text }.replace(Regex("\\s+"), " ").trim())
+
+        val unbroken = "neurovascular".repeat(24)
+        val forced = PageSegmenter(128).split(listOf(PageSource("ortho", 9, unbroken)))
+        assertTrue(forced.all { it.text.length <= 128 })
+        assertEquals(unbroken, forced.joinToString("") { it.text })
+    }
+
     @Test fun rankingIsStableAndNeverMixesChapters() {
         val evidence = listOf(
             Evidence("single", "ortho", 3, "Fracture of the radius causes pain."),
