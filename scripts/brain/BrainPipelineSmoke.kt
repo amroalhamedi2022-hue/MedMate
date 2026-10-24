@@ -38,6 +38,18 @@ fun main() {
     verified(StudyBrain.search("ortho", listOf(PageSource("ortho", 0, "")), "fracture").status == BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, "scanned")
     verified(StudyBrain.search("ortho", pages, "hypothyroidism").status == BrainSearchStatus.NO_MATCH, "unknown question")
     verified(StudyBrain.search("ortho", pages, "? ?").status == BrainSearchStatus.TOO_SHORT, "uninformative question")
+    // Chunk boundaries must not invent spaces inside ordinary medical words.
+    val paragraph = ("Neurovascular examination of the forearm requires careful documentation. ").repeat(8).trim()
+    val chunks = PageSegmenter(128).split(listOf(PageSource("ortho", 8, paragraph)))
+    verified(chunks.size > 1 && chunks.all { it.text.length <= 128 },
+        "long PDF paragraphs remain bounded")
+    verified(chunks.joinToString(" ") { it.text }.replace(Regex("\\s+"), " ").trim() == paragraph,
+        "medical terms are never split when whitespace boundaries exist")
+    val unbrokenWord = "neurovascular".repeat(24)
+    val hardChunks = PageSegmenter(128).split(listOf(PageSource("ortho", 9, unbrokenWord)))
+    verified(hardChunks.joinToString("") { it.text } == unbrokenWord &&
+        hardChunks.all { it.text.length <= 128 },
+        "unbroken tokens fall back to bounded lossless hard splits")
     val prompt = requireNotNull(StudyBrain.prepareSourceOnly("ortho", "Volkmann?", english))
     verified(prompt.presentedEvidence.isNotEmpty() && "[S1]" in prompt.prompt, "source prompt")
     val mixedEvidence = MedicalPromptBuilder.prepare(GroundedRequest("ortho", "fracture", listOf(
