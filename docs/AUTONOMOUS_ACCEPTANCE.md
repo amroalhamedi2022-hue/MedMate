@@ -1,5 +1,13 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Preserve medical words at PDF segment boundaries (source-only)
+- **Production commit:** `7051c6b5cc3b1674b921f7348c7296d56c7aff0d`; **smoke regression:** `590d4c739a030a4aa00ffb9a01fa2b21ab8144d1`; **JUnit regression:** `21db0e2d417e57b77a8f9579bf7c4231814339ec` (MedMate PR #1 only).
+- **Fix:** PDF paragraph segmentation now prefers a whitespace boundary before the character cap so common medical terms are not silently split into unsearchable fragments. For very long unbroken tokens, it retains bounded, lossless hard splits; chapter/page anchors and 128–6000 character limits are unchanged.
+- **PASS:** Compiled and executed a standalone Kotlin/JVM reproduction of the modified production `PageSegmenter` algorithm with 3 assertions: multi-chunk bounds, exact paragraph reconstruction without invented mid-word spaces, and lossless hard-split fallback (5 ordinary chunks, 3 fallback chunks).
+- **NOT TESTED:** Running the newly committed smoke/JUnit tests against the complete source checkout, Android Gradle compilation, GGUF real model inference, clinical accuracy, device RAM/thermal/performance, offline device, APK and SHA-256. Standalone reproduction is not a full-project test.
+- **Build policy:** All commits `[skip ci]`; no Actions build dispatched; `main` unchanged. Single final APK build deferred.
+
+
 ## 2026-10-24 — Unicode confusable citation spoof rejection (source-only)
 - **Production SHA:** `41edadce2621421118527211ab7250b7e4284861`; **test SHA:** `7a8a8ee8e263f33ebd442b4c4e39e390d5a053e3` (draft PR #1; no main write).
 - **Fix:** `CitationValidator` now rejects fullwidth and mathematical Unicode source-marker lookalikes (e.g. `[Ｓ1]`, `［Ｓ１］`, `[𝐒1]`) even when a genuine `[S1]` is present. NFKC is used only to **detect** spoofed markers; it does not convert them into accepted citations. Existing exact ASCII marker behavior and source-count validation remain.
