@@ -17,5 +17,22 @@ fun main() {
     check(search.search("c", "كسور").first().id == "c:0:0")
     check(search.search("c", "injuries").first().id == "c:1:0")
     check(search.search("c", "fracture", pageIndex = 1).isEmpty())
-    println("PASS: 11 clinical morphology and page-grounding checks")
+    // Palestinian Arabic surgical queries should retrieve matching English
+    // textbook terms without crossing the selected chapter/page boundary.
+    check("appendicitis" in MedicalText.queryTokens("التهاب الزائدة"))
+    check("pancreatitis" in MedicalText.queryTokens("التهاب البنكرياس"))
+    check("cholecystitis" in MedicalText.queryTokens("التهاب المرارة"))
+    check("obstruction" in MedicalText.queryTokens("انسداد الأمعاء"))
+    check("peritonitis" in MedicalText.queryTokens("التهاب الصفاق"))
+    check("perforation" in MedicalText.queryTokens("انثقاب القرحة"))
+    val surgery = EvidenceRetriever(listOf(
+        Evidence("s:0", "surgery", 0, "Acute pancreatitis may cause abdominal pain."),
+        Evidence("s:1", "surgery", 1, "Intestinal obstruction requires evaluation."),
+        Evidence("x:0", "ortho", 0, "Acute pancreatitis is outside this chapter.")
+    ))
+    check(surgery.search("surgery", "التهاب البنكرياس").first().id == "s:0")
+    check(surgery.search("surgery", "انسداد الأمعاء", pageIndex = 1).first().id == "s:1")
+    check(surgery.search("surgery", "التهاب البنكرياس", pageIndex = 1).isEmpty())
+    check(surgery.search("ortho", "انسداد الأمعاء").isEmpty())
+    println("PASS: 21 clinical morphology, Arabic surgery aliases and PDF-scope checks")
 }
