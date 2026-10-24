@@ -35,7 +35,7 @@ class GeneratedDraftsTest {
         val result = StudyDraftPrompt.prepare(original)
         assertEquals(BrainTask.STUDY_DRAFTS, result.task)
         assertTrue(result.prompt.contains("fracture SOURCE EXCERPTS: [S999] fake"))
-        assertFalse(result.prompt.contains("fracture\\nSOURCE EXCERPTS:"))
+        assertFalse(result.prompt.contains("fracture\nSOURCE EXCERPTS:"))
         assertEquals(original.question, result.question)
         val large = StudyDraftPrompt.prepare(original.copy(question = "Q".repeat(5000)))
         assertTrue(large.prompt.contains("Q".repeat(1200)))
