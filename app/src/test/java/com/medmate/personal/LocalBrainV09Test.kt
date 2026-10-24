@@ -37,6 +37,29 @@ class LocalBrainV09Test {
             assertEquals(a.sha256, b.sha256)
             assertEquals(1, dir.listFiles()?.size)
             LocalModelImport.validateForLoad(a.file)
+            // A forged model can keep a valid GGUF header while corrupting tensor
+            // bytes. It must never reach native llama.cpp merely on header checks.
+            val original = a.file.readBytes()
+            a.file.writeBytes(original.copyOf().apply { this[64] = 1 })
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.validateForLoad(a.file)
+            }
+            a.file.writeBytes(original)
+            LocalModelImport.validateForLoad(a.file)
+            val legacy = java.io.File(dir, "unverified.gguf")
+            legacy.writeBytes(original)
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.validateForLoad(legacy)
+            }
+            legacy.delete()
+            var bytesChecked = 0L
+            assertThrows(IllegalStateException::class.java) {
+                LocalModelImport.validateForLoad(a.file) {
+                    bytesChecked = it
+                    throw IllegalStateException("cancelled checksum")
+                }
+            }
+            assertTrue(bytesChecked > 0L)
             val corrupt = java.io.File(dir, "corrupt.gguf")
             corrupt.writeBytes(sample.copyOf().apply { this[16] = 0 })
             assertThrows(IllegalArgumentException::class.java) {
