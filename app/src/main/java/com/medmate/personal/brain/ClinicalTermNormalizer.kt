@@ -19,7 +19,16 @@ object ClinicalTermNormalizer {
         "injuries" to "injury",
         "tendons" to "tendon",
         "ligaments" to "ligament",
-        "bones" to "bone"
+        "bones" to "bone",
+        // Common surgical textbook plurals; keep irregular/unverified forms
+        // untouched rather than applying a general-purpose stemmer.
+        "ulcers" to "ulcer",
+        "perforations" to "perforation",
+        "obstructions" to "obstruction",
+        "intestines" to "intestine",
+        "gallbladders" to "gallbladder",
+        "abscesses" to "abscess",
+        "adhesions" to "adhesion"
     )
     fun canonical(token: String): String = forms[token] ?: token
 }
