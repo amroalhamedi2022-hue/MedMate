@@ -44,7 +44,17 @@ object MedicalText {
         "ترويه" to listOf("ischemia", "perfusion"), "اوعيه" to listOf("vessels"),
         "عضله" to listOf("muscle"), "عضلات" to listOf("muscle"),
         "متلازمه" to listOf("syndrome"), "نخر" to listOf("necrosis"),
-        "تقلص" to listOf("contracture"), "ضمور" to listOf("atrophy")
+        "تقلص" to listOf("contracture"), "ضمور" to listOf("atrophy"),
+        // Explicit surgical-study vocabulary. These are retrieval hints only:
+        // they never generate diagnoses or facts absent from the selected PDF.
+        "زايده" to listOf("appendix", "appendicitis"),
+        "بنكرياس" to listOf("pancreas", "pancreatitis"),
+        "مراره" to listOf("gallbladder", "cholecystitis"),
+        "انسداد" to listOf("obstruction"),
+        "امعاء" to listOf("intestine", "intestinal"),
+        "صفاق" to listOf("peritoneum", "peritonitis"),
+        "قرحه" to listOf("ulcer"),
+        "انثقاب" to listOf("perforation")
     )
     fun queryTokens(input: String): List<String> = tokens(input).flatMap { token ->
         val variants = if (token.startsWith("ال") && token.length > 4) listOf(token, token.drop(2)) else listOf(token)
