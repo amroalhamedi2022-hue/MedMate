@@ -109,10 +109,12 @@ fun main() {
     // Reject malformed/forged references even if another valid [S1] is present.
     listOf("[S01]", "[s1]", "[S 1]", "[ S1]", "[S1 extra]", "[S1x]", "[S]", "[S1",
         "[Sfoo]", "[S-1]", "[S:2]", "[Source]",
-        "[\u00A0S1]", "[\u200BS1]", "[\u2060S1]", "[ \u200BS1]", "[S1\u200B]").forEach { bad ->
+        "[\u00A0S1]", "[\u200BS1]", "[\u2060S1]", "[ \u200BS1]", "[S1\u200B]", "[Ｓ1]", "[Ｓ１]", "［S1］", "［Ｓ１］", "[𝐒1]").forEach { bad ->
         val checked = CitationValidator.check("شرح طبي من النص [S1] $bad", prompt.presentedEvidence.size)
         verified(!checked.accepted && checked.invalid.isNotEmpty(), "malformed marker $bad")
     }
+    verified(CitationValidator.check("شرح من النص [S1]", prompt.presentedEvidence.size).accepted,
+        "ASCII source citation remains valid after Unicode spoof rejection")
     verified(!CitationValidator.check("المعلومة مش كافية بالنص الموجود [s1]", prompt.presentedEvidence.size).accepted,
         "malformed citation cannot piggyback on abstention")
 
