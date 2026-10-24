@@ -20,8 +20,9 @@ class LlamaAndroidPort : OnDeviceLlmPort {
     private var releaser: (suspend () -> Unit)? = null
 
     override suspend fun loadModel(file: File) = withContext(Dispatchers.Default) {
-        require(file.isFile && file.length() >= LocalModelImport.MIN_BYTES &&
-            file.extension.equals("gguf", ignoreCase = true)) { "حدد ملف GGUF محليًا صالحًا" }
+        // Reject damaged persisted models before evicting a working native session.
+        // Real GGUF loading still happens only inside Llama.loadModel below.
+        LocalModelImport.validateForLoad(file)
         gate.lock()
         try {
         releaseInternal()
