@@ -1,5 +1,13 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — PDF prompt excerpts end at word boundaries (source-only)
+- **Production commit:** `832c4b98f61ea0d5c23e1896738e867961f75c85`; **regression commit:** `3b6d52261695fc4e83be903fbb1b8227213efce9` on draft PR #1; no `main` writes.
+- **Fix:** `MedicalPromptBuilder.prepare` now truncates oversized PDF excerpts at whitespace, not in the middle of a medical term or negation. If no >=40-character safe excerpt fits, that excerpt is skipped and later evidence may still be cited as `[S1]`. This improves citation clarity but is **not** medical factual verification or AI inference.
+- **PASS (isolated only):** Kotlin/JVM compilation and execution of two cases using an extracted equivalent of the new prompt-boundary logic: normal truncation at whitespace, and skipping a long unbreakable excerpt while keeping later evidence. New regressions added to `scripts/brain/BrainPipelineSmoke.kt`.
+- **NOT TESTED:** Running the committed full Brain smoke script against the repository, Android Gradle compile/lint, APK, real llama.cpp/GGUF, device RAM/thermal, clinical grounding and physical Pad 5. No GitHub Actions build dispatched.
+- **Outstanding:** Real GGUF integration/device acceptance and independent recheck remain IN_PROGRESS.
+
+
 ## 2026-10-24 — Source-only evidence continuity and Kotlin smoke repair
 - **Source + tests + scripts commit:** `80ca366bffdd6e6457d88bd38eec15d105916241` on draft PR #1. No base/default branch writes.
 - **Fix:** `MedicalPromptBuilder.prepare` now skips short/empty excerpts instead of aborting the entire evidence loop. Subsequent valid PDF pages retain contiguous `[S1]`, `[S2]` markers; the excerpt character budget includes the two trailing newlines. This fixes a potential false no-evidence response when a short retrieved fragment precedes a usable one.
