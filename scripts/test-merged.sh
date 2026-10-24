@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-for f in test-brain.sh test-drafts.sh test-domain.sh test-study-filter.sh test-export.sh test-backup-lines.sh; do
+for f in test-cloud-consent.sh test-brain-request-context.sh test-brain.sh test-drafts.sh test-domain.sh test-study-filter.sh test-export.sh test-backup-lines.sh; do
     bash "scripts/$f"
 done
 python3 scripts/test-database-contract.py
