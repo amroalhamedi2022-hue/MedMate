@@ -181,7 +181,16 @@ object MedicalPromptBuilder {
             val prefix = "[S${presented.size + 1}] Page ${e.pageNumber} (${e.id}):\n"
             val room = r.maxEvidenceChars - excerpt.length - prefix.length - 2
             if (room < 40) break
-            val shownText = sourceText.take(min(sourceText.length, room))
+            // Never show a half-word as PDF evidence: a truncated medical
+            // term or negation can mislead the tutor and downstream quote checks.
+            // If no safe word boundary fits, skip this excerpt and try later
+            // pages rather than assigning a misleading citation number.
+            val shownText = if (sourceText.length <= room) sourceText else {
+                val cut = sourceText.lastIndexOfAny(charArrayOf(' ', '\n', '\r', '\t'), startIndex = room)
+                if (cut < 40) continue
+                sourceText.substring(0, cut).trimEnd()
+            }
+            if (shownText.length < 40) continue
             excerpt.append(prefix).append(shownText).append("\n\n")
             presented.add(e.copy(text = shownText))
         }
