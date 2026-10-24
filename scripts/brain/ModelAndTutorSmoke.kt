@@ -36,6 +36,18 @@ fun main() {
         check(!first.reused && first.bytes == 256L && first.file.isFile)
         val second = LocalModelImport.import(ByteArrayInputStream(good), temp)
         check(second.reused && second.sha256 == first.sha256)
+        LocalModelImport.validateForLoad(first.file)
+        val damaged = File(temp, "damaged.gguf")
+        damaged.writeBytes(good.copyOf().apply { this[8] = 0 })
+        expectFailure { LocalModelImport.validateForLoad(damaged) }
+        damaged.writeBytes(good.copyOf(12))
+        expectFailure { LocalModelImport.validateForLoad(damaged) }
+        damaged.writeBytes(good.copyOf().apply { this[4] = 9 })
+        expectFailure { LocalModelImport.validateForLoad(damaged) }
+        damaged.delete()
+        // An existing valid model remains untouched when a different file fails.
+        check(first.file.length() == good.size.toLong())
+
         expectFailure { LocalModelImport.import(ByteArrayInputStream("not a gguf".toByteArray()), temp) }
         expectFailure { LocalModelImport.import(ByteArrayInputStream(ByteArray(256)), temp) }
         expectFailure { LocalModelImport.import(ByteArrayInputStream(gguf().apply { this[4] = 9 }), temp) }
