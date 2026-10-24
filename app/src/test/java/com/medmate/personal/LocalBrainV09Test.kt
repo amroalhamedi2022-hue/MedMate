@@ -36,6 +36,18 @@ class LocalBrainV09Test {
             assertTrue(b.reused)
             assertEquals(a.sha256, b.sha256)
             assertEquals(1, dir.listFiles()?.size)
+            LocalModelImport.validateForLoad(a.file)
+            val corrupt = java.io.File(dir, "corrupt.gguf")
+            corrupt.writeBytes(sample.copyOf().apply { this[16] = 0 })
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.validateForLoad(corrupt)
+            }
+            corrupt.writeBytes(sample.copyOf(12))
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.validateForLoad(corrupt)
+            }
+            corrupt.delete()
+            assertEquals(sample.size.toLong(), a.file.length())
             assertThrows(IllegalArgumentException::class.java) {
                 LocalModelImport.import(ByteArrayInputStream(sample.copyOf().apply { this[8] = 0 }), dir)
             }
