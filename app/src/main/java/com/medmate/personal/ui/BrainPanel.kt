@@ -121,6 +121,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     // Deliberately transient, never saved to Compose's saved state or preferences.
     var sessionToken by remember { mutableStateOf("") }
     var explicitConsent by remember { mutableStateOf(false) }
+    // In-memory only; one grant authorizes one exact endpoint/model/PDF request.
+    var cloudConsent by remember { mutableStateOf<CloudTransferConsent?>(null) }
     var lastQuestion by remember { mutableStateOf("") }
     var lastPageOnly by remember { mutableStateOf(false) }
     var lastSourcePage by remember { mutableIntStateOf(-1) }
@@ -146,7 +148,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             busy = true; progress = 0; results = null; prepared = null; cloudAnswer = null
             generatedDrafts = emptyList(); rejectedGenerated = 0; reviewedGenerated = emptySet(); generatedBy = ""
             validation = null; localAnswer = null; localCitationCheck = null
-            error = null; explicitConsent = false
+            error = null; explicitConsent = false; cloudConsent = null
             val capturedQuestion = question.trim()
             val capturedOnly = pageOnly
             val capturedPage = currentPage
@@ -410,28 +412,42 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             Text("Cloud AI — بوابة خاصة عبر HTTPS", fontWeight = FontWeight.Bold)
             Text("اختياري فقط: أدخل رابط بوابة HTTPS مجانية تديرها بنفسك. لا يوجد مزوّد افتراضي ولا API مدفوع. لن نرسل السؤال والمقاطع إلا بعد موافقتك الصريحة.",
                 color = Muted, style = MaterialTheme.typography.bodySmall)
-            OutlinedTextField(gateway, onValueChange = { gateway = it; explicitConsent = false }, modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(gateway, onValueChange = { gateway = it; explicitConsent = false; cloudConsent = null }, modifier = Modifier.fillMaxWidth(),
                 label = { Text("رابط بوابتك HTTPS") }, placeholder = { Text("https://example.org/v1/chat/completions") }, singleLine = true)
-            OutlinedTextField(gatewayModel, onValueChange = { gatewayModel = it; explicitConsent = false }, modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(gatewayModel, onValueChange = { gatewayModel = it; explicitConsent = false; cloudConsent = null }, modifier = Modifier.fillMaxWidth(),
                 label = { Text("اسم النموذج عند البوابة") }, singleLine = true)
             OutlinedTextField(sessionToken, onValueChange = { sessionToken = it }, modifier = Modifier.fillMaxWidth(),
                 label = { Text("رمز البوابة / مفتاح API — لهذه الجلسة فقط") }, singleLine = true,
                 visualTransformation = PasswordVisualTransformation())
             Row(verticalAlignment = Alignment.Top) {
-                Checkbox(checked = explicitConsent, enabled = !busy, onCheckedChange = { explicitConsent = it })
+                Checkbox(checked = explicitConsent, enabled = !busy, onCheckedChange = { approved ->
+                    val grant = if (approved && prepared != null) runCatching {
+                        CloudTransferConsent.grant(gateway, gatewayModel,
+                            BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage))
+                    }.getOrNull() else null
+                    cloudConsent = grant
+                    explicitConsent = grant != null
+                    if (approved && grant == null) error = "تحقق من رابط HTTPS واسم النموذج والسؤال قبل الموافقة"
+                })
                 Text("أوافق على إرسال سؤالي والمقاطع المعروضة فقط إلى بوابتي السحابية. فاهم إن المحتوى ممكن يكون حساسًا وإن إجابة AI تحتاج مراجعة.",
                     style = MaterialTheme.typography.bodySmall)
             }
             Button(enabled = !busy && explicitConsent && prepared != null &&
+                cloudConsent?.permits(gateway, gatewayModel,
+                    BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)) == true &&
                 question.trim() == lastQuestion && pageOnly == lastPageOnly &&
                 (!pageOnly || currentPage == lastSourcePage),
                 modifier = Modifier.fillMaxWidth(), onClick = {
                     val p = prepared ?: return@Button
                     val requestIdentity = BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
+                    val consent = cloudConsent ?: return@Button
+                    val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
+                    if (!consent.permits(endpoint, selectedModel, requestIdentity)) return@Button
+                    cloudConsent = null; explicitConsent = false // one approval per transfer
                     busy = true; error = null; cloudAnswer = null; validation = null
                     scope.launch {
                         try {
-                            val text = CloudBrainGateway().explain(gateway, gatewayModel, sessionToken, p)
+                            val text = CloudBrainGateway().explain(endpoint, selectedModel, token, p, consent, requestIdentity)
                             // Do not attach a delayed cloud answer to a different question/page/chapter.
                             if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
                                 cloudAnswer = text
@@ -442,16 +458,22 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     }
                 }) { Text("أرسل المقاطع لشرحها") }
             OutlinedButton(enabled = !busy && explicitConsent && prepared != null &&
+                cloudConsent?.permits(gateway, gatewayModel,
+                    BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)) == true &&
                 question.trim() == lastQuestion && pageOnly == lastPageOnly &&
                 (!pageOnly || currentPage == lastSourcePage),
                 modifier = Modifier.fillMaxWidth(), onClick = {
                     val p = prepared ?: return@OutlinedButton
                     val requestIdentity = BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
+                    val consent = cloudConsent ?: return@OutlinedButton
+                    val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
+                    if (!consent.permits(endpoint, selectedModel, requestIdentity)) return@OutlinedButton
+                    cloudConsent = null; explicitConsent = false // one approval per transfer
                     busy = true; error = null; generatedDrafts = emptyList(); rejectedGenerated = 0
                     reviewedGenerated = emptySet()
                     scope.launch {
                         try {
-                            val response = CloudBrainGateway().generateDrafts(gateway, gatewayModel, sessionToken, p)
+                            val response = CloudBrainGateway().generateDrafts(endpoint, selectedModel, token, p, consent, requestIdentity)
                             // Never offer stale drafts for saving after the user changed source context.
                             if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
                                 generatedDrafts = response.accepted
