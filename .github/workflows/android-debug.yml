@@ -3,6 +3,8 @@
 name: MedMate Android debug validation
 on:
   workflow_dispatch:
+  push:
+    branches: [automation/medmate-v091-source-tree-20261023]
 permissions:
   contents: read
 jobs:
