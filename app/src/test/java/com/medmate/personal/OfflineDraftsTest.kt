@@ -22,6 +22,22 @@ class OfflineDraftsTest {
         assertEquals(9, item.pageIndex)
     }
 
+    @Test fun duplicateOrConflictingPrintedAnswerKeysFailClosed() {
+        val text = """Q10. Which finding is correct?
+            a) Severe pain.
+            b) Mild pain.
+            c) No symptoms.
+            d) Swelling.
+            Answer: A
+            Answer: B
+        """.trimIndent()
+        for (candidate in listOf(text, text.replace("Answer: B", "Answer: A"),
+                text.replace("Answer: B", "Answer: A and C"))) {
+            assertTrue(OfflineStudyDrafts.extract(listOf(PageSource("book", 3, candidate)))
+                .none { it.kind == DraftKind.SOURCE_MCQ })
+        }
+    }
+
     @Test fun ambiguousKeyNeverBecomesQuestion() {
         val text = """Q1. Choose all applicable findings in this condition.
             a) First choice.
