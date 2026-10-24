@@ -173,13 +173,17 @@ object MedicalPromptBuilder {
         require(r.evidence.all { it.chapterId == r.chapterId }) { "Cross-chapter evidence forbidden" }
         val excerpt = StringBuilder()
         val presented = mutableListOf<Evidence>()
-        for ((i, e) in r.evidence.withIndex()) {
-            val prefix = "[S${i + 1}] Page ${e.pageNumber} (${e.id}):\n"
-            if (excerpt.length + prefix.length >= r.maxEvidenceChars) break
-            val available = min(e.text.length, r.maxEvidenceChars - excerpt.length - prefix.length)
-            if (available < 40) break
-            excerpt.append(prefix).append(e.text.take(available)).append("\n\n")
-            presented.add(e.copy(text = e.text.take(available)))
+        for (e in r.evidence) {
+            // Empty or too-short snippets must not hide later usable evidence.
+            // Number citations only for excerpts actually shown to the model.
+            val sourceText = e.text.trim()
+            if (sourceText.length < 40) continue
+            val prefix = "[S${presented.size + 1}] Page ${e.pageNumber} (${e.id}):\n"
+            val room = r.maxEvidenceChars - excerpt.length - prefix.length - 2
+            if (room < 40) break
+            val shownText = sourceText.take(min(sourceText.length, room))
+            excerpt.append(prefix).append(shownText).append("\n\n")
+            presented.add(e.copy(text = shownText))
         }
         val prompt = """
             You are MedMate, a Palestinian-Arabic medical study tutor. Keep English medical terms intact.

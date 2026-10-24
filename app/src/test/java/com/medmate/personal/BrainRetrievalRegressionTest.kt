@@ -6,6 +6,19 @@ import org.junit.Test
 
 /** Source-only regression tests: no Android device or network required. */
 class BrainRetrievalRegressionTest {
+    @Test fun shortEvidenceDoesNotHideLaterGroundedExcerpts() {
+        val prepared = MedicalPromptBuilder.prepare(GroundedRequest("ortho", "fracture", listOf(
+            Evidence("tiny", "ortho", 0, "brief"),
+            Evidence("useful", "ortho", 4, "The fracture of the distal radius requires careful neurovascular assessment."),
+            Evidence("also-useful", "ortho", 5, "Additional imaging can be useful in complex patterns of forearm injury.")
+        ), maxEvidenceChars = 500))
+        assertEquals(listOf("useful", "also-useful"), prepared.presentedEvidence.map { it.id })
+        assertTrue(prepared.prompt.contains("[S1] Page 5 (useful)"))
+        assertTrue(prepared.prompt.contains("[S2] Page 6 (also-useful)"))
+        assertFalse(prepared.prompt.contains("[S3]"))
+        assertTrue(CitationValidator.check("شرح من النص [S2]", prepared.presentedEvidence.size).accepted)
+    }
+
     @Test fun rankingIsStableAndNeverMixesChapters() {
         val evidence = listOf(
             Evidence("single", "ortho", 3, "Fracture of the radius causes pain."),

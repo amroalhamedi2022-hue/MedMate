@@ -40,6 +40,19 @@ fun main() {
     verified(StudyBrain.search("ortho", pages, "? ?").status == BrainSearchStatus.TOO_SHORT, "uninformative question")
     val prompt = requireNotNull(StudyBrain.prepareSourceOnly("ortho", "Volkmann?", english))
     verified(prompt.presentedEvidence.isNotEmpty() && "[S1]" in prompt.prompt, "source prompt")
+    val mixedEvidence = MedicalPromptBuilder.prepare(GroundedRequest("ortho", "fracture", listOf(
+        Evidence("too-short", "ortho", 0, "No usable excerpt"),
+        Evidence("real-1", "ortho", 2, "A displaced fracture of the radius may require additional imaging and assessment."),
+        Evidence("real-2", "ortho", 3, "Neurovascular assessment is important when evaluating a fracture of the forearm.")
+    ), maxEvidenceChars = 500))
+    verified(mixedEvidence.presentedEvidence.map { it.id } == listOf("real-1", "real-2"),
+        "short evidence does not hide later usable pages")
+    verified("[S1] Page 3 (real-1)" in mixedEvidence.prompt &&
+        "[S2] Page 4 (real-2)" in mixedEvidence.prompt && "[S3]" !in mixedEvidence.prompt,
+        "only presented evidence gets contiguous citation markers")
+    verified(CitationValidator.check("شرح مستند إلى الكتاب [S2]", mixedEvidence.presentedEvidence.size).accepted,
+        "later presented evidence has a valid source marker")
+
     verified(!CitationValidator.check("hallucination without source", prompt.presentedEvidence.size).accepted, "reject uncited")
     verified(!CitationValidator.check("[S999999999999999999]", prompt.presentedEvidence.size).accepted, "reject overflow citation safely")
     verified(CitationValidator.check("الشرح من النص الطبي [S1]", prompt.presentedEvidence.size).accepted, "recognized citation")
