@@ -33,7 +33,7 @@ object MedicalText {
         .replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا').replace('ى', 'ي')
         .replace('ؤ', 'و').replace('ئ', 'ي').replace('ة', 'ه')
     fun tokens(input: String): List<String> = word.findAll(normalize(input))
-        .map { it.value }.filter { it.length > 1 && it !in stopwords }.toList()
+        .map { ClinicalTermNormalizer.canonical(it.value) }.filter { it.length > 1 && it !in stopwords }.toList()
 
     // Small, audited lexical vocabulary to bridge common Arabic requests to English textbooks.
     // Not a translation model. Answers still require actual PDF evidence.
@@ -49,7 +49,7 @@ object MedicalText {
     fun queryTokens(input: String): List<String> = tokens(input).flatMap { token ->
         val variants = if (token.startsWith("ال") && token.length > 4) listOf(token, token.drop(2)) else listOf(token)
         variants + variants.flatMap { clinicalAliases[it].orEmpty() }
-    }.distinct()
+    }.map(ClinicalTermNormalizer::canonical).distinct()
 }
 
 /** Text-only page segmentation with deterministic, traceable page anchors. */
