@@ -52,6 +52,23 @@ fun main() {
         "only presented evidence gets contiguous citation markers")
     verified(CitationValidator.check("شرح مستند إلى الكتاب [S2]", mixedEvidence.presentedEvidence.size).accepted,
         "later presented evidence has a valid source marker")
+    // A bounded PDF excerpt must end at a real word boundary; a clipped
+    // clinical word or negation is not trustworthy source text for an LLM.
+    val longExcerpt = ("Fracture assessment includes neurovascular examination and careful follow up. ").repeat(20)
+    val bounded = MedicalPromptBuilder.prepare(GroundedRequest("ortho", "fracture", listOf(
+        Evidence("bounded", "ortho", 4, longExcerpt)
+    ), maxEvidenceChars = 500))
+    val shown = bounded.presentedEvidence.single().text
+    verified(shown.length < longExcerpt.length && longExcerpt.startsWith(shown) &&
+        longExcerpt[shown.length].isWhitespace() && shown.length >= 40,
+        "bounded excerpt ends at whitespace, not inside a medical term")
+    val unbroken = MedicalPromptBuilder.prepare(GroundedRequest("ortho", "fracture", listOf(
+        Evidence("unsafe", "ortho", 0, "fracture".repeat(150)),
+        Evidence("safe", "ortho", 1, "Neurovascular examination is an important part of fracture assessment in this example.")
+    ), maxEvidenceChars = 500))
+    verified(unbroken.presentedEvidence.map { it.id } == listOf("safe") &&
+        "[S1] Page 2 (safe)" in unbroken.prompt && "[S2]" !in unbroken.prompt,
+        "unbreakable clipped excerpt skipped without consuming source marker")
 
     verified(!CitationValidator.check("hallucination without source", prompt.presentedEvidence.size).accepted, "reject uncited")
     verified(!CitationValidator.check("[S999999999999999999]", prompt.presentedEvidence.size).accepted, "reject overflow citation safely")
