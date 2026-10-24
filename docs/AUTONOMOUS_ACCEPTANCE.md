@@ -1,5 +1,12 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Harden source-grounded explanation question boundaries (source-only)
+- **Production commit:** `1305975a87163850546596638a49684fe57e8c76`; **JUnit regression:** `018bc4220c3704a232ecd115840f0fa96e5210bf`; **Kotlin smoke regression:** `5dd4997fd521c355b1df388f322e8a4afc6e0bd9` (draft PR #1 only).
+- **Fix:** `MedicalPromptBuilder.prepare` now flattens control/format/newline characters and caps the untrusted student question at 1,200 characters before inserting it into EXPLAIN prompts. The original question remains in `PreparedPrompt.question` for async request identity; citation and PDF page anchors remain unchanged. Invisible-only questions fail before model invocation. This reduces prompt-header spoofing, **not** semantic prompt-injection or clinical risk.
+- **PASS:** 4 isolated Kotlin/JVM checks of equivalent prompt-sanitization logic (forged headers, length bound, invisible-only input, ordinary question); inspected actual PR production source and regression tests for matching expressions and call sites. **FAIL:** 0 in the isolated checks.
+- **NOT TESTED:** Full committed `scripts/test-brain.sh`, actual production `BrainCore.kt` compilation, Gradle/JUnit/lint, cloud gateway, real GGUF/llama.cpp, clinical correctness, Pad 5/offline/performance, APK and SHA-256.
+- **Build policy:** all commits `[skip ci]`; no APK or Actions build requested, no `main` modification, no merge. Final build deferred.
+
 ## 2026-10-24 — Bounded, single-line student topics in generated study prompts (source-only)
 - **Production commit:** `28da61ab8d244a7515c6be7afda12aabf4722a93`; **smoke commit:** `0cfdfc542654f6aa3458aa03a38e219f7ffdbec6`; **script commit:** `13964a2f1f87c0903f19b7228cb6d8c929976e81`; **JUnit commit:** `efacdd894ff5ad9a3e13bd4b5247dc06f5537bc9` (draft PR #1).
 - **Fix:** `StudyDraftPrompt.prepare` collapses control/format/newline characters from student questions into a single line and caps the inserted topic at 1,200 characters; retains the original question in `PreparedPrompt.question` for identity checking. Direct callers cannot pass more than 20,000 source text characters. This reduces prompt-section spoofing/context overflow but does **not** prove semantic prompt-injection resistance or clinical correctness.
