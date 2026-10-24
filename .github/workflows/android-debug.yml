@@ -17,9 +17,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Install SDK platform
-        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
+      # ubuntu-latest already has an Android SDK; setup-android@v3 attempts
+      # to install the removed legacy 'tools' package and fails before Gradle.
+      - name: Install Android platform using runner SDK
+        shell: bash
+        run: |
+          test -n "${ANDROID_HOME:-}"
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          test -n "$SDKMGR"
+          "$SDKMGR" --install "platforms;android-36" "build-tools;35.0.0"
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
       - uses: gradle/actions/setup-gradle@v4
