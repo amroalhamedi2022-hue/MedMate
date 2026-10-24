@@ -168,3 +168,9 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS:** compiled and ran 9 isolated Kotlin/JVM assertions with `kotlinc` and `java -jar` against an equivalent standalone copy of the canonicalizer (7 surgical plurals plus two intentionally unchanged irregular words).
 - **NOT TESTED:** newly committed integrated ClinicalTermsSmoke/JUnit execution, full Android Gradle tests/lint, actual PDF corpus clinical relevance, GGUF/native inference, Pad 5 offline/RAM/performance and independent recheck. Isolated smoke is not proof of integration.
 - **Build:** no APK, no workflow dispatch, no merge, no paid API, no private medical data. Status: **IN_PROGRESS**.
+
+## 2026-10-24 — GGUF import/load UI state consistency (source-only)
+- **Production commit:** `cac30204d1548f4cdd6901e7b4eb0e68638b8811` updates `BrainPanel.kt`: after a successful local GGUF import, refresh the saved-model list **before** the RAM preflight/native activation; failed activation no longer hides an already-loaded native session. Saved-model activation failure also mirrors `onDevice.loadedModelName` instead of unconditionally clearing the UI label. No native backend/API/model weights changed.
+- **Regression commit:** `dbd09c710a0de1c28c8a5e5266290ec8ed787503` adds `scripts/test-model-load-ui-contract.py`, a source-only regression checking ordering and both error paths.
+- **PASS (static source checks):** four assertions against the exact current GitHub production/test blob verified list-refresh ordering, two failure paths, and presence of regression guards.
+- **NOT TESTED:** running the Python regression script from a repository checkout, Android Kotlin/Compose compilation, RAM failure on a physical device, actual llama.cpp/GGUF loading, medical accuracy, offline performance and independent device QA. No APK/Actions run, paid service, main write or merge. **IN_PROGRESS.**
