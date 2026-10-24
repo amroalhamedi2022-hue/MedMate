@@ -1,5 +1,11 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Untrusted PDF source-ID prompt-header hardening (source-only)
+- **Production SHA:** `60cc106695495afba8396a32f2b1b5ce4587fc7e`; **regression commits:** `5b725f5a0d2f3d12f6e41ac7603aaa79cb211c4c`, `8a0661879eec7eb02dadf9305b5e012b9bc971c4`; corrected Kotlin newline escapes `32ecdf5541bfd3db29f94f58561932c66073e2e6`, `1e3c9fc1c8f7537d81e8c838c4e7b2ec02c973c9` on PR #1. No base/main writes.
+- **Fix:** The prompt uses a bounded, single-line ASCII-safe display form of `Evidence.id`, so malicious chapter names cannot inject new prompt header lines or fake `[S999]` source labels. The original ID remains intact in `presentedEvidence` for PDF page navigation. Added Kotlin smoke/JUnit regressions and corrected existing bearer-token smoke cases to use actual CR/LF/TAB/NUL escape sequences instead of literal backslash letters.
+- **PASS:** Six isolated Kotlin/JVM checks of the exact new source-ID normalization logic; static source/test integration checks and escape-sequence inspection. **NOT TESTED:** Compilation/execution of the full committed `BrainCore.kt` and new smoke/JUnit tests, Gradle/lint, APK, native llama.cpp/GGUF, Pad 5, clinical correctness, cloud gateway and real device security tests.
+- **Build gate:** all writes `[skip ci]`; no APK or Actions dispatch. Final one-time APK build remains blocked on all remaining source/unit/static acceptance and actual device verification availability.
+
 ## 2026-10-24 — PDF prompt excerpts end at word boundaries (source-only)
 - **Production commit:** `832c4b98f61ea0d5c23e1896738e867961f75c85`; **regression commit:** `3b6d52261695fc4e83be903fbb1b8227213efce9` on draft PR #1; no `main` writes.
 - **Fix:** `MedicalPromptBuilder.prepare` now truncates oversized PDF excerpts at whitespace, not in the middle of a medical term or negation. If no >=40-character safe excerpt fits, that excerpt is skipped and later evidence may still be cited as `[S1]`. This improves citation clarity but is **not** medical factual verification or AI inference.
