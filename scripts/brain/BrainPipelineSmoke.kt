@@ -88,5 +88,11 @@ fun main() {
     listOf("http://study.example.org/v1/chat/completions", "https://u:p@host/v1/chat/completions", "https://host/path?key=x", "https://host/other").forEach { bad ->
         verified(runCatching { GatewayPolicy.endpoint(bad) }.isFailure, "invalid gateway: $bad")
     }
+    verified(GatewayPolicy.validSessionToken(""), "unauthenticated private gateway remains supported")
+    verified(GatewayPolicy.validSessionToken("session_ABC-123.+/="), "printable bearer token")
+    listOf("abc\\rInjected: x", "abc\\nInjected: x", "abc\\txyz", "abc\\u0000xyz", "كلمة").forEach { bad ->
+        verified(!GatewayPolicy.validSessionToken(bad), "reject unsafe bearer header")
+    }
+    verified(!GatewayPolicy.validSessionToken("x".repeat(2049)), "reject oversized bearer header")
     println("PASS: $checks Brain pipeline and HTTPS security assertions")
 }
