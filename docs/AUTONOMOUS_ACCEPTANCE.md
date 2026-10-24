@@ -1,5 +1,13 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Unicode-invisible citation spoofing guard (source-only)
+- **Production SHA:** `9d5157388cbd3203d52d3ff86f1c33d6e0495b32`; **regression SHA:** `2de0bb4c17b8d0f56f5687051b73fb47919a9a9e`, draft PR #1; no base/default-branch changes.
+- **Fix:** `CitationValidator` now catches source-like markers with Unicode separators, zero-width spaces and word-joiner characters before `S`, e.g. `[NBSP S1]` and `[ZWSP S1]`. A separate valid `[S1]` no longer masks these visually misleading malformed markers. This validates citation syntax, **not medical truth**.
+- **PASS:** Compiled and executed an isolated Kotlin/JVM harness for the exact updated regex: 6 malformed-marker cases and 1 valid-marker case passed. Committed matching regression cases to `scripts/brain/BrainPipelineSmoke.kt`.
+- **NOT TESTED:** Compiling/running the committed full BrainCore and smoke suite, Android Gradle/lint, APK, genuine GGUF/llama.cpp on Xiaomi Pad 5, clinical grounding, offline device behavior and performance.
+- **Build policy:** `[skip ci]` commits; 0 PR-triggered workflow runs on regression SHA when checked. Final APK deferred until source/unit/static gates and device-readiness criteria are met.
+
+
 ## 2026-10-24 — Untrusted PDF source-ID prompt-header hardening (source-only)
 - **Production SHA:** `60cc106695495afba8396a32f2b1b5ce4587fc7e`; **regression commits:** `5b725f5a0d2f3d12f6e41ac7603aaa79cb211c4c`, `8a0661879eec7eb02dadf9305b5e012b9bc971c4`; corrected Kotlin newline escapes `32ecdf5541bfd3db29f94f58561932c66073e2e6`, `1e3c9fc1c8f7537d81e8c838c4e7b2ec02c973c9` on PR #1. No base/main writes.
 - **Fix:** The prompt uses a bounded, single-line ASCII-safe display form of `Evidence.id`, so malicious chapter names cannot inject new prompt header lines or fake `[S999]` source labels. The original ID remains intact in `presentedEvidence` for PDF page navigation. Added Kotlin smoke/JUnit regressions and corrected existing bearer-token smoke cases to use actual CR/LF/TAB/NUL escape sequences instead of literal backslash letters.
