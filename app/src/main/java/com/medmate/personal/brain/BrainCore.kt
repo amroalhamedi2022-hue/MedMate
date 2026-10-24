@@ -184,6 +184,12 @@ object MedicalPromptBuilder {
 
     fun prepare(r: GroundedRequest): PreparedPrompt {
         require(r.query.isNotBlank())
+        // The question is user-supplied data. Flatten forged prompt headings and
+        // bound its length without changing the original request identity.
+        val safeQuestion = r.query
+            .replace(Regex("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]+"), " ")
+            .replace(Regex("\\s+"), " ").trim().take(1200)
+        require(safeQuestion.isNotBlank()) { "Question has no visible content" }
         require(r.maxEvidenceChars in 500..20000)
         require(r.evidence.all { it.chapterId == r.chapterId }) { "Cross-chapter evidence forbidden" }
         val excerpt = StringBuilder()
@@ -221,7 +227,7 @@ object MedicalPromptBuilder {
             against external references. This tool is for study, not clinical decision-making.
 
             QUESTION:
-            ${r.query}
+            ${safeQuestion}
 
             SOURCE EXCERPTS:
             ${if (excerpt.isEmpty()) "(no relevant excerpts)" else excerpt.toString().trim()}
