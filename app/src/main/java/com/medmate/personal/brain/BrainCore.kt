@@ -29,6 +29,11 @@ object MedicalText {
         "tell", "me", "please", "explain", "what", "why", "how", "is", "the", "a", "an", "of", "and", "in", "to", "for", "with", "about"
     )
     fun normalize(input: String): String = Normalizer.normalize(input.lowercase(Locale.ROOT), Normalizer.Form.NFKC)
+        // PDF extractors may split English medical words at a line ending or
+        // insert discretionary soft hyphens (e.g. "pancre-\\natitis").
+        // Rejoin only explicit end-of-line hyphenation, not ordinary compounds.
+        .replace(Regex("(?<=\\\\p{L})-[ \\t]*\\r?\\n[ \\t]*(?=\\\\p{L})"), "")
+        .replace("\\u00AD", "")
         .replace(arabicMarks, "")
         .replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا').replace('ى', 'ي')
         .replace('ؤ', 'و').replace('ئ', 'ي').replace('ة', 'ه')
