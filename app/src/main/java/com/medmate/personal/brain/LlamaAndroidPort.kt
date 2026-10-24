@@ -4,6 +4,8 @@ import dev.ffmpegkit.llama.Llama
 import dev.ffmpegkit.llama.LlamaConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import java.io.File
 
@@ -22,7 +24,12 @@ class LlamaAndroidPort : OnDeviceLlmPort {
     override suspend fun loadModel(file: File) = withContext(Dispatchers.Default) {
         // Reject damaged persisted models before evicting a working native session.
         // Real GGUF loading still happens only inside Llama.loadModel below.
-        LocalModelImport.validateForLoad(file)
+        // SHA-256 verification may scan several GB: run it on IO threads and
+        // honor cancellation without blocking Compose or holding the native gate.
+        val caller = currentCoroutineContext()
+        withContext(Dispatchers.IO) {
+            LocalModelImport.validateForLoad(file) { caller.ensureActive() }
+        }
         gate.lock()
         try {
         releaseInternal()
