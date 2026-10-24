@@ -4,6 +4,14 @@ package com.medmate.personal.brain
 object StudyDraftPrompt {
     fun prepare(original: PreparedPrompt): PreparedPrompt {
         require(original.presentedEvidence.isNotEmpty()) { "ما في مصدر صالح لتوليد مسودات" }
+        // Validate before any local or optional cloud inference, not only after
+        // parsing the model output. A forged PreparedPrompt must not expose
+        // excerpts from another PDF chapter or an unbounded number of headers.
+        require(original.presentedEvidence.size <= 20) { "Too many study-draft sources" }
+        val chapter = original.presentedEvidence.first().chapterId
+        require(chapter.isNotBlank() && original.presentedEvidence.all {
+            it.chapterId == chapter && it.pageIndex >= 0 && it.text.isNotBlank()
+        }) { "Study drafts require nonempty excerpts from one PDF chapter" }
         // Treat the student's topic as data, not a new prompt section. Keep
         // local-model context bounded even if a pasted question is enormous.
         // This reduces delimiter spoofing; it cannot eliminate semantic injection.
