@@ -22,6 +22,25 @@ class BrainRetrievalRegressionTest {
             search.search("surgery", "fracture radius").map { it.id })
     }
 
+    @Test fun surgicalPluralsAreSearchableWithoutCrossingPagesOrBooks() {
+        val pages = listOf(
+            Evidence("s:0", "surgery", 0, "Ulcers and perforations require assessment."),
+            Evidence("s:1", "surgery", 1, "Intestinal obstructions and adhesions are discussed."),
+            Evidence("s:2", "surgery", 2, "Gallbladders and abscesses are mentioned."),
+            Evidence("o:0", "ortho", 0, "Ulcers are outside the selected surgical chapter.")
+        )
+        val search = EvidenceRetriever(pages)
+        assertEquals("s:0", search.search("surgery", "ulcer").first().id)
+        assertEquals("s:0", search.search("surgery", "perforation").first().id)
+        assertEquals("s:1", search.search("surgery", "obstruction").first().id)
+        assertEquals("s:1", search.search("surgery", "adhesion").first().id)
+        assertEquals("s:2", search.search("surgery", "abscess").first().id)
+        assertEquals("s:0", search.search("surgery", "قرحة", pageIndex = 0).first().id)
+        assertTrue(search.search("surgery", "ulcer", pageIndex = 1).isEmpty())
+        assertTrue(search.search("ortho", "adhesion").isEmpty())
+        assertEquals("diagnoses", ClinicalTermNormalizer.canonical("diagnoses"))
+    }
+
     @Test fun shortQuestionCountsOnlySelectedPdfPages() {
         val pages = listOf(
             PageSource("ortho", 0, "A fracture is a break in bone continuity."),
