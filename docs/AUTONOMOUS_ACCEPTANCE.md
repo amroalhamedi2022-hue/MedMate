@@ -227,3 +227,8 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS:** compiled the **same production Kotlin source** with local `kotlinc` and executed four JVM checks: Arabic/CRLF exact-limit reading, bare-CR length rejection, malformed UTF-8 rejection and oversized-line rejection. **FAIL:** none observed in these isolated checks.
 - **NOT TESTED:** committed JUnit tests in the full Gradle project, Android build/lint, full restore transaction on device, GGUF/llama.cpp inference, medical accuracy, Pad 5 offline/RAM/performance/install and final APK. A source-only Kotlin smoke is not proof of Android restore success.
 - **Build/merge:** no APK, no Actions dispatch, no main write, merge, paid service, private PDF/model weight or Library/Handoff. Status **IN_PROGRESS**; final APK build remains gated on full feature/source-test completion.
+
+
+### Independent Kotlin source/test replay (same batch)
+- **PASS:** additionally compiled the exact committed production blob `46818a192c56fe13e0b8e85050d2a5ebfbcb0737` and the exact committed JUnit test-source blob `b00d4758763a398f12e1e58de3c57f998aaa954d` with local `kotlinc`. Executed all five test methods with lightweight local JUnit assertion shims: **5/5 PASS**. The local `git hash-object` values matched both repository blobs byte-for-byte.
+- **NOT TESTED:** genuine JUnit/Gradle test runner and Android instrumentation/device. The assertion-shim replay validates test logic only; it is not a substitute for the full project test suite.
