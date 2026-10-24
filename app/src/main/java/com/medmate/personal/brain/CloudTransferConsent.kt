@@ -8,7 +8,7 @@ package com.medmate.personal.brain
  * This is a client-side consent boundary, not a substitute for TLS verification
  * or a medical review of the generated answer.
  */
-data class CloudTransferConsent private constructor(
+class CloudTransferConsent private constructor(
     val endpoint: String,
     val model: String,
     val request: BrainRequestIdentity
