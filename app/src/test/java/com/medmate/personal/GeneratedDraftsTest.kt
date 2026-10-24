@@ -27,6 +27,29 @@ class GeneratedDraftsTest {
         assertEquals(2, result.rejected)
     }
 
+    @Test fun malformedEvidenceBatchIsRejectedBeforeAnyDraftCanBeSaved() {
+        val source = Evidence("page", "chapter", 2,
+            "An original medical source excerpt with a quote that can be independently checked.")
+        val candidate = GeneratedCandidate(GeneratedKind.FLASHCARD,
+            "What does this source describe?", "A study concept", sourceId = "S1",
+            supportingQuote = "An original medical source excerpt with a quote")
+        val invalidBatches = listOf(
+            emptyList(),
+            listOf(source.copy(chapterId = "")),
+            listOf(source.copy(pageIndex = -1)),
+            listOf(source.copy(text = " ")),
+            (0..20).map { source.copy(pageIndex = it) },
+            listOf(source.copy(text = "A".repeat(20_001))),
+            listOf(source, source.copy(chapterId = "other"))
+        )
+        for (batch in invalidBatches) {
+            val result = GeneratedStudyDrafts.validate(listOf(candidate), batch)
+            assertTrue("Invalid evidence must not produce saved drafts", result.accepted.isEmpty())
+            assertEquals(1, result.rejected)
+        }
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(candidate), listOf(source)).accepted.size)
+    }
+
     @Test fun studyDraftTopicCannotForgePromptHeadersOrExhaustContext() {
         val evidence = listOf(Evidence("source", "book", 0,
             "A fracture is a break in the continuity of bone and requires assessment."))
