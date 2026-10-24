@@ -1,5 +1,15 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Source-only evidence continuity and Kotlin smoke repair
+- **Source + tests + scripts commit:** `80ca366bffdd6e6457d88bd38eec15d105916241` on draft PR #1. No base/default branch writes.
+- **Fix:** `MedicalPromptBuilder.prepare` now skips short/empty excerpts instead of aborting the entire evidence loop. Subsequent valid PDF pages retain contiguous `[S1]`, `[S2]` markers; the excerpt character budget includes the two trailing newlines. This fixes a potential false no-evidence response when a short retrieved fragment precedes a usable one.
+- **Regression added:** Kotlin smoke assertions and Android JUnit source tests cover later valid excerpts, marker numbering and source mapping.
+- **Smoke scripts repaired:** `test-brain.sh`, both `test-drafts.sh` compiler calls, `test-local-brain-v09.sh`, and `test-llama-adapter-contract.sh` now include `ClinicalTermNormalizer.kt`, which `BrainCore.kt` requires. Static inspection of all five compiler blocks: **PASS**.
+- **PASS:** Isolated Kotlin/JVM compilation and execution of the equivalent excerpt selection loop, including short-fragment skip, contiguous markers and bounded excerpt length. **NOT TESTED:** full production `BrainCore.kt` compilation, newly committed Kotlin smoke/JUnit tests, complete Android build, device runtime, medical accuracy, offline field tests and real GGUF inference. Isolated test is not proof of a working local generative model.
+- **CI policy:** `[skip ci]` commit; 0 PR workflow runs reported for this SHA when checked. No APK created or Actions build dispatched.
+- **Open:** real llama.cpp/GGUF integration, source-grounded study flow, final UI and independent device verification remain incomplete. No Library/Handoff access.
+
+
 AUTOMATION_COMPLETE: IN_PROGRESS
 
 ## 2026-10-24 — Citation marker hardening (source-only)
