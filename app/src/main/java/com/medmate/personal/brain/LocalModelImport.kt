@@ -79,10 +79,12 @@ object LocalModelImport {
     /**
      * Validate a previously imported model again immediately before invoking native
      * llama.cpp. A saved file may have been truncated or replaced after import.
-     * This is a bounded GGUF *header* check, NOT a full parse, checksum audit,
-     * proof of model authenticity, or successful native inference.
+     * Verifies the original content-addressed filename and the entire SHA-256
+     * digest before native parsing, catching corruption beyond the GGUF header.
+     * The callback supports coroutine cancellation during multi-GB disk reads.
+     * This is NOT a full GGUF parse, authenticity proof or actual inference.
      */
-    fun validateForLoad(file: File) {
+    fun validateForLoad(file: File, onBytes: (Long) -> Unit = {}) {
         require(file.isFile && file.extension.equals("gguf", ignoreCase = true)) {
             "اختر ملف GGUF محليًا صالحًا"
         }
@@ -99,6 +101,13 @@ object LocalModelImport {
             }
         }
         validateHeader(header)
+        val expectedDigest = file.nameWithoutExtension
+        require(expectedDigest.length == 64 && expectedDigest.all { it in '0'..'9' || it in 'a'..'f' }) {
+            "اسم النموذج غير موثوق؛ أعد استيراد ملف GGUF من داخل التطبيق"
+        }
+        require(digestFile(file, onBytes) == expectedDigest) {
+            "تغيّر محتوى النموذج المحفوظ؛ أعد استيراده قبل التشغيل"
+        }
     }
 
     private fun validateHeader(head: ByteArray) {
@@ -118,14 +127,19 @@ object LocalModelImport {
         }
     }
 
-    private fun digestFile(file: File): String {
+    private fun digestFile(file: File, onBytes: (Long) -> Unit = {}): String {
         val digest = MessageDigest.getInstance("SHA-256")
         FileInputStream(file).use { stream ->
             val bytes = ByteArray(64 * 1024)
+            var count = 0L
             while (true) {
                 val n = stream.read(bytes)
                 if (n < 0) break
-                if (n > 0) digest.update(bytes, 0, n)
+                if (n > 0) {
+                    digest.update(bytes, 0, n)
+                    count += n
+                    onBytes(count)
+                }
             }
         }
         return digest.digest().joinToString("") { "%02x".format(it) }
