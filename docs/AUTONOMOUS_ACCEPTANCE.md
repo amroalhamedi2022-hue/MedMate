@@ -1,5 +1,13 @@
 # MedMate Personal — autonomous source patch 2026-10-23
 
+## 2026-10-24 — Unicode confusable citation spoof rejection (source-only)
+- **Production SHA:** `41edadce2621421118527211ab7250b7e4284861`; **test SHA:** `7a8a8ee8e263f33ebd442b4c4e39e390d5a053e3` (draft PR #1; no main write).
+- **Fix:** `CitationValidator` now rejects fullwidth and mathematical Unicode source-marker lookalikes (e.g. `[Ｓ1]`, `［Ｓ１］`, `[𝐒1]`) even when a genuine `[S1]` is present. NFKC is used only to **detect** spoofed markers; it does not convert them into accepted citations. Existing exact ASCII marker behavior and source-count validation remain.
+- **PASS:** Compiled and executed a standalone Kotlin/JVM smoke of the exact new regular-expression and NFKC detection logic using `kotlinc` + `java`: 10 malformed-marker cases rejected and 3 valid cases preserved. Fetched both updated repository files and statically verified the guard and regression cases are present.
+- **NOT TESTED:** Executing the committed `scripts/test-brain.sh` / JUnit suite in the complete project, Android Gradle compile/lint, APK, actual native GGUF inference, clinical grounding accuracy and Pad 5 memory/performance/offline behavior. A regex smoke is not proof of medical correctness.
+- **Build policy:** Both commits use `[skip ci]`; no Actions build or APK created. Continue until all source and device acceptance gates are complete.
+
+
 ## 2026-10-24 — Unicode-invisible citation spoofing guard (source-only)
 - **Production SHA:** `9d5157388cbd3203d52d3ff86f1c33d6e0495b32`; **regression SHA:** `2de0bb4c17b8d0f56f5687051b73fb47919a9a9e`, draft PR #1; no base/default-branch changes.
 - **Fix:** `CitationValidator` now catches source-like markers with Unicode separators, zero-width spaces and word-joiner characters before `S`, e.g. `[NBSP S1]` and `[ZWSP S1]`. A separate valid `[S1]` no longer masks these visually misleading malformed markers. This validates citation syntax, **not medical truth**.
