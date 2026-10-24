@@ -254,3 +254,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **NOT TESTED:** repository Gradle/JUnit suite, complete Brain pipeline, cloud endpoint, Android APK, Pad 5, clinical correctness and real GGUF inference. Zero PR workflow runs reported for the latest test SHA. No APK created. The source gate does not prove a working on-device model.
 
 AUTOMATION_COMPLETE: IN_PROGRESS
+
+## 2026-10-24 — Generated study-draft source trust boundary (source milestone)
+- **Production:** `GeneratedStudyDrafts.validate` now rejects an entire generated draft batch when evidence is empty, exceeds 20 sources/20,000 characters, has an empty chapter, mixes chapters, contains negative page indices or blank excerpts. This independent output boundary matches `StudyDraftPrompt` input limits, preventing malformed PDF page anchors from being saved even if a caller bypasses prompt preparation. This does **not** establish medical correctness.
+- **PASS (actual production Kotlin):** Git blob `12e4c0add2d036a1006e9acf9730d00c428561e3` was reproduced byte-for-byte in an isolated Kotlin/JVM harness; compiled with `kotlinc` and ran **8 assertions**, including valid evidence and 7 invalid source batches. All passed. Added regression cases to `scripts/brain/GeneratedDraftSmoke.kt` and Android `GeneratedDraftsTest.kt`.
+- **NOT TESTED:** full committed `scripts/test-drafts.sh`, Gradle/JUnit, Android compilation/APK, real GGUF inference, device RAM/thermal/offline, cloud HTTPS consent path, medical claim accuracy and PDF-to-draft UI.
+- **Gate:** malformed-evidence rejection **PASS (isolated production source)** / **NOT TESTED (full suite/device)**. No fake backend test is claimed as real GGUF inference.
+- **Commit checkpoint:** `281514c49275026f25743afc0cd42d784494e6da` (production + smoke + JUnit, draft PR #1 only). No APK/Actions build, no merge/main write.
