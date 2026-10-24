@@ -35,6 +35,13 @@ jobs:
           python3 scripts/test-migrations.py
       - name: Run unit tests, lint, and assemble debug APK
         run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+      - name: Record inner APK SHA-256 for future targeted builds
+        if: success()
+        shell: bash
+        run: |
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f | head -1)"
+          test -n "$APK"
+          sha256sum "$APK" | tee app/build/outputs/apk/debug/APK_SHA256.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -49,6 +56,8 @@ jobs:
         if: success()
         with:
           name: MedMate-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/APK_SHA256.txt
           if-no-files-found: error
           retention-days: 14
