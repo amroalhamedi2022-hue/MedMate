@@ -53,7 +53,7 @@ class CloudBrainGateway {
         require(model.trim().length in 1..96 && model.all { it.isLetterOrDigit() || it in "._-/:" }) {
             "اسم النموذج غير صالح"
         }
-        require(ephemeralGatewayToken.length <= 2048 && !ephemeralGatewayToken.contains('\n')) { "رمز الدخول غير صالح" }
+        require(GatewayPolicy.validSessionToken(ephemeralGatewayToken)) { "رمز الدخول غير صالح" }
         val payload = JSONObject().put("model", model.trim()).put("stream", false)
             .put("messages", JSONArray()
                 .put(JSONObject().put("role", "system").put("content", systemMessage))
