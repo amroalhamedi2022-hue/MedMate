@@ -2,9 +2,13 @@ package com.medmate.personal
 
 import com.medmate.personal.brain.BrainRequestIdentity
 import com.medmate.personal.brain.CloudTransferConsent
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /** Production consent gate; no fake model and no network requests. */
 class CloudTransferConsentTest {
@@ -34,5 +38,39 @@ class CloudTransferConsentTest {
         assertTrue(runCatching { CloudTransferConsent.grant(endpoint, "", source) }.isFailure)
         assertTrue(runCatching { CloudTransferConsent.grant(endpoint + "?key=leak", "local-model", source) }.isFailure)
         assertTrue(runCatching { CloudTransferConsent.grant(endpoint, "local-model", source.copy(question = "")) }.isFailure)
+    }
+
+    @Test fun approvalIsOneShotAndCannotBeReplayed() {
+        val consent = CloudTransferConsent.grant(endpoint, "local-model", source)
+        assertTrue(consent.permits(endpoint, "local-model", source))
+        assertTrue(consent.consume(endpoint, "local-model", source))
+        assertFalse(consent.permits(endpoint, "local-model", source))
+        assertFalse(consent.consume(endpoint, "local-model", source))
+    }
+
+    @Test fun mismatchedClaimDoesNotConsumeApproval() {
+        val consent = CloudTransferConsent.grant(endpoint, "local-model", source)
+        assertFalse(consent.consume(endpoint, "other-model", source))
+        assertFalse(consent.consume(endpoint, "local-model", source.copy(sourcePage = 5)))
+        assertFalse(consent.consume("https://other.example/v1/chat/completions", "local-model", source))
+        assertTrue(consent.consume(endpoint, "local-model", source))
+    }
+
+    @Test fun concurrentClaimsCannotDuplicatePdfUploadPermission() {
+        val consent = CloudTransferConsent.grant(endpoint, "local-model", source)
+        val start = CountDownLatch(1)
+        val finished = CountDownLatch(16)
+        val claims = AtomicInteger(0)
+        repeat(16) {
+            Thread {
+                try {
+                    start.await()
+                    if (consent.consume(endpoint, "local-model", source)) claims.incrementAndGet()
+                } finally { finished.countDown() }
+            }.start()
+        }
+        start.countDown()
+        assertTrue("workers timed out", finished.await(5, TimeUnit.SECONDS))
+        assertEquals("exactly one upload permission", 1, claims.get())
     }
 }
