@@ -13,7 +13,22 @@ class CloudTransferConsent private constructor(
     val model: String,
     val request: BrainRequestIdentity
 ) {
+    // One in-memory capability must never authorize two outbound requests.
+    // Atomic claiming also covers concurrent callers retaining the same grant.
+    private var consumed = false
+
+    @Synchronized
     fun permits(endpointInput: String, modelInput: String, current: BrainRequestIdentity): Boolean =
+        !consumed && matches(endpointInput, modelInput, current)
+
+    @Synchronized
+    fun consume(endpointInput: String, modelInput: String, current: BrainRequestIdentity): Boolean {
+        if (consumed || !matches(endpointInput, modelInput, current)) return false
+        consumed = true
+        return true
+    }
+
+    private fun matches(endpointInput: String, modelInput: String, current: BrainRequestIdentity): Boolean =
         runCatching { GatewayPolicy.endpoint(endpointInput) }.getOrNull() == endpoint &&
             modelInput.trim() == model && current == request
 
