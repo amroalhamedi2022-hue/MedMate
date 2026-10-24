@@ -1,6 +1,8 @@
 package com.medmate.personal.data
 
 import java.io.File
+import java.io.InputStreamReader
+import java.nio.charset.CodingErrorAction
 
 /**
  * Parse exported JSONL files with bounded allocations.
@@ -13,26 +15,40 @@ import java.io.File
 internal object BoundedLineReader {
     fun forEach(file: File, maxChars: Int, consume: (String) -> Unit) {
         require(maxChars > 0) { "Invalid maximum line length" }
-        file.bufferedReader(Charsets.UTF_8).use { reader ->
+        // Default UTF-8 decoders replace malformed bytes with U+FFFD. Backups
+        // must fail closed rather than silently changing notes or study cards.
+        val decoder = Charsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+        InputStreamReader(file.inputStream(), decoder).buffered().use { reader ->
             val current = StringBuilder()
+            var pendingCr = false
+            fun append(char: Char) {
+                require(current.length < maxChars) { "Backup record exceeds safe line length" }
+                current.append(char)
+            }
             while (true) {
                 val next = reader.read()
                 if (next == -1) {
-                    if (current.isNotEmpty()) consume(stripCr(current))
+                    if (pendingCr) append('\r')
+                    if (current.isNotEmpty()) consume(current.toString())
                     break
                 }
                 if (next == '\n'.code) {
-                    consume(stripCr(current))
+                    // A CR in CRLF is a delimiter, not part of the JSON record.
+                    // A line exactly maxChars long must still be accepted.
+                    consume(current.toString())
                     current.setLength(0)
-                } else {
-                    require(current.length < maxChars) { "Backup record exceeds safe line length" }
-                    current.append(next.toChar())
+                    pendingCr = false
+                    continue
                 }
+                if (pendingCr) {
+                    append('\r') // A bare CR counts toward the line bound.
+                    pendingCr = false
+                }
+                if (next == '\r'.code) pendingCr = true
+                else append(next.toChar())
             }
         }
     }
-
-    private fun stripCr(line: StringBuilder): String =
-        if (line.isNotEmpty() && line.last() == '\r') line.substring(0, line.length - 1)
-        else line.toString()
 }
