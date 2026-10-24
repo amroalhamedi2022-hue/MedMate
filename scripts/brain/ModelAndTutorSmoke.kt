@@ -37,6 +37,23 @@ fun main() {
         val second = LocalModelImport.import(ByteArrayInputStream(good), temp)
         check(second.reused && second.sha256 == first.sha256)
         LocalModelImport.validateForLoad(first.file)
+        // A header-only check would miss this corrupt tensor body.
+        first.file.writeBytes(good.copyOf().apply { this[64] = 1 })
+        expectFailure { LocalModelImport.validateForLoad(first.file) }
+        first.file.writeBytes(good)
+        LocalModelImport.validateForLoad(first.file)
+        val unverified = File(temp, "unverified.gguf")
+        unverified.writeBytes(good)
+        expectFailure { LocalModelImport.validateForLoad(unverified) }
+        unverified.delete()
+        var checksumProgress = 0L
+        expectFailure {
+            LocalModelImport.validateForLoad(first.file) { count ->
+                checksumProgress = count
+                error("checksum cancelled")
+            }
+        }
+        check(checksumProgress > 0L)
         val damaged = File(temp, "damaged.gguf")
         damaged.writeBytes(good.copyOf().apply { this[8] = 0 })
         expectFailure { LocalModelImport.validateForLoad(damaged) }
