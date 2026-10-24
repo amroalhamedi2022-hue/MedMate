@@ -233,11 +233,21 @@ object CitationValidator {
     // incomplete tokens, including visually hidden Unicode whitespace before S.
     // A valid [S1] elsewhere must never hide a forged [NBSP S1] marker.
     private val citationCandidates = Regex("""\[[\p{Z}\t\u200B\u2060]*[sS][^\]\r\n]{0,64}\]?""")
+    // NFKC can make fullwidth/mathematical source markers look exactly like
+    // [S1]. Treat those visually deceptive spellings as malformed, even if a
+    // genuine [S1] also appears. Never normalize them into valid citations.
+    private val compatibilityBrackets = Regex("""[\[\uFF3B][^\]\uFF3D\r\n]{0,64}[\]\uFF3D]?""")
     fun check(answer: String, presentedEvidenceCount: Int, sourceRequired: Boolean = true): CitationCheck {
         require(presentedEvidenceCount >= 0)
         val used = allCitations.findAll(answer).map { "S${it.groupValues[1]}" }.toSet()
+        val compatibilityMalformed = compatibilityBrackets.findAll(answer).map { it.value }
+            .filter { candidate ->
+                val normalized = Normalizer.normalize(candidate, Normalizer.Form.NFKC)
+                (normalized.startsWith("[S") || normalized.startsWith("[s")) &&
+                    !allCitations.matches(candidate)
+            }.toSet()
         val malformed = citationCandidates.findAll(answer).map { it.value }
-            .filter { !allCitations.matches(it) }.toSet()
+            .filter { !allCitations.matches(it) }.toSet() + compatibilityMalformed
         val invalid = used.filter { marker ->
             marker.removePrefix("S").toIntOrNull() !in 1..presentedEvidenceCount
         }.toSet() + malformed
