@@ -302,3 +302,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS (source inspection):** production and tests are committed in draft PR #1. **NOT TESTED (new SHA):** Kotlin/JUnit execution and full Android compilation after this change, physical device performance and model inference.
 - **Purposeful build question:** Does the *modified* coroutine/IO cancellation path compile with the actual Android Kotlin dependencies, and do the new JUnit regression cases pass with the production import code? Static review and an isolated fake GGUF cannot prove the integrated Kotlin/Gradle result. **One targeted branch CI run is justified**; it is a Debug validation build, not a final APK or real GGUF inference.
 - **Scope:** only MedMate PR #1; no main/auto-merge/paid API or Library/Handoff. IN_PROGRESS.
+
+## 2026-10-25 — Printed PDF MCQ answer-key ambiguity guard
+- **Production SHA:** `fb2945e87f362d7faba090a73b36f37158933aef`; **smoke SHA:** `8e6c38016a889a9a5949ed0efb8de47a3e9c8ec8`; **JUnit SHA:** `2d29bbebeaedb4bed6322094a5a7a25eb99098dd`, PR #1 only.
+- The offline extractive PDF MCQ parser now rejects **the entire question** when multiple answer labels are printed (even duplicate same-letter keys), or when a malformed/ambiguous answer label follows a valid one. It never silently promotes the first key as certain. Added three negative cases to source smoke and JUnit.
+- **PASS:** Five **isolated Kotlin/JVM** answer-label checks (one valid and four invalid). This is a reproduction of the production parser's key-label logic, **not** the full compiled project or committed smoke script.
+- **New CI status:** **NOT TESTED** on the latest SHA. **Older CI baseline PASS:** GitHub Actions run `40126898764`, Android SDK, SQLite contracts, Gradle unit tests, lint, assembleDebug, artifact upload all successful; Debug APK artifact `12573313606` and validation report `12573563298` exist. These artifacts predate the new parser change; neither proves genuine GGUF inference or a device install.
+- **NOT TESTED:** full current JUnit/Gradle, actual PDF user flow, real llama.cpp/GGUF, clinical correctness, Pad 5 thermal/memory, cloud HTTPS, final APK/signature continuity.
+- No new APK built for this parser-only change; the prior successful Android CI already establishes a build baseline, while the new regression must still pass in full CI before acceptance.
