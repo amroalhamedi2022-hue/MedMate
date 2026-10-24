@@ -76,6 +76,31 @@ object LocalModelImport {
         }
     }
 
+    /**
+     * Validate a previously imported model again immediately before invoking native
+     * llama.cpp. A saved file may have been truncated or replaced after import.
+     * This is a bounded GGUF *header* check, NOT a full parse, checksum audit,
+     * proof of model authenticity, or successful native inference.
+     */
+    fun validateForLoad(file: File) {
+        require(file.isFile && file.extension.equals("gguf", ignoreCase = true)) {
+            "اختر ملف GGUF محليًا صالحًا"
+        }
+        require(file.length() in MIN_BYTES..MAX_BYTES) {
+            "حجم ملف GGUF غير صالح أو خارج الحد المسموح"
+        }
+        val header = ByteArray(24)
+        FileInputStream(file).use { stream ->
+            var offset = 0
+            while (offset < header.size) {
+                val count = stream.read(header, offset, header.size - offset)
+                require(count > 0) { "ترويسة GGUF ناقصة" }
+                offset += count
+            }
+        }
+        validateHeader(header)
+    }
+
     private fun validateHeader(head: ByteArray) {
         require(head.copyOfRange(0, 4).contentEquals(magic)) { "الملف ليس GGUF" }
         val version = (head[4].toInt() and 0xff) or ((head[5].toInt() and 0xff) shl 8) or
