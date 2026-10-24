@@ -219,3 +219,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS:** isolated `kotlinc` + `java -jar` compiled the current GatewayPolicy source in a temporary JVM harness and passed 10 checks (blank/normal/max-length accepted; CR/LF/TAB/NUL/Unicode/oversize rejected; HTTPS endpoint accepted). Ten source-contract assertions checked the exact committed gateway/policy/regression code. **This is not a full integrated smoke test.**
 - **NOT TESTED:** complete `scripts/test-brain.sh`, Gradle JUnit/lint, Android compile, real HTTPS relay, real GGUF/llama.cpp inference, PDF medical accuracy, Pad 5 RAM/thermal/offline/install tests.
 - **CI/APK:** no workflow dispatched or APK created. PR remains open/unmerged, `main` untouched. **Status:** IN_PROGRESS.
+
+
+## 2026-10-24 — Strict UTF-8 JSONL restore and CRLF boundary (source-only)
+- **Production commit:** `c23247b0a56041eec5d815a6b82c1fd4fc428715` in `BoundedLineReader.kt`. **JUnit regression commit:** `cd422cc2a0f53b7933dda24ebc2fd143f0a59f3c` on draft PR #1 (not main).
+- **Fix:** restore scanner now uses an explicit UTF-8 decoder with `CodingErrorAction.REPORT`; malformed byte sequences can no longer be silently replaced with U+FFFD in medical notes/study-card JSONL. CRLF's trailing CR is excluded from the record length bound so an exactly `maxChars`-long line remains valid; a bare CR still counts toward the limit. Existing line-size limits and JSONL schema are unchanged.
+- **PASS:** compiled the **same production Kotlin source** with local `kotlinc` and executed four JVM checks: Arabic/CRLF exact-limit reading, bare-CR length rejection, malformed UTF-8 rejection and oversized-line rejection. **FAIL:** none observed in these isolated checks.
+- **NOT TESTED:** committed JUnit tests in the full Gradle project, Android build/lint, full restore transaction on device, GGUF/llama.cpp inference, medical accuracy, Pad 5 offline/RAM/performance/install and final APK. A source-only Kotlin smoke is not proof of Android restore success.
+- **Build/merge:** no APK, no Actions dispatch, no main write, merge, paid service, private PDF/model weight or Library/Handoff. Status **IN_PROGRESS**; final APK build remains gated on full feature/source-test completion.
