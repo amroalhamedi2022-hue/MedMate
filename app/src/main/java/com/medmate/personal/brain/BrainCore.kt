@@ -97,8 +97,16 @@ class PageSegmenter(private val maxChars: Int = 900) {
                     val remaining = paragraph.length - offset
                     val end = if (remaining <= available) paragraph.length else {
                         val proposed = offset + available
-                        val space = paragraph.lastIndexOf(' ', proposed)
-                        if (space > offset + available / 2) space else proposed
+                        // Prefer a real whitespace boundary. Cutting a common
+                        // clinical term mid-word can make it unsearchable and
+                        // mislead source-grounded explanations. If an unusually
+                        // long unbroken token fills almost the whole segment,
+                        // a bounded hard split is unavoidable.
+                        var boundary = proposed
+                        while (boundary > offset &&
+                            !paragraph[boundary - 1].isWhitespace() &&
+                            !paragraph[boundary].isWhitespace()) boundary--
+                        if (boundary >= offset + 40) boundary else proposed
                     }
                     val part = paragraph.substring(offset, end).trim()
                     if (part.isNotEmpty()) { parts.add(part); chars += part.length + if (chars > 0) 2 else 0 }
