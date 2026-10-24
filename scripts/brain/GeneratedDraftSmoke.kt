@@ -35,6 +35,22 @@ fun main() {
     val mixedChapter = sources + Evidence("c", "another-chapter", 0, "A third valid source excerpt.")
     val mixed = GeneratedStudyDrafts.validate(listOf(good, mcq), mixedChapter)
     check(mixed.accepted.isEmpty() && mixed.rejected == 2) { "Cross-chapter evidence accepted: $mixed" }
+    // An invalid evidence batch must reject ALL drafts before any save, even
+    // if a single candidate contains a quote matching one otherwise valid page.
+    val invalidSourceSets = listOf(
+        emptyList(),
+        listOf(sources[0].copy(chapterId = "")),
+        listOf(sources[0].copy(pageIndex = -1)),
+        listOf(sources[0].copy(text = " ")),
+        (0..20).map { sources[0].copy(pageIndex = it) },
+        listOf(sources[0].copy(text = "A".repeat(20_001)))
+    )
+    for (invalidSources in invalidSourceSets) {
+        val rejected = GeneratedStudyDrafts.validate(listOf(mcq), invalidSources)
+        check(rejected.accepted.isEmpty() && rejected.rejected == 1) {
+            "Invalid source batch was accepted: $rejected"
+        }
+    }
     // A single-chapter batch is allowed to reference multiple pages independently.
     check(GeneratedStudyDrafts.validate(listOf(good, mcq), sources).accepted.size == 2)
     val fifth = mcq.copy(options = mcq.options + "Fifth answer", correctIndex = 4)
