@@ -143,3 +143,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Tests authored:** ten new source smoke assertions in `scripts/brain/ClinicalTermsSmoke.kt` covering six Arabic surgical queries and four chapter/page isolation cases; total asserted checks becomes 21.
 - **PASS:** static review of production alias map and regression test source. **NOT TESTED:** actual Kotlin smoke execution, full Gradle/JUnit/Android CI, real GGUF model inference, PDF medical accuracy, Pad 5 performance and independent recheck. No APK build requested; commits use `[skip ci]`.
 - **Status:** IN_PROGRESS; native llama-android path is present but not yet validated with a real GGUF on a device. No private PDFs, keys, model weights or paid API.
+
+
+## 2026-10-24 — PDF extracted-term dehyphenation (source-only)
+- **Production commits:** `a2bdd79b78b83dcda26de3c4c8143a6282ab6184` and Kotlin escape correction `5044a6e6bf780a941d104eb7346cb03524b0da4c`. `MedicalText.normalize` now rejoins Latin medical words split by an end-of-line hyphen and removes discretionary U+00AD soft hyphens before tokenization. Normal hyphenated compounds and paragraph breaks remain distinct; no generative AI capability is implied.
+- **Regression commit:** `bcbcb899f1ea16977230d736ba04ad78c87bb227` adds six cases to `scripts/brain/ClinicalTermsSmoke.kt` including English PDF hyphenation and retrieval.
+- **PASS:** compiled and executed five **isolated Kotlin/JVM checks** of the same normalization expressions with `kotlinc` and `java -jar` (LF/CRLF wrapped words, soft hyphen, ordinary compound, paragraph boundary).
+- **NOT TESTED:** full repository `scripts/test-clinical-terms.sh`, Gradle tests, native GGUF inference, clinical correctness, Android build, offline/performance/Pad 5 and independent device recheck. No APK, workflow dispatch, paid API, private PDFs or model weights used. Status: **IN_PROGRESS**.
