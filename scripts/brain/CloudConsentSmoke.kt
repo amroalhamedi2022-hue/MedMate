@@ -21,5 +21,15 @@ fun main() {
     checkCase(runCatching { CloudTransferConsent.grant("https://example.org/v1/chat/completions", "ok", source.copy(question = "")) }.isFailure, "empty question")
     checkCase(runCatching { CloudTransferConsent.grant("https://example.org/v1/chat/completions?token=leak", "ok", source) }.isFailure, "URL query")
     checkCase(runCatching { CloudTransferConsent.grant("http://example.org/v1/chat/completions", "ok", source) }.isFailure, "HTTP endpoint")
+    // One explicit consent authorizes exactly one network attempt.
+    val oneShot = CloudTransferConsent.grant(
+        "https://example.org/v1/chat/completions", "local-model", source
+    )
+    checkCase(!oneShot.consume("https://evil.example/v1/chat/completions", "local-model", source), "wrong host does not claim")
+    checkCase(!oneShot.consume("https://example.org/v1/chat/completions", "other-model", source), "wrong model does not claim")
+    checkCase(oneShot.permits("https://example.org/v1/chat/completions", "local-model", source), "still valid after failed claim")
+    checkCase(oneShot.consume("https://example.org/v1/chat/completions", "local-model", source), "first valid claim")
+    checkCase(!oneShot.permits("https://example.org/v1/chat/completions", "local-model", source), "claimed approval is hidden")
+    checkCase(!oneShot.consume("https://example.org/v1/chat/completions", "local-model", source), "replay rejected")
     println("PASS CloudTransferConsent: $checks pure Kotlin checks")
 }
