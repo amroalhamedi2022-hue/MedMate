@@ -100,13 +100,18 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     }
                 }
                 localImportBytes = imported.bytes
-                requireEnoughRam(imported.file)
-                onDevice.loadModel(imported.file)
-                localModelName = imported.file.name
+                // Import and activation are separate operations. A successful
+                // import must remain selectable even when RAM preflight or
+                // native GGUF loading fails on this attempt.
                 savedModels = modelDirectory.listFiles()?.filter { it.isFile && it.extension == "gguf" }
                     ?.sortedByDescending { it.lastModified() }?.take(8).orEmpty()
+                requireEnoughRam(imported.file)
+                onDevice.loadModel(imported.file)
+                localModelName = onDevice.loadedModelName
             } catch (e: Exception) {
-                localModelName = null
+                // A RAM preflight failure does not unload the previous model;
+                // reflect actual native session state instead of hiding it.
+                localModelName = onDevice.loadedModelName
                 error = "لم يتم تحميل النموذج المحلي: ${e.localizedMessage}"
             } finally { localBusy = false }
         }
@@ -322,7 +327,9 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                             onDevice.loadModel(file)
                                             localModelName = file.name
                                         } catch (e: Exception) {
-                                            localModelName = null
+                                            // Preserve the visible name of a previously loaded
+                                            // model if only the new model's RAM gate failed.
+                                            localModelName = onDevice.loadedModelName
                                             error = "تعذّر تشغيل النموذج المحفوظ: ${e.localizedMessage}"
                                         } finally { localBusy = false }
                                     }
