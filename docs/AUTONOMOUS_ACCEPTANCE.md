@@ -174,3 +174,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Regression commit:** `dbd09c710a0de1c28c8a5e5266290ec8ed787503` adds `scripts/test-model-load-ui-contract.py`, a source-only regression checking ordering and both error paths.
 - **PASS (static source checks):** four assertions against the exact current GitHub production/test blob verified list-refresh ordering, two failure paths, and presence of regression guards.
 - **NOT TESTED:** running the Python regression script from a repository checkout, Android Kotlin/Compose compilation, RAM failure on a physical device, actual llama.cpp/GGUF loading, medical accuracy, offline performance and independent device QA. No APK/Actions run, paid service, main write or merge. **IN_PROGRESS.**
+
+## 2026-10-24 — Ephemeral cloud bearer-header validation (source-only)
+- **Production:** `GatewayPolicy.kt` adds `validSessionToken` to enforce <=2048 printable ASCII characters (empty allowed for an unauthenticated personal relay), rejecting CR/LF/TAB/NUL and ambiguous Unicode before constructing the Authorization header. `CloudBrainGateway.kt` uses this shared policy instead of checking LF alone. No paid API, stored secret, cloud auto-fallback or gateway activation was introduced.
+- **Regression commit:** `009712764921b9b2f2469f1bc084183314242302` adds checks to `scripts/brain/BrainPipelineSmoke.kt`. Production integration commit: `380f5d60b1b5f8f3cbb7fb754e09c6bbaae8396e`; policy blob SHA `f5bf3ac09e1985774d4d7ce5a8b0ee21dd3ef09d`.
+- **PASS:** isolated `kotlinc` + `java -jar` compiled the current GatewayPolicy source in a temporary JVM harness and passed 10 checks (blank/normal/max-length accepted; CR/LF/TAB/NUL/Unicode/oversize rejected; HTTPS endpoint accepted). Ten source-contract assertions checked the exact committed gateway/policy/regression code. **This is not a full integrated smoke test.**
+- **NOT TESTED:** complete `scripts/test-brain.sh`, Gradle JUnit/lint, Android compile, real HTTPS relay, real GGUF/llama.cpp inference, PDF medical accuracy, Pad 5 RAM/thermal/offline/install tests.
+- **CI/APK:** no workflow dispatched or APK created. PR remains open/unmerged, `main` untouched. **Status:** IN_PROGRESS.
