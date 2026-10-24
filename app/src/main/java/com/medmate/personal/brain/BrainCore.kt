@@ -165,6 +165,13 @@ data class PreparedPrompt(
 )
 
 object MedicalPromptBuilder {
+    // Evidence IDs may originate from user-selected chapter names. Keep the
+    // original ID for navigation, but never interpolate control characters,
+    // prompt delimiters or arbitrary PDF metadata into the LLM prompt header.
+    private val unsafeSourceIdChars = Regex("[^A-Za-z0-9:_-]")
+    private fun safePromptId(id: String): String =
+        id.replace(unsafeSourceIdChars, "_").take(96).ifBlank { "source" }
+
     fun build(r: GroundedRequest): String = prepare(r).prompt
 
     fun prepare(r: GroundedRequest): PreparedPrompt {
@@ -178,7 +185,7 @@ object MedicalPromptBuilder {
             // Number citations only for excerpts actually shown to the model.
             val sourceText = e.text.trim()
             if (sourceText.length < 40) continue
-            val prefix = "[S${presented.size + 1}] Page ${e.pageNumber} (${e.id}):\n"
+            val prefix = "[S${presented.size + 1}] Page ${e.pageNumber} (${safePromptId(e.id)}):\n"
             val room = r.maxEvidenceChars - excerpt.length - prefix.length - 2
             if (room < 40) break
             // Never show a half-word as PDF evidence: a truncated medical
