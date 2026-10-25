@@ -26,8 +26,13 @@ data class NativeProbeResult(
     val calibrationPhrasePresent: Boolean,
     val citationSyntaxValid: Boolean,
     val memoryBefore: NativeProbeMemory? = null,
-    val memoryAfter: NativeProbeMemory? = null
-)
+    val memoryAfter: NativeProbeMemory? = null,
+    // A model that merely echoes its source/prompt has not demonstrated retrieval.
+    val promptEchoDetected: Boolean = false
+) {
+    val diagnosticPassed: Boolean
+        get() = calibrationPhrasePresent && citationSyntaxValid && !promptEchoDetected
+}
 
 object NativeInferenceProbe {
     // Fresh per-run code rejects stale/hard-coded responses. Not JNI attestation.
@@ -84,7 +89,13 @@ object NativeInferenceProbe {
             ).containsMatchIn(answer),
             citationSyntaxValid = CitationValidator.check(answer, 1).accepted,
             memoryBefore = memoryBefore,
-            memoryAfter = memoryAfter
+            memoryAfter = memoryAfter,
+            // This is an additional sanity gate, not proof of genuine JNI/GGUF.
+            // Full prompt/source echoes can contain both the code and [S1].
+            promptEchoDetected = answer.contains(prepared.prompt, ignoreCase = true) ||
+                answer.contains(evidence.text, ignoreCase = true) ||
+                answer.contains("This is a synthetic calibration passage", ignoreCase = true) ||
+                answer.contains("Only report this code and cite the passage", ignoreCase = true)
         )
     }
 }
