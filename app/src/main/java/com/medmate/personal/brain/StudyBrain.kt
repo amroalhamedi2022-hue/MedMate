@@ -5,7 +5,8 @@ data class BrainSearchResult(
     val evidence: List<Evidence>,
     val status: BrainSearchStatus,
     val shownPages: Int,
-    val excludedCorruptedPages: Int = 0
+    val excludedCorruptedPages: Int = 0,
+    val firstCorruptedPage: Int? = null
 )
 
 enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, CORRUPTED_PDF_TEXT, TOO_SHORT }
@@ -41,24 +42,26 @@ object StudyBrain {
         val scoped = pages.filter { it.chapterId == chapterId }
         // Distinguish extraction damage from scanned/image-only pages. The
         // latter may need OCR; corrupt text must never become LLM evidence.
-        val corruptInScope = scoped.count {
+        val damagedPageIndices = scoped.asSequence().filter {
             (onlyPage == null || it.pageIndex == onlyPage) &&
                 PdfCoverageAudit.likelyCorruptedText(it.text)
-        }
+        }.map { it.pageIndex }.toList()
+        val corruptInScope = damagedPageIndices.size
+        val firstCorruptedPage = damagedPageIndices.minOrNull()
         val chapterPages = scoped.filterNot { PdfCoverageAudit.likelyCorruptedText(it.text) }
         val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
         val readablePages = valid.count { it.text.isNotBlank() }
         if (MedicalText.queryTokens(cleaned).isEmpty())
-            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages, corruptInScope)
+            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages, corruptInScope, firstCorruptedPage)
         if (readablePages == 0)
             return BrainSearchResult(emptyList(), if (corruptInScope > 0)
                 BrainSearchStatus.CORRUPTED_PDF_TEXT else BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT,
-                0, corruptInScope)
+                0, corruptInScope, firstCorruptedPage)
         val index = reusableIndex(chapterId, chapterPages)
         val results = if (index != null) index.search(chapterId, cleaned, pageIndex = onlyPage, limit = 5)
             else EvidenceRetriever(PageSegmenter(850).split(valid)).search(chapterId, cleaned, limit = 5)
         return BrainSearchResult(results, if (results.isEmpty()) BrainSearchStatus.NO_MATCH else BrainSearchStatus.FOUND,
-            readablePages, corruptInScope)
+            readablePages, corruptInScope, firstCorruptedPage)
     }
 
     fun prepareSourceOnly(chapterId: String, question: String, found: BrainSearchResult,
