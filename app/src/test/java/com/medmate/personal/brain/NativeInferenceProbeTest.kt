@@ -12,6 +12,8 @@ import org.junit.Test
  * They DO NOT count as a real GGUF / llama.cpp inference test.
  */
 class NativeInferenceProbeTest {
+    private val CHALLENGE = "ORBIT-001122334455"
+
     private class RecordingFakePort(private val response: String) : OnDeviceLlmPort {
         override val loadedModelName: String? = "fake-for-unit-test.gguf"
         var calls = 0
@@ -26,12 +28,12 @@ class NativeInferenceProbeTest {
     }
 
     @Test fun probeUsesOnlySyntheticEvidenceAndReportsSeparateGroundingFlags() = runBlocking {
-        val port = RecordingFakePort("The calibration code is ORBIT-27 [S1].")
-        val report = NativeInferenceProbe.run(port)
+        val port = RecordingFakePort("The calibration code is ORBIT-001122334455 [S1].")
+        val report = NativeInferenceProbe.run(port, challengeCode = CHALLENGE)
         assertEquals(1, port.calls)
         assertEquals("fake-for-unit-test.gguf", report.modelName)
         assertTrue(report.elapsedMs >= 0)
-        assertEquals("The calibration code is ORBIT-27 [S1].".length, report.answerChars)
+        assertEquals("The calibration code is ORBIT-001122334455 [S1].".length, report.answerChars)
         assertTrue(report.calibrationPhrasePresent)
         assertTrue(report.citationSyntaxValid)
         assertEquals(null, report.memoryBefore)
@@ -40,14 +42,14 @@ class NativeInferenceProbeTest {
         assertEquals(BrainTask.EXPLAIN, prompt.task)
         assertEquals(1, prompt.presentedEvidence.size)
         assertEquals("synthetic-native-probe", prompt.presentedEvidence.single().chapterId)
-        assertTrue(prompt.prompt.contains("ORBIT-27"))
+        assertTrue(prompt.prompt.contains(CHALLENGE))
         assertTrue(prompt.prompt.contains("[S1]"))
     }
 
     @Test fun diagnosticMemorySamplesAreLabeledAndNeverCalledPeak() = runBlocking {
-        val port = RecordingFakePort("ORBIT-27 [S1] is the synthetic code.")
+        val port = RecordingFakePort("ORBIT-001122334455 [S1] is the synthetic code.")
         var reads = 0
-        val result = NativeInferenceProbe.run(port) {
+        val result = NativeInferenceProbe.run(port, challengeCode = CHALLENGE) {
             reads++
             if (reads == 1) NativeProbeMemory(190_000, 2_000_000_000L, false)
             else NativeProbeMemory(230_000, 1_900_000_000L, true)
@@ -78,4 +80,26 @@ class NativeInferenceProbeTest {
         val failure = runCatching { NativeInferenceProbe.run(unloaded) }
         assertTrue(failure.isFailure)
     }
+    @Test fun aStaleFixedCalibrationAnswerCannotPassAChangedChallenge() = runBlocking {
+        val stale = RecordingFakePort("The calibration code is ORBIT-27 [S1].")
+        val result = NativeInferenceProbe.run(stale, challengeCode = CHALLENGE)
+        assertFalse(result.calibrationPhrasePresent)
+        assertTrue(result.citationSyntaxValid)
+        assertTrue(stale.captured!!.prompt.contains(CHALLENGE))
+        assertFalse(stale.captured!!.prompt.contains("ORBIT-27."))
+    }
+
+    @Test fun calibrationMustBeAnEntireTokenNotAQuotedSubstring() = runBlocking {
+        val port = RecordingFakePort("The code is ORBIT-00112233445599 [S1].")
+        val result = NativeInferenceProbe.run(port, challengeCode = CHALLENGE)
+        assertFalse(result.calibrationPhrasePresent)
+    }
+
+    @Test fun invalidCalibrationInputIsRejectedBeforeCallingThePort() = runBlocking {
+        val port = RecordingFakePort("ORBIT-001122334455 [S1]")
+        val result = runCatching { NativeInferenceProbe.run(port, challengeCode = "ORBIT-27") }
+        assertTrue(result.isFailure)
+        assertEquals(0, port.calls)
+    }
+
 }
