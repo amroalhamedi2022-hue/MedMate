@@ -375,3 +375,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS source inspection:** verified production and test files are present on the MedMate PR branch with expected cross-file references; **NOT TESTED:** actual committed JUnit execution, Android Compose compilation/lint/APK for this source, real GGUF inference, OCR quality, actual PDF data, Pad 5, cloud HTTPS and clinical accuracy.
 - **Purposeful Android build question:** do the new Kotlin data field, Compose coverage warning, retrieval filter and committed JUnit tests compile and run together, and does an ARM64 Android APK assemble? Source inspection cannot establish this. Non-skip checkpoint requests branch CI; **CI/Artifact NOT TESTED until exact-SHA completed run is checked**. No paid API, personal PDF, GGUF, secrets, main write or merge.
 - **Acceptance:** local Brain is not certified as running a real model; MedMate remains **IN_PROGRESS** pending GGUF and independent device/medical recheck.
+
+
+### Corrupted-PDF grounding quarantine — targeted Android CI completion
+
+- **PASS:** [Actions 40159165080](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40159165080) completed successfully on exact functional/test SHA `1a54bc918c8e5d82619b009c9c166ac6dff8bc6c`. Android `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` **BUILD SUCCESSFUL in 4m 21s**, with the new PDF damage/grounding regression tests included in the Gradle JUnit suite. Compose source compiled and Debug APK assembled.
+- **Artifacts:** `MedMate-debug-apk` ID **12585684613** and `MedMate-validation-reports` ID **12586100304**. CI-calculated **inner** `app-debug.apk` SHA-256: `0f050337e013235331caf5eb71f5707cac8f08bdac46a4500e9dd9a74d3b9ae0`. Artifact ZIP checksum is different; **independent download/re-hash NOT TESTED**.
+- **NOT TESTED:** physical scanned PDF and tap-through review on Pad 5, real GGUF/llama.cpp inference, medical factuality, OCR, cloud HTTPS/consent on device, thermal/RAM, signing/upgrade and final independent acceptance. A successful Android build is not evidence of a working model. **IN_PROGRESS**.
