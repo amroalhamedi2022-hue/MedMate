@@ -360,3 +360,9 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Purposeful Android build question:** Do the new Compose UI and coverage data types compile together with the existing Android/llama AAR, and do the new JUnit tests pass? Isolated Kotlin/source inspection cannot prove Android Compose compilation. [Actions 40155275698](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40155275698) **IN_PROGRESS at this checkpoint**; latest full Gradle/JUnit/lint/APK **NOT TESTED pending CI completion**.
 - **NOT TESTED:** physical PDF scan coverage and navigation on Xiaomi Pad 5, real OCR, real GGUF/llama.cpp model inference, clinical citation truth, cloud consent/HTTPS on device, memory/thermal/performance, final APK. **IN_PROGRESS**.
 - **CI economy:** development workflow cancels superseded intermediate builds; no `main` write, auto-merge, paid API, personal PDFs/GGUF/secrets or Library/Handoff access.
+
+
+### PDF coverage purposeful CI completion (supersedes pending status above)
+- **PASS:** [Actions 40155275698](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40155275698) on exact functional/workflow SHA `a9ebd0ab32672df14f1ec3c7a96eafce8341e745`: `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` **BUILD SUCCESSFUL in 3m 59s**. Newly committed `PdfTextCoverageTest.kt` is part of the JUnit source suite. Android Compose source compiles with the coverage panel.
+- **Real artifacts:** Debug APK ZIP **12583933773** and validation report ZIP **12584422909**. CI-calculated SHA-256 of inner `app-debug.apk`: **`cfebef7f8b3baf5e66e70c3acc090c03f83c64828bd87556ab89d6637074b1eb`**. Independent artifact re-download/re-hash **NOT TESTED**.
+- **NOT TESTED:** actual scanned medical PDFs on Xiaomi Pad 5, OCR, real GGUF inference, PDF clinical grounding, device performance, cloud HTTPS/consent, final signed upgrade and independent second-pass acceptance. Debug APK is not a final release; MedMate **IN_PROGRESS**.
