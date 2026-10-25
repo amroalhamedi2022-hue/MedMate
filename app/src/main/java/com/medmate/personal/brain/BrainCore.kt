@@ -251,6 +251,16 @@ object CitationValidator {
     // [S1]. Treat those visually deceptive spellings as malformed, even if a
     // genuine [S1] also appears. Never normalize them into valid citations.
     private val compatibilityBrackets = Regex("""[\[\uFF3B][^\]\uFF3D\r\n]{0,64}[\]\uFF3D]?""")
+    /** Cloud explanations are never displayed as source-grounded if a model
+     * invents or omits citations. Syntax validation is not clinical review. */
+    fun requireGroundedCloudAnswer(answer: String, presentedEvidenceCount: Int): String {
+        val result = check(answer, presentedEvidenceCount)
+        require(result.accepted) {
+            "رد الذكاء السحابي لم يجتز فحص استشهادات PDF؛ أعد المحاولة أو استخدم المصدر مباشرة"
+        }
+        return answer
+    }
+
     fun check(answer: String, presentedEvidenceCount: Int, sourceRequired: Boolean = true): CitationCheck {
         require(presentedEvidenceCount >= 0)
         val used = allCitations.findAll(answer).map { "S${it.groupValues[1]}" }.toSet()
