@@ -112,4 +112,69 @@ class OfflineDraftsTest {
         assertEquals(line, cards.single().answer)
     }
 
+    @Test fun wrappedEnglishQuestionStemIsRecoveredWithoutChangingPrintedKey() {
+        val text = """Q42. Which of
+            the following findings is described by the printed source?
+            a) First textbook choice.
+            b) Second textbook choice.
+            c) Third textbook choice.
+            d) Fourth textbook choice.
+            Answer: C
+        """.trimIndent()
+        val item = OfflineStudyDrafts.extract(listOf(PageSource("book", 10, text)))
+            .single { it.kind == DraftKind.SOURCE_MCQ }
+        assertEquals("Which of the following findings is described by the printed source?", item.prompt)
+        assertEquals(2, item.correctIndex)
+        assertEquals(10, item.pageIndex)
+        assertTrue(item.sourceQuote.contains("the following findings"))
+    }
+
+    @Test fun wrappedArabicQuestionStemKeepsItsPageAndSourceKey() {
+        val text = """سؤال ٤. أي من
+            العلامات التالية وردت في النص الطبي المطبوع؟
+            أ) العلامة الأولى المطبوعة.
+            ب) العلامة الثانية المطبوعة.
+            ج) العلامة الثالثة المطبوعة.
+            د) العلامة الرابعة المطبوعة.
+            الجواب: ب
+        """.trimIndent()
+        val item = OfflineStudyDrafts.extract(listOf(PageSource("chapter-ar", 7, text)))
+            .single { it.kind == DraftKind.SOURCE_MCQ }
+        assertEquals("أي من العلامات التالية وردت في النص الطبي المطبوع؟", item.prompt)
+        assertEquals(1, item.correctIndex)
+        assertEquals("chapter-ar", item.chapterId)
+        assertEquals(7, item.pageIndex)
+    }
+
+    @Test fun excessiveStemContinuationCannotCreateQuestionFromUnrelatedPageText() {
+        val text = """Q12. Which
+            first stray line
+            second stray line
+            third stray line
+            fourth stray line
+            fifth stray line
+            a) First printed option.
+            b) Second printed option.
+            c) Third printed option.
+            d) Fourth printed option.
+            Answer: A
+        """.trimIndent()
+        assertTrue(OfflineStudyDrafts.extract(listOf(PageSource("book", 3, text)))
+            .none { it.kind == DraftKind.SOURCE_MCQ })
+    }
+
+    @Test fun wrappedQuestionWithConflictingPrintedKeysStillFailsClosed() {
+        val text = """Q22. Which of
+            these four choices is indicated in the printed source?
+            a) First printed option.
+            b) Second printed option.
+            c) Third printed option.
+            d) Fourth printed option.
+            Answer: B
+            Answer: B
+        """.trimIndent()
+        assertTrue(OfflineStudyDrafts.extract(listOf(PageSource("book", 2, text)))
+            .none { it.kind == DraftKind.SOURCE_MCQ })
+    }
+
 }

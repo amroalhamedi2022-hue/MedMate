@@ -27,7 +27,7 @@ data class OfflineDraft(
 
 object OfflineStudyDrafts {
     // Never infer a correct answer without a literal, well-formed answer key in the same page.
-    private val questionHeader = Regex("^(?:(?:Q(?:uestion)?|س(?:ؤال)?)\\s*[-#.:]?\\s*)([0-9٠-٩۰-۹]{1,4})[.)\\s:：-]+(.{10,})$", RegexOption.IGNORE_CASE)
+    private val questionHeader = Regex("^(?:(?:Q(?:uestion)?|س(?:ؤال)?)\\s*[-#.:]?\\s*)([0-9٠-٩۰-۹]{1,4})[.)\\s:：-]+(.{4,})$", RegexOption.IGNORE_CASE)
     // Printed Arabic medical MCQs often use أ/ب/ج/د/هـ rather than A-E.
     // Keep one canonical key space; never infer an answer from option order.
     private val optionLine = Regex("^([a-eA-Eأابجده]|هـ)[.)]\\s*(.{2,})$")
@@ -118,12 +118,13 @@ object OfflineStudyDrafts {
 
     private fun parseMcqs(page: PageSource, text: String): List<OfflineDraft> {
         data class State(
-            val stem: String,
+            var stem: String,
             val quoteLines: MutableList<String> = mutableListOf(),
             val options: LinkedHashMap<Char, String> = linkedMapOf(),
             var key: Char? = null,
             var invalidKey: Boolean = false,
             var explanation: String = "",
+            var stemContinuationLines: Int = 0,
             var mode: String = "stem"
         )
         val drafts = mutableListOf<OfflineDraft>()
@@ -193,7 +194,16 @@ object OfflineStudyDrafts {
                     s.options[k] = (s.options.getValue(k) + " " + line).take(1000)
                 }
                 s.mode == "explanation" -> s.explanation = (s.explanation + " " + line).take(3000).trim()
-                s.mode == "stem" -> s.mode = "stem" // Don't append unknown standalone lines to a medical question.
+                s.mode == "stem" -> {
+                    // Recover wrapped PDF question stems, but never absorb an
+                    // unbounded page of unrelated text before the options.
+                    if (s.stemContinuationLines >= 4 || s.stem.length + line.length + 1 > 1200) {
+                        flush()
+                        continue
+                    }
+                    s.stem += " " + line
+                    s.stemContinuationLines++
+                }
             }
         }
         flush()
