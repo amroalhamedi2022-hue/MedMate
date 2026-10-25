@@ -14,7 +14,13 @@ import java.io.InputStream
  * A user may supply a session-only key for their chosen HTTPS provider or personal relay.
  * Cloud requests are initiated solely by an explicit UI action after consent.
  */
-class CloudBrainGateway {
+class CloudBrainGateway(
+    // Injectable HTTPS transport seam enables real outbound-boundary tests
+    // without opening sockets or exposing a personal PDF/credential.
+    private val connectionFactory: (URL) -> HttpURLConnection = { url ->
+        url.openConnection() as HttpURLConnection
+    }
+) {
     suspend fun explain(
         gatewayUrl: String,
         model: String,
@@ -80,7 +86,7 @@ class CloudBrainGateway {
         require(consent.consume(gatewayUrl, model, requestIdentity, evidenceSeal)) {
             "الموافقة السحابية استُخدمت أو تغيّر السؤال/المصدر؛ وافق مجددًا"
         }
-        val connection = (URL(safeUrl).openConnection() as HttpURLConnection).apply {
+        val connection = connectionFactory(URL(safeUrl)).apply {
             requestMethod = "POST"
             connectTimeout = 10_000
             readTimeout = 45_000
