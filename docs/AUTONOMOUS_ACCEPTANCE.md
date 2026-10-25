@@ -635,3 +635,8 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Fixtures are tiny synthetic byte arrays used only to test the import boundary; they are **not complete GGUF files** and do not count as native parsing/inference evidence. No model weights, private PDF or key is committed.
 - **Purposeful CI question:** does the Android/JVM runtime support the symlink guard and do the importer regressions pass alongside existing tests, lint and APK assembly? Static review cannot prove the Kotlin/Android API linkage or JUnit behavior; one targeted CI build is justified.
 - **CI / test count / APK:** PENDING. Real GGUF/JNI inference, Xiaomi Pad 5, PDF grounding, clinical accuracy, live HTTPS consent/denial and device RAM/thermal remain **NOT TESTED**.
+
+
+### Local GGUF import CI follow-up — 2026-10-26
+- **FAIL:** [Android CI 40246624901](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40246624901) compiled the changed source/test code, but JUnit rejected three expression-bodied test methods because their inferred return types were not `Unit`; the test class failed initialization before any of its cases ran. No Debug APK was produced. This was a test-harness declaration error, not a passing import-validation result.
+- **Repair:** declared the three affected tests as `Unit` and explicitly returned `Unit` from their temp-directory lambdas. Re-run is **PENDING**.

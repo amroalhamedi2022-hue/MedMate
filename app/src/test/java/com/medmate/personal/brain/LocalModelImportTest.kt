@@ -80,7 +80,7 @@ class LocalModelImportTest {
         }
     }
 
-    @Test fun modifiedStoredModelIsRejectedBeforeNativeLoad() = inTempDir { dir ->
+    @Test fun modifiedStoredModelIsRejectedBeforeNativeLoad(): Unit = inTempDir { dir ->
         val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
         val changed = imported.file.readBytes()
         changed[changed.lastIndex] = (changed.last().toInt() xor 1).toByte()
@@ -89,9 +89,10 @@ class LocalModelImportTest {
         assertThrows(IllegalArgumentException::class.java) {
             LocalModelImport.validateForLoad(imported.file)
         }
+        Unit
     }
 
-    @Test fun aHashNamedSymlinkCannotRedirectNativeLoadToItsTarget() = inTempDir { dir ->
+    @Test fun aHashNamedSymlinkCannotRedirectNativeLoadToItsTarget(): Unit = inTempDir { dir ->
         val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
         val target = File(dir, "detached-target.gguf")
         assertTrue(imported.file.renameTo(target))
@@ -100,9 +101,10 @@ class LocalModelImportTest {
         assertThrows(IllegalArgumentException::class.java) {
             LocalModelImport.validateForLoad(imported.file)
         }
+        Unit
     }
 
-    @Test fun nonContentAddressedFilenameIsRejected() = inTempDir { dir ->
+    @Test fun nonContentAddressedFilenameIsRejected(): Unit = inTempDir { dir ->
         val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
         val renamed = File(dir, "student-model.gguf")
         assertTrue(imported.file.renameTo(renamed))
@@ -110,6 +112,7 @@ class LocalModelImportTest {
         assertThrows(IllegalArgumentException::class.java) {
             LocalModelImport.validateForLoad(renamed)
         }
+        Unit
     }
 
     @Test fun repeatedZeroByteReadsAbortAndCleanTheTemporaryFile() = inTempDir { dir ->
