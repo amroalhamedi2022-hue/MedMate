@@ -113,9 +113,17 @@ class CloudBrainGateway(
     private fun limitedRead(stream: InputStream, max: Int): String {
         val bytes = java.io.ByteArrayOutputStream()
         val data = ByteArray(8192)
+        var emptyReads = 0
         while (true) {
             val n = stream.read(data)
             if (n < 0) break
+            // A broken custom/HTTP stream returning repeated zero-byte reads
+            // must not spin forever on the IO dispatcher. Short pauses recover.
+            if (n == 0) {
+                require(++emptyReads <= 8) { "توقف استقبال رد بوابة AI" }
+                continue
+            }
+            emptyReads = 0
             require(bytes.size() + n <= max) { "رد بوابة AI تجاوز الحد المسموح" }
             bytes.write(data, 0, n)
         }
