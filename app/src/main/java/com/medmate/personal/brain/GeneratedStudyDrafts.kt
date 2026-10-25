@@ -83,7 +83,14 @@ object GeneratedStudyDrafts {
                     "عدم", "دون", "بدون", "غياب")
                 val firstQuotedWord = Regex("""[\p{L}]+""").find(quote)?.value
                 val prefix = source.substring(0, at)
-                val clauseStart = prefix.indexOfLast { it in ".!?;:،؛\n\r" } + 1
+                val hardStart = prefix.indexOfLast { it in ".!?;:؛\n\r" } + 1
+                // A comma alone does not end the scope of "no" in a list
+                // ("no fever, cough or pain"). A contrastive "but/لكن" does.
+                val comma = prefix.indexOfLast { it == ',' || it == '،' }
+                val afterComma = if (comma >= hardStart) prefix.substring(comma + 1).trimStart() else ""
+                val contrast = Regex("""^(?:but|however|yet|لكن|ولكن)(?:\s|$)""")
+                    .containsMatchIn(afterComma)
+                val clauseStart = if (comma >= hardStart && contrast) comma + 1 else hardStart
                 val precedingWords = Regex("""[\p{L}]+""")
                     .findAll(prefix.substring(clauseStart)).map { it.value }
                     .toList().takeLast(6)
