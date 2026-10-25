@@ -1,3 +1,12 @@
+## 2026-10-25 — Medical draft quote negation-scope safety milestone
+
+- **Production:** `GeneratedStudyDrafts` now conservatively rejects excerpts that drop a negation within the preceding six words of the same clause, not only the immediately adjacent word. This blocks misleading crops like `No radiographic evidence of infection` -> `infection is present`. English/Arabic hard sentence breaks are respected; commas preserve negation in symptom lists, but a contrastive `but/لكن` permits an independent positive clause. Quotes beginning with their own explicit negation remain eligible.
+- **Regression:** added eight bilingual positive/negative JUnit cases, plus comma-list cases. This is a **lexical safety filter**, not medical truth/clinical entailment verification; legitimate excerpts may require a longer faithful quote.
+- **PASS (isolated Kotlin/JVM):** compiled and executed eight algorithm checks with `kotlinc` and `java`; corrected comma-clause behavior after a failed local test. This isolated harness does **not** compile the complete Android project.
+- **NOT TESTED:** full JUnit/Android CI on current SHA, genuine llama.cpp/GGUF inference, clinical accuracy, HTTPS allow/deny on device, Pad 5 RAM/thermals and final signed release.
+- **Targeted build question:** do the real production Kotlin changes and committed JUnit tests compile and pass together with Compose, SQLite, lint and Android packaging? Isolated algorithm checks cannot answer this; one CI validation build is justified, not a routine per-line build.
+- **Status:** IN_PROGRESS; PR #1 Draft, no main merge, no PDFs, GGUF, private keys, paid API, or unrelated Library/Handoff changes.
+
 ## 2026-10-25 — Cloud payload-bound consent + exact PDF preview
 - **Production:** `CloudEvidenceSeal.of` now fingerprints the entire reviewed explanation prompt in addition to question, chapter, page and exact excerpts; altered prompt text with unchanged excerpts cannot reuse a grant. Cloud study-draft generation validates the **original reviewed PreparedPrompt** and derives its JSON-only prompt deterministically from the same source excerpts, avoiding a mismatched consent seal.
 - **UI:** Cloud consent is disabled until the user opens a preview showing the exact bounded PDF excerpts (with [S#] page markers) and question. Preview-review state resets when the prepared question/PDF context changes; no PDF bytes, tokens or models are persisted/uploaded to GitHub.
