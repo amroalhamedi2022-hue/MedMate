@@ -1,3 +1,7 @@
+### Independent Debug APK verification — wrapped textbook MCQs
+- **PASS:** downloaded artifact **12610695015**, extracted 33,536,769-byte `app-debug.apk` and independently recalculated SHA-256 `606e42674fb21c89312f368af5db85d9022363c580a7079e172ca0beae13bb94`, matching CI `APK_SHA256.txt`. ARM64 `libllama.so` and `libllama_jni.so` packaged. This supersedes the earlier pending independent-hash line for this run.
+- **NOT TESTED:** actual GGUF inference, Pad 5 PDF/MCQ experience, live HTTPS consent, medical accuracy, device memory/thermal and final signed release. Native libraries in APK are **not** a successful model execution.
+
 ## 2026-10-25 — Bounded wrapped PDF MCQ stem recovery (Arabic + English)
 - **Functional SHA:** `14c48bc8dbd7ec1b14fcf54225eaa33a89863987`, existing draft PR #1 only.
 - **Production:** `OfflineStudyDrafts` now reconstructs up to four short PDF-wrapped question-stem lines before the first printed option, for Arabic and English textbook questions. A fifth line or overlong stem aborts extraction rather than attaching unrelated page text. Correct answers still require one explicit printed same-page key; duplicate/conflicting keys remain rejected.
