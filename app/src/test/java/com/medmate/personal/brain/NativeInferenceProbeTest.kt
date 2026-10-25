@@ -36,6 +36,8 @@ class NativeInferenceProbeTest {
         assertEquals("The calibration code is ORBIT-001122334455 [S1].".length, report.answerChars)
         assertTrue(report.calibrationPhrasePresent)
         assertTrue(report.citationSyntaxValid)
+        assertFalse(report.promptEchoDetected)
+        assertTrue(report.diagnosticPassed)
         assertEquals(null, report.memoryBefore)
         assertEquals(null, report.memoryAfter)
         val prompt = requireNotNull(port.captured)
@@ -93,6 +95,26 @@ class NativeInferenceProbeTest {
         val port = RecordingFakePort("The code is ORBIT-00112233445599 [S1].")
         val result = NativeInferenceProbe.run(port, challengeCode = CHALLENGE)
         assertFalse(result.calibrationPhrasePresent)
+    }
+
+    @Test fun sourceEchoCannotPassEvenWhenCodeAndCitationAppear() = runBlocking {
+        val probeText = "This is a synthetic calibration passage, not a medical textbook or patient PDF. " +
+            "The calibration code written in this passage is $CHALLENGE. " +
+            "Only report this code and cite the passage; do not invent a different code."
+        val report = NativeInferenceProbe.run(
+            RecordingFakePort("$probeText [S1]"), challengeCode = CHALLENGE)
+        assertTrue(report.calibrationPhrasePresent)
+        assertTrue(report.citationSyntaxValid)
+        assertTrue(report.promptEchoDetected)
+        assertFalse(report.diagnosticPassed)
+    }
+
+    @Test fun partialInstructionEchoAlsoFailsDiagnostic() = runBlocking {
+        val report = NativeInferenceProbe.run(
+            RecordingFakePort("Only report this code and cite the passage. $CHALLENGE [S1]"),
+            challengeCode = CHALLENGE)
+        assertTrue(report.promptEchoDetected)
+        assertFalse(report.diagnosticPassed)
     }
 
     @Test fun invalidCalibrationInputIsRejectedBeforeCallingThePort() = runBlocking {
