@@ -37,6 +37,10 @@ object CloudEvidenceSeal {
         add(request.question.trim())
         add(request.pageOnly.toString())
         add(if (request.pageOnly) request.sourcePage.toString() else "*")
+        // The exact explanation payload is part of the one-shot approval.
+        // Merely preserving the excerpt list must NOT authorize a later prompt
+        // that silently adds different student/private text to the upload.
+        add(prepared.prompt)
         excerpts.forEach { e ->
             add(e.id); add(e.chapterId); add(e.pageIndex.toString()); add(e.text)
         }
