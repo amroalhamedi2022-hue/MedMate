@@ -88,6 +88,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var localAnswer by remember(chapter.sha256) { mutableStateOf<String?>(null) }
     var localCitationCheck by remember { mutableStateOf<CitationCheck?>(null) }
     var localInferenceAudit by remember(chapter.sha256) { mutableStateOf<LocalInferenceAudit?>(null) }
+    // A native probe is run only by explicit tap; it never uses the student's PDF.
+    var nativeProbe by remember(chapter.sha256) { mutableStateOf<NativeProbeResult?>(null) }
     var localCitationLinks by remember(chapter.sha256) { mutableStateOf<List<SourceCitationLink>>(emptyList()) }
     var cloudCitationLinks by remember(chapter.sha256) { mutableStateOf<List<SourceCitationLink>>(emptyList()) }
     val modelPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -116,6 +118,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 requireEnoughRam(imported.file)
                 onDevice.loadModel(imported.file)
                 localModelName = onDevice.loadedModelName
+                nativeProbe = null
             } catch (e: Exception) {
                 // A RAM preflight failure does not unload the previous model;
                 // reflect actual native session state instead of hiding it.
@@ -434,7 +437,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                         try {
                                             requireEnoughRam(file)
                                             onDevice.loadModel(file)
-                                            localModelName = file.name
+                                            localModelName = onDevice.loadedModelName
+                                            nativeProbe = null
                                         } catch (e: Exception) {
                                             // Preserve the visible name of a previously loaded
                                             // model if only the new model's RAM gate failed.
@@ -448,10 +452,40 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                         }
                     }
                     if (localModelName != null) {
+                        OutlinedButton(
+                            enabled = arm64Capable && !busy && !localBusy,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                localBusy = true; nativeProbe = null; error = null
+                                scope.launch {
+                                    try {
+                                        // Calls the real loaded LlamaAndroidPort, not FakeLlama.
+                                        nativeProbe = NativeInferenceProbe.run(onDevice)
+                                    } catch (e: Exception) {
+                                        error = "فشل اختبار GGUF المحلي: ${e.localizedMessage}"
+                                    } finally { localBusy = false }
+                                }
+                            }
+                        ) { Text("اختبار استدلال GGUF محلي بنص اصطناعي — دون PDF") }
+                        nativeProbe?.let { probe ->
+                            Text(
+                                "استدلال محلي: ${probe.modelName.take(32)} · ${probe.elapsedMs} ms · " +
+                                    "${probe.answerChars} حرف · رمز الاختبار: " +
+                                    (if (probe.calibrationPhrasePresent) "PASS" else "FAIL") +
+                                    " · صيغة المصدر: " +
+                                    (if (probe.citationSyntaxValid) "PASS" else "FAIL"),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (probe.calibrationPhrasePresent && probe.citationSyntaxValid)
+                                    Turquoise else MaterialTheme.colorScheme.error
+                            )
+                            Text("ظهور نتيجة على جهازك يثبت استجابة جلسة النموذج لهذا النص الاصطناعي فقط؛ " +
+                                "لا يثبت دقة طبية أو استشهادات PDF حقيقية.",
+                                style = MaterialTheme.typography.bodySmall, color = Muted)
+                        }
                         TextButton(enabled = !localBusy && !busy, onClick = {
                             localBusy = true
                             scope.launch {
-                                try { onDevice.unload(); localModelName = null }
+                                try { onDevice.unload(); localModelName = null; nativeProbe = null }
                                 catch (e: Exception) { error = "تعذّر تفريغ النموذج: ${e.localizedMessage}" }
                                 finally { localBusy = false }
                             }
