@@ -71,13 +71,24 @@ object GeneratedStudyDrafts {
                 val end = at + quote.length
                 val before = at == 0 || !source[at - 1].isLetterOrDigit()
                 val after = end == source.length || !source[end].isLetterOrDigit()
-                // A cropped quote must not silently omit an immediately
-                // preceding negation ("no infection" -> "infection"). This
-                // narrow lexical guard is NOT a clinical entailment check.
+                // Do not allow a model to quote an affirmative-looking
+                // fragment from a negated medical statement. "No evidence of
+                // infection" -> "evidence of infection" AND "infection is
+                // present" are both unsafe crops. Restrict the lookback to
+                // the current clause and six words; do not reject a separate
+                // sentence after punctuation. This is a conservative lexical
+                // guard, NOT clinical entailment or a diagnosis validator.
+                val negations = setOf("no", "not", "without", "absence", "absent",
+                    "negative", "لا", "لم", "لن", "ليس", "ليست", "غير",
+                    "عدم", "دون", "بدون", "غياب")
+                val firstQuotedWord = Regex("""[\\p{L}]+""").find(quote)?.value
                 val prefix = source.substring(0, at)
-                val preceding = if (prefix.lastOrNull()?.isWhitespace() == true)
-                    prefix.trimEnd().takeLastWhile { it.isLetter() } else ""
-                val omittedNegation = preceding in setOf("no", "not", "without", "لا", "لم", "لن", "ليس")
+                val clauseStart = prefix.indexOfLast { it in ".!?;:،؛\\n\\r" } + 1
+                val precedingWords = Regex("""[\\p{L}]+""")
+                    .findAll(prefix.substring(clauseStart)).map { it.value }
+                    .toList().takeLast(6)
+                val omittedNegation = firstQuotedWord !in negations &&
+                    precedingWords.any { it in negations }
                 if (before && after && !omittedNegation) return true
                 at = source.indexOf(quote, at + 1)
             }
