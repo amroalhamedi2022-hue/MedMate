@@ -3,7 +3,10 @@
 - Regression: ten synthetic bilingual cases added to the actual Android JUnit suite: cropped vs faithful uncertainty, Arabic qualifiers, cannot-exclude, sentence and contrast boundaries.
 - **Purposeful CI question:** does the real Kotlin quote validator compile with all existing JUnit/Compose code, and do the ten bilingual uncertainty regression cases pass? Text inspection cannot establish Android/JVM compatibility. One targeted Android CI build is justified.
 
-- **NOT TESTED until matching CI:** Kotlin JUnit, Android lint, APK compilation, independent checksum, device PDF flow, actual GGUF model, clinical accuracy and HTTPS consent on Xiaomi Pad 5. Lexical quote protection does **not** establish medical truth or inference.
+- **PASS Android CI:** [run 40236667832](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40236667832) on functional source SHA `360901171b02a6342e1bfd94cdf57e25ab93807e`: Gradle JUnit, Android lint, Compose compilation and Debug APK assembly succeeded. Downloaded report artifact `12614419407` confirms **121 tests PASS, 0 failures, 0 ignored**, including the new uncertainty test (`GeneratedDraftsTest` 9/9 PASS).
+- **PASS independent APK checksum:** downloaded artifact `12615092525`, extracted 33,553,153-byte APK and independently SHA-256 `ebcf40139707582481d8fd3821a10f1040846b19bcdf2fecd1417aeb5e847dd0`, matching CI. ARM64 `libllama.so` and `libllama_jni.so` packaged; **no GGUF bundled and no real inference tested**.
+- **NOT TESTED:** actual GGUF model/JNI inference, Xiaomi Pad 5 medical PDF accuracy, live HTTPS consent, device RAM/thermal, signed final release. These source/CI PASS results are not clinical validation.
+- **Historical pending checkpoint (superseded by CI PASS above):** Kotlin JUnit, Android lint, APK compilation, independent checksum, device PDF flow, actual GGUF model, clinical accuracy and HTTPS consent on Xiaomi Pad 5. Lexical quote protection does **not** establish medical truth or inference.
 - Build rationale: Kotlin source/JUnit compatibility and Android compilation need one purposeful integration build, not repeated APK packaging after each small edit.
 - Draft PR only; no main merge, real PDF, model, secret, paid API, other repository or Library/Handoff changes.
 
