@@ -1,3 +1,10 @@
+## 2026-10-25 — Reject cloud explanations with missing/forged PDF citations
+- Production: `CitationValidator.requireGroundedCloudAnswer` rejects ungrounded or forged cloud explanation output; `CloudBrainGateway.explain` invokes it before returning any answer to the UI. An explicit evidence-insufficient abstention without a fake citation remains valid. Study-draft JSON uses its separate quote/source validation, unchanged.
+- Regression: four checks added to `scripts/brain/BrainPipelineSmoke.kt` and a new Android JUnit `CloudAnswerGateTest.kt` for valid source markers, unsupported claims, forged markers and abstention.
+- **PASS (source inspection):** production gateway calls the new guard; both source and test paths are committed. **NOT TESTED:** actual Kotlin/JUnit/Android CI on this SHA (pending), HTTPS request behavior, device cloud privacy, GGUF inference, medical correctness, and Pad 5 performance.
+- **Build question:** will the new Kotlin gateway wiring and JUnit test compile and pass in the real Android project? Static inspection alone cannot answer. A targeted CI build is justified; debug APK is not a final release.
+- **Status:** IN_PROGRESS; PR #1 Draft, no main write, no personal PDF/model/token upload or Handoff/Library access.
+
 # MedMate Personal — autonomous source patch 2026-10-23
 
 ## 2026-10-24 — Harden source-grounded explanation question boundaries (source-only)
