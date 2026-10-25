@@ -114,7 +114,8 @@ class BrainRetrievalRegressionTest {
         val prepared = StudyBrain.prepareSourceOnly("ortho", "fracture", result)
         assertEquals(listOf(1), prepared!!.presentedEvidence.map { it.pageIndex }.distinct())
         val damagedOnly = StudyBrain.search("ortho", pages, "fracture", onlyPage = 0)
-        assertEquals(BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, damagedOnly.status)
+        assertEquals(BrainSearchStatus.CORRUPTED_PDF_TEXT, damagedOnly.status)
+        assertEquals(1, damagedOnly.excludedCorruptedPages)
         assertTrue(damagedOnly.evidence.isEmpty())
     }
 
@@ -131,4 +132,34 @@ class BrainRetrievalRegressionTest {
         assertEquals(1, StudyBrain.search("ortho", pages, "?").shownPages)
         assertEquals(1, StudyBrain.search("surgery", pages, "?").shownPages)
     }
+    @Test fun corruptedAndImageOnlyPdfPagesHaveDifferentGuidanceAndNoFalseCitations() {
+        val damaged = "Fracture " + "\\uFFFD".repeat(14)
+        val pages = listOf(
+            PageSource("ortho", 0, damaged),
+            PageSource("ortho", 1, "   "),
+            PageSource("ortho", 2, "Fracture management requires careful neurovascular assessment."),
+            PageSource("foreign", 0, damaged)
+        )
+        val corrupt = StudyBrain.search("ortho", pages, "fracture", onlyPage = 0)
+        assertEquals(BrainSearchStatus.CORRUPTED_PDF_TEXT, corrupt.status)
+        assertEquals(1, corrupt.excludedCorruptedPages)
+        assertEquals(0, corrupt.shownPages)
+        assertTrue(corrupt.evidence.isEmpty())
+        assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", corrupt))
+        val scanned = StudyBrain.search("ortho", pages, "fracture", onlyPage = 1)
+        assertEquals(BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, scanned.status)
+        assertEquals(0, scanned.excludedCorruptedPages)
+        val good = StudyBrain.search("ortho", pages, "fracture")
+        assertEquals(BrainSearchStatus.FOUND, good.status)
+        assertEquals(1, good.excludedCorruptedPages)
+        assertEquals(1, good.shownPages)
+        assertEquals(listOf(2), good.evidence.map { it.pageIndex }.distinct())
+        assertEquals(listOf(2), StudyBrain.prepareSourceOnly("ortho", "fracture", good)!!
+            .presentedEvidence.map { it.pageIndex }.distinct())
+        val short = StudyBrain.search("ortho", pages, "?")
+        assertEquals(BrainSearchStatus.TOO_SHORT, short.status)
+        assertEquals(1, short.excludedCorruptedPages)
+        assertEquals(0, StudyBrain.search("foreign", pages, "fracture", onlyPage = 1).excludedCorruptedPages)
+    }
+
 }
