@@ -50,6 +50,10 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var results by remember(chapter.sha256) { mutableStateOf<BrainSearchResult?>(null) }
     var pdfCoverage by remember(chapter.sha256) { mutableStateOf<PdfTextCoverage?>(null) }
     var prepared by remember(chapter.sha256) { mutableStateOf<PreparedPrompt?>(null) }
+    // Preview is tied to this exact prepared prompt; a changed PDF/question
+    // must be reviewed again before a new cloud consent can be issued.
+    var cloudPreviewExpanded by remember(chapter.sha256, prepared) { mutableStateOf(false) }
+    var cloudPreviewReviewed by remember(chapter.sha256, prepared) { mutableStateOf(false) }
     var cloudAnswer by remember(chapter.sha256) { mutableStateOf<String?>(null) }
     var validation by remember { mutableStateOf<CitationCheck?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -560,8 +564,34 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             OutlinedTextField(sessionToken, onValueChange = { sessionToken = it }, modifier = Modifier.fillMaxWidth(),
                 label = { Text("رمز البوابة / مفتاح API — لهذه الجلسة فقط") }, singleLine = true,
                 visualTransformation = PasswordVisualTransformation())
+            // Show the ACTUAL bounded excerpts included in PreparedPrompt, not
+            // an untruncated search-result preview or an entire private PDF.
+            val cloudSources = prepared!!.presentedEvidence
+            Text("سيُرسل السؤال: ${prepared!!.question} · ${cloudSources.size} مقطع/مقاطع من PDF. لا يُرفع الملف الكامل.",
+                style = MaterialTheme.typography.bodySmall, color = Muted)
+            OutlinedButton(onClick = {
+                cloudPreviewExpanded = !cloudPreviewExpanded
+                if (cloudPreviewExpanded) cloudPreviewReviewed = true
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text(if (cloudPreviewExpanded) "إخفاء المقاطع المراجَعة" else
+                    "راجع النص الفعلي المرسل قبل الموافقة")
+            }
+            if (cloudPreviewExpanded) {
+                cloudSources.forEachIndexed { index, source ->
+                    Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text("[S${index + 1}] صفحة ${source.pageNumber}",
+                                fontWeight = FontWeight.SemiBold, color = Turquoise)
+                            Text(source.text, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+            if (!cloudPreviewReviewed) Text("راجع المقاطع أولًا لتفعيل الموافقة السحابية.",
+                style = MaterialTheme.typography.bodySmall, color = Muted)
             Row(verticalAlignment = Alignment.Top) {
-                Checkbox(checked = explicitConsent, enabled = !busy, onCheckedChange = { approved ->
+                Checkbox(checked = explicitConsent, enabled = !busy && cloudPreviewReviewed, onCheckedChange = { approved ->
                     val grant = if (approved && prepared != null) runCatching {
                         CloudTransferConsent.grant(gateway, gatewayModel,
                             BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage),
