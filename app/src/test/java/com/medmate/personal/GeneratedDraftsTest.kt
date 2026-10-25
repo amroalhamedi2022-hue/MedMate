@@ -157,4 +157,46 @@ class GeneratedDraftsTest {
             "المفصل يبدو طبيعيا في الفحص"))
     }
 
+
+    @Test fun uncertaintyMustRemainVisibleInGeneratedPdfQuotes() {
+        fun valid(source: String, quote: String): Boolean {
+            val candidate = GeneratedCandidate(GeneratedKind.FLASHCARD,
+                "What is the exact finding in the source excerpt?",
+                "Human review is required", sourceId = "S1", supportingQuote = quote)
+            val evidence = Evidence("synthetic:4:0", "synthetic", 4, source)
+            return GeneratedStudyDrafts.validate(listOf(candidate), listOf(evidence))
+                .accepted.isNotEmpty()
+        }
+        assertFalse(valid(
+            "Possible pneumonia is present in the imaging report.",
+            "pneumonia is present in the imaging report"))
+        assertTrue(valid(
+            "Possible pneumonia is present in the imaging report.",
+            "Possible pneumonia is present in the imaging report"))
+        assertFalse(valid(
+            "The image may show signs of infection.",
+            "show signs of infection"))
+        assertTrue(valid(
+            "The image may show signs of infection.",
+            "may show signs of infection"))
+        assertFalse(valid(
+            "The scan cannot exclude a subtle fracture in the wrist.",
+            "exclude a subtle fracture in the wrist"))
+        assertFalse(valid(
+            "ربما تظهر علامات التهاب في الصورة الشعاعية.",
+            "علامات التهاب في الصورة الشعاعية"))
+        assertTrue(valid(
+            "ربما تظهر علامات التهاب في الصورة الشعاعية.",
+            "ربما تظهر علامات التهاب في الصورة الشعاعية"))
+        assertFalse(valid(
+            "هناك احتمال وجود التهاب في المفصل الأيسر.",
+            "وجود التهاب في المفصل الأيسر"))
+        assertTrue(valid(
+            "Possible infection was mentioned, but the lungs appear normal.",
+            "the lungs appear normal"))
+        assertTrue(valid(
+            "Possible infection was mentioned. The lungs appear normal.",
+            "The lungs appear normal"))
+    }
+
 }

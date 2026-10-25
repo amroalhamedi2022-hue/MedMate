@@ -79,8 +79,18 @@ object GeneratedStudyDrafts {
                 // sentence after punctuation. This is a conservative lexical
                 // guard, NOT clinical entailment or a diagnosis validator.
                 val negations = setOf("no", "not", "without", "absence", "absent",
-                    "negative", "لا", "لم", "لن", "ليس", "ليست", "غير",
-                    "عدم", "دون", "بدون", "غياب")
+                    "negative", "cannot", "unable", "لا", "لم", "لن", "ليس",
+                    "ليست", "غير", "عدم", "دون", "بدون", "غياب")
+                // A quote that omits uncertainty can falsely turn a suspected
+                // finding into a confirmed one. Preserve nearby epistemic
+                // qualifiers as carefully as explicit negation. This is a
+                // conservative lexical check, NOT medical entailment.
+                val uncertainty = setOf("may", "might", "could", "possible",
+                    "possibly", "suspected", "suspicious", "suggestive",
+                    "probable", "probably", "potential", "potentially",
+                    "uncertain", "unclear", "unlikely", "ربما", "يحتمل",
+                    "محتمل", "احتمال", "احتمالية", "اشتباه", "مشتبه",
+                    "يشتبه", "مرجح", "يبدو")
                 val firstQuotedWord = Regex("""[\p{L}]+""").find(quote)?.value
                 val prefix = source.substring(0, at)
                 val hardStart = prefix.indexOfLast { it in ".!?;:؛\n\r" } + 1
@@ -96,7 +106,9 @@ object GeneratedStudyDrafts {
                     .toList().takeLast(6)
                 val omittedNegation = firstQuotedWord !in negations &&
                     precedingWords.any { it in negations }
-                if (before && after && !omittedNegation) return true
+                val omittedUncertainty = firstQuotedWord !in uncertainty &&
+                    precedingWords.any { it in uncertainty }
+                if (before && after && !omittedNegation && !omittedUncertainty) return true
                 at = source.indexOf(quote, at + 1)
             }
             return false
