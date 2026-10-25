@@ -34,12 +34,31 @@ class NativeInferenceProbeTest {
         assertEquals("The calibration code is ORBIT-27 [S1].".length, report.answerChars)
         assertTrue(report.calibrationPhrasePresent)
         assertTrue(report.citationSyntaxValid)
+        assertEquals(null, report.memoryBefore)
+        assertEquals(null, report.memoryAfter)
         val prompt = requireNotNull(port.captured)
         assertEquals(BrainTask.EXPLAIN, prompt.task)
         assertEquals(1, prompt.presentedEvidence.size)
         assertEquals("synthetic-native-probe", prompt.presentedEvidence.single().chapterId)
         assertTrue(prompt.prompt.contains("ORBIT-27"))
         assertTrue(prompt.prompt.contains("[S1]"))
+    }
+
+    @Test fun diagnosticMemorySamplesAreLabeledAndNeverCalledPeak() = runBlocking {
+        val port = RecordingFakePort("ORBIT-27 [S1] is the synthetic code.")
+        var reads = 0
+        val result = NativeInferenceProbe.run(port) {
+            reads++
+            if (reads == 1) NativeProbeMemory(190_000, 2_000_000_000L, false)
+            else NativeProbeMemory(230_000, 1_900_000_000L, true)
+        }
+        assertEquals(2, reads)
+        assertEquals(190_000, result.memoryBefore?.appPssKb)
+        assertEquals(230_000, result.memoryAfter?.appPssKb)
+        assertTrue(result.memoryAfter?.systemLowMemory == true)
+        assertTrue(result.citationSyntaxValid)
+        assertTrue(runCatching { NativeProbeMemory(-1, 100, false) }.isFailure)
+        assertTrue(runCatching { NativeProbeMemory(1, -1, false) }.isFailure)
     }
 
     @Test fun aNonGroundedFakeResponseDoesNotBecomeGroundedPass() = runBlocking {
