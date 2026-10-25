@@ -82,6 +82,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var localImportBytes by remember { mutableLongStateOf(0L) }
     var localAnswer by remember(chapter.sha256) { mutableStateOf<String?>(null) }
     var localCitationCheck by remember { mutableStateOf<CitationCheck?>(null) }
+    var localInferenceAudit by remember(chapter.sha256) { mutableStateOf<LocalInferenceAudit?>(null) }
     val modelPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && !localBusy) scope.launch {
             localBusy = true; localImportBytes = 0L; error = null
@@ -147,7 +148,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             if (busy) return@Button
             busy = true; progress = 0; results = null; prepared = null; cloudAnswer = null
             generatedDrafts = emptyList(); rejectedGenerated = 0; reviewedGenerated = emptySet(); generatedBy = ""
-            validation = null; localAnswer = null; localCitationCheck = null
+            validation = null; localAnswer = null; localCitationCheck = null; localInferenceAudit = null
             error = null; explicitConsent = false; cloudConsent = null
             val capturedQuestion = question.trim()
             val capturedOnly = pageOnly
@@ -357,12 +358,25 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             val found = results ?: return@Button
                             val p = StudyBrain.prepareSourceOnly(chapter.sha256, lastQuestion, found,
                                 maxEvidenceChars = 2400) ?: return@Button
-                            localBusy = true; error = null; localAnswer = null; localCitationCheck = null
+                            val requestIdentity = BrainRequestIdentity(
+                                chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
+                            localBusy = true; error = null; localAnswer = null
+                            localCitationCheck = null; localInferenceAudit = null
                             scope.launch {
                                 try {
+                                    val startNanos = System.nanoTime()
+                                    // This is the actual native llama.cpp port, not FakeLlama.
                                     val response = onDevice.generate(p) { }
-                                    localAnswer = response
-                                    localCitationCheck = CitationValidator.check(response, p.presentedEvidence.size)
+                                    val elapsed = ((System.nanoTime() - startNanos) / 1_000_000L).coerceAtLeast(0L)
+                                    val audit = LocalInferenceAudit.fromNativeResponse(
+                                        onDevice.loadedModelName, elapsed, p, response)
+                                    if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
+                                        localAnswer = response
+                                        localCitationCheck = audit.citationCheck
+                                        localInferenceAudit = audit
+                                    } else {
+                                        error = "تغيّر السؤال أو الصفحة أثناء الاستدلال؛ تجاهلنا النتيجة القديمة."
+                                    }
                                 } catch (e: Exception) { error = "تعذّر الشرح المحلي: ${e.localizedMessage}" }
                                 finally { localBusy = false }
                             }
@@ -374,6 +388,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             val source = results ?: return@OutlinedButton
                             val original = StudyBrain.prepareSourceOnly(chapter.sha256, lastQuestion, source,
                                 maxEvidenceChars = 2400) ?: return@OutlinedButton
+                            val requestIdentity = BrainRequestIdentity(
+                                chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
                             localBusy = true; error = null; generatedDrafts = emptyList()
                             rejectedGenerated = 0; reviewedGenerated = emptySet()
                             scope.launch {
@@ -382,11 +398,12 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     val raw = onDevice.generate(task) { }
                                     val outcome = GeneratedDraftJson.parseAndValidate(raw, original.presentedEvidence)
                                     // If the user changed the source while inference ran, discard stale drafts.
-                                    if (question.trim() == lastQuestion && pageOnly == lastPageOnly &&
-                                        (!pageOnly || currentPage == lastSourcePage)) {
+                                    if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
                                         generatedDrafts = outcome.accepted
                                         rejectedGenerated = outcome.rejected
                                         generatedBy = "Local AI"
+                                    } else {
+                                        error = "تغيّر السؤال أو الصفحة أثناء توليد المسودات؛ تجاهلنا النتيجة القديمة."
                                     }
                                 } catch (e: Exception) { error = "فشل إنشاء المسودات محليًا: ${e.localizedMessage}" }
                                 finally { localBusy = false }
@@ -394,6 +411,19 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                         }) { Text("✨ توليد MCQ وFlashcards محليًا — للمراجعة") }
                     localAnswer?.let { reply ->
                         Text("شرح محلي مولّد — راجع المصدر", fontWeight = FontWeight.Bold)
+                        localInferenceAudit?.let { audit ->
+                            Text(
+                                "فحص تشغيل GGUF محلي: ${audit.modelName.take(32)} · " +
+                                    "${audit.elapsedMs} ms · ${audit.answerChars} حرف · " +
+                                    "صفحات المصدر: ${audit.sourcePages.joinToString(", ")} · " +
+                                    if (audit.syntaxPass) "صيغة الاستشهاد PASS" else "صيغة الاستشهاد FAIL",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (audit.syntaxPass) Turquoise else MaterialTheme.colorScheme.error
+                            )
+                            Text("هذا إثبات تشخيصي لطلب الاستدلال على هذا الجهاز فقط؛ " +
+                                "لا يثبت الدقة الطبية ولا الأداء على أجهزة أخرى.",
+                                style = MaterialTheme.typography.bodySmall, color = Muted)
+                        }
                         Text(reply, style = MaterialTheme.typography.bodyMedium)
                         Text(if (localCitationCheck?.accepted == true)
                             "مراجع [S] موجودة، لكن صحتها الطبية لم تُثبت آليًا."
