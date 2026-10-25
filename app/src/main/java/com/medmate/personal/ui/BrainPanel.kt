@@ -193,6 +193,14 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                    if (report.garbledPages > 0) {
+                        Text(
+                            "${report.garbledPages} صفحة فيها نص PDF تالف بوضوح (رموز بديلة/محارف تحكم). " +
+                                "استُبعدت من أدلة الشرح الآلي؛ افتح الصفحات وافحصها أو استخدم OCR موثوقًا.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                     if (report.firstUnusablePages.isNotEmpty()) {
                         Text("افتح صفحات بحاجة للفحص:", style = MaterialTheme.typography.bodySmall)
                         report.firstUnusablePages.take(5).forEach { page ->
