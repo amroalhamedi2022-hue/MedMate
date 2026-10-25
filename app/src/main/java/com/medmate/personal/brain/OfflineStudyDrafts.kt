@@ -133,11 +133,16 @@ object OfflineStudyDrafts {
             val s = state ?: return
             val letters = s.options.keys.toList()
             val key = s.key
+            // Preserve the complete printed question, options and answer key.
+            // Truncating source evidence can turn a grounded MCQ into an
+            // unverifiable one; skip oversize excerpts rather than clip them.
+            val sourceQuote = s.quoteLines.joinToString("\n")
+            if (sourceQuote.length > 5500) { state = null; return }
             if ((letters == listOf('a', 'b', 'c', 'd') || letters == listOf('a', 'b', 'c', 'd', 'e')) && key != null && !s.invalidKey && key in letters &&
                 s.stem.length in 12..1200 && s.options.values.all { it.length in 2..1000 } &&
                 s.options.values.map { it.lowercase(Locale.ROOT).trim() }.distinct().size == letters.size
             ) {
-                val quote = s.quoteLines.joinToString("\n").take(5500)
+                val quote = sourceQuote
                 drafts.add(OfflineDraft(
                     id = fingerprint(page, DraftKind.SOURCE_MCQ, s.stem + s.options.values.joinToString() + key),
                     kind = DraftKind.SOURCE_MCQ,
