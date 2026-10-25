@@ -117,6 +117,19 @@ fun main() {
     verified("[S999] Page 999" !in safeMetadata.prompt && "IGNORE RULES\n" !in safeMetadata.prompt,
         "metadata cannot inject forged source headers or instructions")
 
+    // Cloud explanation UI must not silently display an unsupported answer.
+    verified(CitationValidator.requireGroundedCloudAnswer(
+        "الشرح من المصدر [S1]", prompt.presentedEvidence.size) == "الشرح من المصدر [S1]",
+        "cloud response accepts valid PDF source marker")
+    verified(runCatching { CitationValidator.requireGroundedCloudAnswer(
+        "شرح بلا مصدر", prompt.presentedEvidence.size) }.isFailure,
+        "cloud response rejects missing source marker")
+    verified(runCatching { CitationValidator.requireGroundedCloudAnswer(
+        "شرح من المصدر [S999]", prompt.presentedEvidence.size) }.isFailure,
+        "cloud response rejects invented PDF marker")
+    verified(CitationValidator.requireGroundedCloudAnswer(
+        "المعلومة مش كافية بالنص الموجود", prompt.presentedEvidence.size).isNotBlank(),
+        "cloud response allows source-free evidence-insufficient abstention")
     verified(!CitationValidator.check("hallucination without source", prompt.presentedEvidence.size).accepted, "reject uncited")
     verified(!CitationValidator.check("[S999999999999999999]", prompt.presentedEvidence.size).accepted, "reject overflow citation safely")
     verified(CitationValidator.check("الشرح من النص الطبي [S1]", prompt.presentedEvidence.size).accepted, "recognized citation")
