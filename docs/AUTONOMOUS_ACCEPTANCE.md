@@ -543,3 +543,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **NOT TESTED:** new JUnit suite, Android compilation/lint/CI at the current head, actual HTTPS transport on device, true GGUF/llama.cpp inference, clinical accuracy, Pad 5 RAM/thermal and final APK.
 - **Build question:** will the new Robolectric response-stream tests compile and pass with the production gateway and its coroutine dependencies? Source-only checks cannot answer; one targeted CI validation is warranted.
 - **Acceptance:** cloud safety improved at source level; no new device/model acceptance gate can be marked PASS.
+
+## 2026-10-25 — GGUF synthetic diagnostic echo gate (pending integration)
+- Production: NativeInferenceProbe now reports a **separate prompt/source-echo flag**; even if an echoed passage contains the correct random calibration code and [S1], the in-app diagnostic status must be FAIL. This prevents a simple false-positive from copying the prompt; it does **not** attest JNI execution or clinical grounding.
+- New Robolectric/JUnit contract cases use an explicitly fake port: whole-source echo and partial instruction echo. They are **not** genuine GGUF tests.
+- **PASS (source inspection):** new result property, UI gate and regression assertions are committed to the PR branch.
+- **NOT TESTED:** Gradle JUnit/Compose compilation and Android CI on the new SHA; real llama.cpp/GGUF inference, Pad 5 memory/thermal, PDF grounding, actual HTTPS/consent and medical accuracy.
+- **Purposeful Android build question:** do the updated Compose UI and Kotlin test suite compile and pass with the actual Android project? Isolated source review cannot answer that. Debug build is for integration only, not a final APK.
