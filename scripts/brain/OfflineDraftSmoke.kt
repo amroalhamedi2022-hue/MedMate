@@ -51,5 +51,22 @@ fun main() {
     check(OfflineStudyDrafts.extract(listOf(PageSource(chapter, 1, malformedAfterValid))).none { it.kind == DraftKind.SOURCE_MCQ })
     val duplicateSame = contradictory.replace("Answer: B", "Answer: A")
     check(OfflineStudyDrafts.extract(listOf(PageSource(chapter, 1, duplicateSame))).none { it.kind == DraftKind.SOURCE_MCQ })
-    println("PASS offline drafts: four/five-choice MCQ, definition, page refs, no-key exclusion, multiple-key exclusion, deterministic and bounded")
+
+    val arabicMcq = """سؤال ١٢. أي عبارة يحددها مفتاح الكتاب بوصفها الإجابة الصحيحة؟
+        أ) الجواب الأول كما في النص.
+        ب) الجواب الثاني كما في النص.
+        ج) الجواب الثالث كما في النص.
+        د) الجواب الرابع كما في النص.
+        الإجابة: ج
+        التفسير: شرح من الكتاب.
+    """.trimIndent()
+    val arQuiz = OfflineStudyDrafts.extract(listOf(PageSource(chapter, 12, arabicMcq)))
+        .single { it.kind == DraftKind.SOURCE_MCQ }
+    check(arQuiz.correctIndex == 2 && arQuiz.pageIndex == 12 && arQuiz.options.size == 4)
+    check(OfflineStudyDrafts.extract(listOf(PageSource(chapter, 12,
+        arabicMcq.replace("الإجابة: ج", "الإجابة: أ و ج")))).none { it.kind == DraftKind.SOURCE_MCQ })
+    val arDefinition = "نقص التروية هو انخفاض وصول الدم المحمل بالأكسجين إلى الأنسجة مما قد يؤدي إلى تلفها."
+    check(OfflineStudyDrafts.extract(listOf(PageSource(chapter, 13, arDefinition)))
+        .single { it.kind == DraftKind.DEFINITION_CARD }.sourceQuote == arDefinition)
+    println("PASS offline drafts: Arabic/English keyed MCQ and definitions, page refs, no-key/multiple-key exclusion")
 }

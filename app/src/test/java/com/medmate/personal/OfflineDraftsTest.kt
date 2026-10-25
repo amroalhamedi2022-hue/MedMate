@@ -50,4 +50,66 @@ class OfflineDraftsTest {
         assertTrue(OfflineStudyDrafts.extract(listOf(PageSource("book", 2, text)))
             .none { it.kind == DraftKind.SOURCE_MCQ })
     }
+    @Test fun arabicBookMcqWithArabicDigitsAndSourcePageIsExtracted() {
+        val text = """سؤال ١٧. ما العلامة الأكثر ارتباطًا بنقص التروية في الطرف؟
+            أ) ألم شديد مع برودة الطرف.
+            ب) زيادة الشهية عند المريض.
+            ج) تحسن الرؤية بعد النوم.
+            د) زيادة كثافة الشعر.
+            الإجابة الصحيحة: أ
+            التفسير: مفتاح الإجابة مطبوع في المصدر.
+        """.trimIndent()
+        val quiz = OfflineStudyDrafts.extract(listOf(PageSource("arabic-book", 12, text)))
+            .single { it.kind == DraftKind.SOURCE_MCQ }
+        assertEquals(12, quiz.pageIndex)
+        assertEquals(4, quiz.options.size)
+        assertEquals(0, quiz.correctIndex)
+        assertTrue(quiz.sourceQuote.contains("الإجابة الصحيحة: أ"))
+        assertTrue(quiz.explanation.contains("مفتاح الإجابة"))
+    }
+
+    @Test fun arabicFiveChoiceMcqUsesFifthOptionWithoutInventingKey() {
+        val text = """س ۲. أي الخيارات مذكور في المفتاح المطبوع للمصدر؟
+            أ) الخيار الأول الوارد في السؤال.
+            ب) الخيار الثاني الوارد في السؤال.
+            ج) الخيار الثالث الوارد في السؤال.
+            د) الخيار الرابع الوارد في السؤال.
+            هـ) الخيار الخامس الوارد في السؤال.
+            الجواب: هـ
+        """.trimIndent()
+        val quiz = OfflineStudyDrafts.extract(listOf(PageSource("arabic-book", 4, text)))
+            .single { it.kind == DraftKind.SOURCE_MCQ }
+        assertEquals(5, quiz.options.size)
+        assertEquals(4, quiz.correctIndex)
+    }
+
+    @Test fun arabicConflictingOrMultipleKeysAreNeverApproved() {
+        val base = """سؤال ٣. أي عبارة يحددها مفتاح الكتاب على أنها صحيحة؟
+            أ) العبارة الأولى المطبوعة.
+            ب) العبارة الثانية المطبوعة.
+            ج) العبارة الثالثة المطبوعة.
+            د) العبارة الرابعة المطبوعة.
+            الإجابة: ب
+        """.trimIndent()
+        for (bad in listOf(base + "\\nالإجابة: ج",
+                base.replace("الإجابة: ب", "الإجابة: أ و ج"),
+                base + "\\nالجواب: ب")) {
+            assertTrue(OfflineStudyDrafts.extract(listOf(PageSource("arabic-book", 2, bad)))
+                .none { it.kind == DraftKind.SOURCE_MCQ })
+        }
+        assertEquals(1, OfflineStudyDrafts.extract(listOf(PageSource("arabic-book", 2, base)))
+            .count { it.kind == DraftKind.SOURCE_MCQ })
+    }
+
+    @Test fun arabicDefinitionIsAQuotedDraftNotAnInferredFact() {
+        val line = "نقص التروية هو انخفاض وصول الدم المحمل بالأكسجين إلى الأنسجة مما قد يؤدي إلى تلفها."
+        val cards = OfflineStudyDrafts.extract(listOf(PageSource("arabic-book", 6, line)))
+            .filter { it.kind == DraftKind.DEFINITION_CARD }
+        assertEquals(1, cards.size)
+        assertEquals(6, cards.single().pageIndex)
+        assertTrue(cards.single().prompt.startsWith("ما معنى"))
+        assertEquals(line, cards.single().sourceQuote)
+        assertEquals(line, cards.single().answer)
+    }
+
 }
