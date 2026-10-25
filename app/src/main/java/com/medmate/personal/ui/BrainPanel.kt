@@ -460,7 +460,16 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 scope.launch {
                                     try {
                                         // Calls the real loaded LlamaAndroidPort, not FakeLlama.
-                                        nativeProbe = NativeInferenceProbe.run(onDevice)
+                                        nativeProbe = NativeInferenceProbe.run(onDevice) {
+                                            // Android's own-UID PSS and available RAM snapshots.
+                                            // This is diagnostic data, not an invented model peak.
+                                            val manager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                                            val system = ActivityManager.MemoryInfo().also { manager.getMemoryInfo(it) }
+                                            val pss = manager.getProcessMemoryInfo(intArrayOf(android.os.Process.myPid()))
+                                                .firstOrNull()?.totalPss ?: 0
+                                            NativeProbeMemory(pss.coerceAtLeast(0),
+                                                system.availMem.coerceAtLeast(0L), system.lowMemory)
+                                        }
                                     } catch (e: Exception) {
                                         error = "فشل اختبار GGUF المحلي: ${e.localizedMessage}"
                                     } finally { localBusy = false }
@@ -478,6 +487,18 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 color = if (probe.calibrationPhrasePresent && probe.citationSyntaxValid)
                                     Turquoise else MaterialTheme.colorScheme.error
                             )
+                            if (probe.memoryBefore != null && probe.memoryAfter != null) {
+                                val before = probe.memoryBefore
+                                val after = probe.memoryAfter
+                                Text("RAM (لقطتان، مش أعلى استهلاك): PSS التطبيق " +
+                                    "${before.appPssKb / 1024} → ${after.appPssKb / 1024} MiB · " +
+                                    "RAM المتاحة للنظام " +
+                                    "${before.systemAvailableBytes / 1_048_576} → " +
+                                    "${after.systemAvailableBytes / 1_048_576} MiB" +
+                                    (if (after.systemLowMemory) " · تحذير: ذاكرة منخفضة" else ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (after.systemLowMemory) MaterialTheme.colorScheme.error else Muted)
+                            }
                             Text("ظهور نتيجة على جهازك يثبت استجابة جلسة النموذج لهذا النص الاصطناعي فقط؛ " +
                                 "لا يثبت دقة طبية أو استشهادات PDF حقيقية.",
                                 style = MaterialTheme.typography.bodySmall, color = Muted)
