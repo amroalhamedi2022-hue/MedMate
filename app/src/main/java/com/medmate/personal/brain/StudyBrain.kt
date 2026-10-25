@@ -34,7 +34,12 @@ object StudyBrain {
         val cleaned = question.trim()
         // Apply chapter/page isolation even for an empty or stopword-only
         // question. A short query must not report pages from another PDF.
-        val chapterPages = pages.filter { it.chapterId == chapterId }
+        // A clearly corrupted PDF extraction must not become source evidence
+        // for a generated medical explanation. Keep the original PDF intact;
+        // the coverage panel identifies the excluded page for inspection.
+        val chapterPages = pages.filter {
+            it.chapterId == chapterId && !PdfCoverageAudit.likelyCorruptedText(it.text)
+        }
         val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
         val readablePages = valid.count { it.text.isNotBlank() }
         if (MedicalText.queryTokens(cleaned).isEmpty())
