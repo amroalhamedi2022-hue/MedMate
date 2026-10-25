@@ -1,3 +1,33 @@
+## 2026-10-25 — Randomized native GGUF challenge (functional milestone)
+
+- **Production:** `NativeInferenceProbe.run` now generates a fresh
+  96-bit synthetic challenge (`ORBIT-<12 hex digits>`) per diagnostic.
+  The expected answer must contain the **whole current challenge token**
+  and a valid source citation; stale hard-coded `ORBIT-27` answers
+  or longer lookalike tokens cannot pass the calibration-code flag.
+  Challenge injection is constrained to a strict ASCII format.
+- **Contract tests:** updated `NativeInferenceProbeTest.kt` with deterministic
+  challenge injection and new stale-answer, token-boundary and invalid-input
+  regressions. Fake-port tests are explicitly **NOT native inference**.
+- **PASS (isolated Kotlin/JVM):** 6 compiled/executed challenge regex,
+  token-boundary and randomness checks; **FAIL 0** in this isolated harness.
+- **PASS (Android CI):** [run 40198882489](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40198882489)
+  on production + JUnit source SHA `ab3a64e59c1bc03b5d23c8d7a159a46df9f28f54`:
+  SQLite schema/migrations, `testDebugUnitTest`, `lintDebug`,
+  `assembleDebug` and artifact upload succeeded.
+  Debug artifact **12601810746**, reports **12601106538**.
+  CI-calculated APK SHA-256:
+  `e973adec9ba052db3e352e23daa148083efc91a2dba27ec038e6e047fc388028`.
+- **NOT TESTED:** independent artifact download/rehash, a **real GGUF
+  model loaded and run through JNI** on Xiaomi Pad 5, real memory/thermal
+  metrics, medical factual grounding, actual cloud HTTPS consent denial,
+  final signed APK. Do not confuse CI and fake-port JUnit with actual GGUF.
+- **Build rationale:** changing a suspend Kotlin API used by Compose plus
+  its JUnit contract required real Gradle compilation; isolated regex checks
+  cannot establish Android integration. One purposeful CI build was used.
+- PR #1 remains Draft, no `main` writes or merge; no personal PDFs,
+  model weights, credentials or other repositories/Library were touched.
+
 ## 2026-10-25 — Medical draft quote negation-scope safety milestone
 
 - **Production:** `GeneratedStudyDrafts` now conservatively rejects excerpts that drop a negation within the preceding six words of the same clause, not only the immediately adjacent word. This blocks misleading crops like `No radiographic evidence of infection` -> `infection is present`. English/Arabic hard sentence breaks are respected; commas preserve negation in symptom lists, but a contrastive `but/لكن` permits an independent positive clause. Quotes beginning with their own explicit negation remain eligible.
