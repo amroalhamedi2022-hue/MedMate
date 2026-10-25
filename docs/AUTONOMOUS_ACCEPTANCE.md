@@ -1,3 +1,11 @@
+## 2026-10-25 — Cloud outbound payload byte cap (integration pending)
+
+- **Source SHA:** `c0b0e6f8528543daa6500d114fdfb66839633249`, draft PR #1 only.
+- **Production:** `CloudBrainGateway` measures the exact UTF-8 serialized JSON body and rejects requests above 96 KiB **before consuming one-shot consent or opening a connection**. This protects against control-heavy input whose JSON escaping greatly expands its byte size; no prompt, PDF, credential or response is persisted.
+- **New Robolectric/JUnit cases:** a 17,000-NUL synthetic prompt must be rejected before transport while leaving its grant unused; HTTP 302 must fail closed without following a redirect, disconnect the connection and consume the one-shot approval.
+- **NOT TESTED on this SHA:** Android/JUnit/lint/Gradle integration is still running at [Actions run 40232014108](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40232014108); no APK artifact or new APK SHA is available yet. The previous successful run 40226941011 predates this source change.
+- **NOT TESTED:** actual HTTPS/TLS and consent allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, medical accuracy, device RAM/thermal and final signed release.
+
 ### Independent Debug APK verification — wrapped textbook MCQs
 - **PASS:** downloaded artifact **12610695015**, extracted 33,536,769-byte `app-debug.apk` and independently recalculated SHA-256 `606e42674fb21c89312f368af5db85d9022363c580a7079e172ca0beae13bb94`, matching CI `APK_SHA256.txt`. ARM64 `libllama.so` and `libllama_jni.so` packaged. This supersedes the earlier pending independent-hash line for this run.
 - **NOT TESTED:** actual GGUF inference, Pad 5 PDF/MCQ experience, live HTTPS consent, medical accuracy, device memory/thermal and final signed release. Native libraries in APK are **not** a successful model execution.
