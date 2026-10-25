@@ -101,6 +101,23 @@ class BrainRetrievalRegressionTest {
         assertEquals("diagnoses", ClinicalTermNormalizer.canonical("diagnoses"))
     }
 
+    @Test fun corruptedPdfGlyphsCannotBecomeGroundingOrCitationSources() {
+        val pages = listOf(
+            PageSource("ortho", 0, "Fracture fracture \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"),
+            PageSource("ortho", 1, "Fracture management requires assessment of neurovascular status."),
+            PageSource("other", 0, "Fracture management in another PDF is not evidence here.")
+        )
+        val result = StudyBrain.search("ortho", pages, "fracture")
+        assertEquals(BrainSearchStatus.FOUND, result.status)
+        assertEquals(1, result.shownPages)
+        assertEquals(listOf(1), result.evidence.map { it.pageIndex }.distinct())
+        val prepared = StudyBrain.prepareSourceOnly("ortho", "fracture", result)
+        assertEquals(listOf(1), prepared!!.presentedEvidence.map { it.pageIndex }.distinct())
+        val damagedOnly = StudyBrain.search("ortho", pages, "fracture", onlyPage = 0)
+        assertEquals(BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, damagedOnly.status)
+        assertTrue(damagedOnly.evidence.isEmpty())
+    }
+
     @Test fun shortQuestionCountsOnlySelectedPdfPages() {
         val pages = listOf(
             PageSource("ortho", 0, "A fracture is a break in bone continuity."),
