@@ -618,3 +618,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS (source inspection):** new result property, UI gate and regression assertions are committed to the PR branch.
 - **NOT TESTED:** Gradle JUnit/Compose compilation and Android CI on the new SHA; real llama.cpp/GGUF inference, Pad 5 memory/thermal, PDF grounding, actual HTTPS/consent and medical accuracy.
 - **Purposeful Android build question:** do the updated Compose UI and Kotlin test suite compile and pass with the actual Android project? Isolated source review cannot answer that. Debug build is for integration only, not a final APK.
+
+
+## 2026-10-26 — Native inference diagnostic: fake-port separation gate
+- **Functional source SHA:** `d0952ef2d764f5dc8d09c0fac7fc7a7d7cb10e74`. `NativeProbeResult` now separates response-grounding checks from a full diagnostic pass; a pass requires the production `LlamaAndroidPort` implementation as well as a fresh challenge, valid citation syntax and no prompt/source echo. The Compose UI reports the backend gate separately from response checks.
+- Added `aPerfectFakeResponseNeverCountsAsNativeInference`: a fake port can pass response-format checks but must fail `nativeBackendConfirmed` and `diagnosticPassed`. Existing fake-port tests remain contract tests only, not native inference evidence.
+- **PASS Android CI:** [run 40242016531](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40242016531) on functional SHA `d0952ef2d764f5dc8d09c0fac7fc7a7d7cb10e74`: JUnit, Android Lint, Compose/Kotlin compilation and Debug APK assembly succeeded.
+- **PASS test report:** downloaded report artifact `12617825278` records **122 tests, 0 failures, 0 ignored**; the new fake-vs-native gate regression passed.
+- **PASS independent APK hash:** downloaded artifact `12617595782`, extracted the 33,553,153-byte `app-debug.apk` and independently recalculated SHA-256 `a4d201eea082a346aae4c2b673addb2c99b2c2a4d3dfbfd89af3753fb6b7e728`, matching `APK_SHA256.txt` from CI. ARM64 llama.cpp libraries are packaged; no GGUF weights or personal PDF are included.
+- **NOT TESTED:** genuine GGUF/JNI inference on a physical Xiaomi Pad 5, clinical accuracy, real HTTPS consent/denial, actual RAM/thermal behavior and signed final release. A production-port gate in source and passing fake-port tests do not substitute for running a real model on device.
