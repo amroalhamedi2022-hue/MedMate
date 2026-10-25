@@ -177,4 +177,44 @@ class OfflineDraftsTest {
             .none { it.kind == DraftKind.SOURCE_MCQ })
     }
 
+
+    @Test fun oversizedPrintedQuestionIsRejectedRatherThanSilentlyTruncatingEvidence() {
+        val huge = buildString {
+            appendLine("Q1. Which printed option is the textbook answer?")
+            for (letter in listOf('a', 'b', 'c', 'd')) {
+                appendLine("$letter) " + "clinical ".repeat(95))
+            }
+            appendLine("Answer: A")
+            appendLine("Explanation: " + "Printed explanation. ".repeat(130))
+        }
+        val items = OfflineStudyDrafts.extract(listOf(PageSource("book", 5, huge)))
+        assertTrue("A clipped quote cannot establish the printed answer key",
+            items.none { it.kind == DraftKind.SOURCE_MCQ })
+    }
+
+    @Test fun oversizedQuestionDoesNotHideNextFullyCitedQuestionOnSamePage() {
+        val huge = buildString {
+            appendLine("Q1. Which printed option is the textbook answer?")
+            for (letter in listOf('a', 'b', 'c', 'd')) {
+                appendLine("$letter) " + "clinical ".repeat(95))
+            }
+            appendLine("Answer: A")
+            appendLine("Explanation: " + "Printed explanation. ".repeat(130))
+        }
+        val valid = """
+            Q2. Which printed finding is correct?
+            a) First printed option.
+            b) Second printed option.
+            c) Third printed option.
+            d) Fourth printed option.
+            Answer: B
+        """.trimIndent()
+        val quizzes = OfflineStudyDrafts.extract(listOf(PageSource("book", 5, huge + "\n" + valid)))
+            .filter { it.kind == DraftKind.SOURCE_MCQ }
+        assertEquals(1, quizzes.size)
+        assertEquals(1, quizzes.single().correctIndex)
+        assertTrue(quizzes.single().sourceQuote.contains("Answer: B"))
+        assertTrue(quizzes.single().sourceQuote.length <= 5500)
+    }
+
 }
