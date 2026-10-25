@@ -81,10 +81,10 @@ object GeneratedStudyDrafts {
                 val negations = setOf("no", "not", "without", "absence", "absent",
                     "negative", "لا", "لم", "لن", "ليس", "ليست", "غير",
                     "عدم", "دون", "بدون", "غياب")
-                val firstQuotedWord = Regex("""[\\p{L}]+""").find(quote)?.value
+                val firstQuotedWord = Regex("""[\p{L}]+""").find(quote)?.value
                 val prefix = source.substring(0, at)
-                val clauseStart = prefix.indexOfLast { it in ".!?;:،؛\\n\\r" } + 1
-                val precedingWords = Regex("""[\\p{L}]+""")
+                val clauseStart = prefix.indexOfLast { it in ".!?;:،؛\n\r" } + 1
+                val precedingWords = Regex("""[\p{L}]+""")
                     .findAll(prefix.substring(clauseStart)).map { it.value }
                     .toList().takeLast(6)
                 val omittedNegation = firstQuotedWord !in negations &&
