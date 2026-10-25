@@ -438,3 +438,9 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS (source inspection):** production UI invokes `NativeInferenceProbe.run(onDevice)`, where `onDevice` is `LlamaAndroidPort`, not `FakeLlama`; a model must be loaded before the probe. Three JUnit tests explicitly use a fake port and **do not count as native inference**.
 - **NOT TESTED:** execution of the new JUnit tests, Android Compose compile/lint/APK on latest head, actual llama.cpp/GGUF inference, device memory/thermal, clinical PDF grounding, cloud HTTPS and physical Pad 5. A successful diagnostic will only prove the synthetic inference request, not medical accuracy.
 - **Purposeful build question:** Does the new probe compile with the real Compose UI and pass the Android unit tests? Source inspection cannot establish Kotlin/Compose integration or packaging. One targeted CI build is warranted, not one build per edit.
+
+
+### Validation closure for synthetic native probe (2026-10-25)
+- **PASS:** [Android CI 40181545922](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40181545922), functional SHA `e341aac08de92f46c91113984064d9ee06ad23ef`: Android JUnit (fake probe contract only), SQLite, lint, Compose and APK.
+- **PASS:** independently extracted 33,536,769-byte `app-debug.apk` from GitHub Artifact **12594915191**, SHA-256 `b4046e53f73a7087513bf548ba94670397fe8d619e1c8b59db5eb836de941920` matches CI. Dex includes `NativeInferenceProbe`, `ORBIT-27`, and the synthetic source ID; ARM64 `libllama.so`/`libllama_jni.so` packaged. No GGUF/PDF/keystore packaged.
+- **NOT TESTED:** actual GGUF inference on Xiaomi Pad 5, device privacy/thermal, medical citation accuracy. A fake unit test or packaged library is not a real model execution. Debug APK is not final.
