@@ -30,13 +30,24 @@ data class NativeProbeResult(
 )
 
 object NativeInferenceProbe {
-    private const val CODE = "ORBIT-27"
+    // Fresh per-run code rejects stale/hard-coded responses. Not JNI attestation.
+    private fun freshChallenge(): String {
+        val bytes = ByteArray(6)
+        java.security.SecureRandom().nextBytes(bytes)
+        return "ORBIT-" + bytes.joinToString("") {
+            (it.toInt() and 0xff).toString(16).padStart(2, '0')
+        }.uppercase(java.util.Locale.ROOT)
+    }
     private const val CHAPTER = "synthetic-native-probe"
 
     suspend fun run(
         port: OnDeviceLlmPort,
+        challengeCode: String = freshChallenge(),
         sampleMemory: () -> NativeProbeMemory? = { null }
     ): NativeProbeResult {
+        require(Regex("^ORBIT-[0-9A-F]{12}$").matches(challengeCode)) {
+            "Invalid synthetic calibration challenge"
+        }
         val name = port.loadedModelName?.takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Load a GGUF model before running the native probe")
         val evidence = Evidence(
@@ -44,7 +55,7 @@ object NativeInferenceProbe {
             chapterId = CHAPTER,
             pageIndex = 0,
             text = "This is a synthetic calibration passage, not a medical textbook or patient PDF. " +
-                "The calibration code written in this passage is $CODE. " +
+                "The calibration code written in this passage is $challengeCode. " +
                 "Only report this code and cite the passage; do not invent a different code."
         )
         val prepared = MedicalPromptBuilder.prepare(
@@ -67,7 +78,10 @@ object NativeInferenceProbe {
             modelName = name,
             elapsedMs = elapsed,
             answerChars = answer.length,
-            calibrationPhrasePresent = answer.contains(CODE, ignoreCase = true),
+            calibrationPhrasePresent = Regex(
+                "(?<![\\p{L}\\p{N}])" + Regex.escape(challengeCode) + "(?![\\p{L}\\p{N}])",
+                RegexOption.IGNORE_CASE
+            ).containsMatchIn(answer),
             citationSyntaxValid = CitationValidator.check(answer, 1).accepted,
             memoryBefore = memoryBefore,
             memoryAfter = memoryAfter
