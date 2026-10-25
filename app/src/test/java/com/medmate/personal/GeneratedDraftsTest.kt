@@ -122,4 +122,33 @@ class GeneratedDraftsTest {
         assertEquals(1, GeneratedStudyDrafts.validate(listOf(faithful), listOf(source)).accepted.size)
     }
 
+    @Test fun multiwordNegationCannotBeRemovedFromMedicalQuote() {
+        fun card(quote: String) = GeneratedCandidate(GeneratedKind.FLASHCARD,
+            "What does this examination show?", "Review the original evidence",
+            sourceId = "S1", supportingQuote = quote)
+        fun accepted(source: String, quote: String): Boolean =
+            GeneratedStudyDrafts.validate(listOf(card(quote)),
+                listOf(Evidence("book:3:0", "book", 3, source))).accepted.isNotEmpty()
+
+        val negative = "No radiographic evidence of infection is present in the joint."
+        assertFalse(accepted(negative, "evidence of infection is present"))
+        assertFalse(accepted(negative, "infection is present in the joint"))
+        assertTrue(accepted(negative, "No radiographic evidence of infection"))
+        assertTrue(accepted(
+            "No fever was observed. The patient remains stable today.",
+            "The patient remains stable today"))
+        assertTrue(accepted(
+            "No fever was observed, but the patient remains stable today.",
+            "the patient remains stable today"))
+        assertTrue(accepted(
+            "No fracture and no evidence of dislocation were identified.",
+            "no evidence of dislocation"))
+        assertFalse(accepted(
+            "لا توجد علامات التهاب في الصورة الشعاعية.",
+            "علامات التهاب في الصورة الشعاعية"))
+        assertTrue(accepted(
+            "لا يوجد التهاب، لكن المفصل يبدو طبيعيا في الفحص.",
+            "المفصل يبدو طبيعيا في الفحص"))
+    }
+
 }
