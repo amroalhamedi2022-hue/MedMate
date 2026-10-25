@@ -1,6 +1,8 @@
 ## 2026-10-25 — PDF citation uncertainty-preservation milestone
 - Production: `GeneratedStudyDrafts` now rejects a source quote that drops an adjacent uncertainty/possibility qualifier (e.g., **possible**, **may**, **cannot**, **ربما**, **احتمال**) within the existing six-word clause window. The previous negation guard remains, and separate sentences or contrastive clauses remain eligible. Original PDF text and page citations are unchanged; human review remains mandatory.
 - Regression: ten synthetic bilingual cases added to the actual Android JUnit suite: cropped vs faithful uncertainty, Arabic qualifiers, cannot-exclude, sentence and contrast boundaries.
+- **Purposeful CI question:** does the real Kotlin quote validator compile with all existing JUnit/Compose code, and do the ten bilingual uncertainty regression cases pass? Text inspection cannot establish Android/JVM compatibility. One targeted Android CI build is justified.
+
 - **NOT TESTED until matching CI:** Kotlin JUnit, Android lint, APK compilation, independent checksum, device PDF flow, actual GGUF model, clinical accuracy and HTTPS consent on Xiaomi Pad 5. Lexical quote protection does **not** establish medical truth or inference.
 - Build rationale: Kotlin source/JUnit compatibility and Android compilation need one purposeful integration build, not repeated APK packaging after each small edit.
 - Draft PR only; no main merge, real PDF, model, secret, paid API, other repository or Library/Handoff changes.
