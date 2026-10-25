@@ -1,0 +1,136 @@
+package com.medmate.personal.brain
+
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.*
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.json.JSONObject
+
+/** Exercises the production HTTPS outbound boundary using an in-memory
+ * connection, NOT a live endpoint. No user PDF, token or external network.
+ * Does not verify actual HTTPS/TLS on a physical device. */
+@RunWith(RobolectricTestRunner::class)
+class CloudGatewayTransportBoundaryTest {
+    private val endpoint = "https://example.org/v1/chat/completions"
+    private val model = "private-relay"
+    private val request = BrainRequestIdentity("synthetic-chapter", "Explain this synthetic passage", true, 2)
+    private val excerpt = "The synthetic sample describes a test-only bone illustration and contains no patient information."
+    private val prepared = MedicalPromptBuilder.prepare(
+        GroundedRequest("synthetic-chapter", request.question,
+            listOf(Evidence("synthetic-chapter:2:0", "synthetic-chapter", 2, excerpt)))
+    )
+
+    private class FakeHttpsConnection(
+        url: URL,
+        private val body: String = """{"choices":[{"message":{"content":"هذا شرح من المصدر [S1]"}}]}"""
+    ) : HttpURLConnection(url) {
+        val requestBytes = ByteArrayOutputStream()
+        var disconnected = false
+        override fun connect() = Unit
+        override fun disconnect() { disconnected = true }
+        override fun usingProxy() = false
+        override fun getOutputStream() = requestBytes
+        override fun getResponseCode() = 200
+        override fun getInputStream() = ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
+    }
+
+    @Test fun approvedRequestWritesOnlyReviewedSyntheticContextOnce() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url).also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val answer = gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
+        assertTrue(answer.contains("[S1]"))
+        assertEquals(1, opened.size)
+        val connection = opened.single()
+        assertTrue(connection.disconnected)
+        assertEquals("POST", connection.requestMethod)
+        assertEquals("Bearer SESSION-TOKEN", connection.getRequestProperty("Authorization"))
+        val json = JSONObject(connection.requestBytes.toString("UTF-8"))
+        assertEquals(model, json.getString("model"))
+        assertEquals(false, json.getBoolean("stream"))
+        val messages = json.getJSONArray("messages")
+        assertEquals(2, messages.length())
+        val transmitted = messages.getJSONObject(1).getString("content")
+        assertEquals(prepared.prompt, transmitted)
+        assertTrue(transmitted.contains(excerpt))
+        assertFalse(transmitted.contains("PRIVATE PATIENT RECORD"))
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, opened.size)
+    }
+
+    @Test fun changedPdfOrPromptAndWrongDestinationNeverOpenConnection() = runBlocking {
+        var sockets = 0
+        val gateway = CloudBrainGateway { url ->
+            sockets++
+            FakeHttpsConnection(url)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val changedPrompt = prepared.copy(prompt = prepared.prompt + "\\nPRIVATE PATIENT RECORD")
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", changedPrompt, consent, request)
+        }.isFailure)
+        val wrongPage = request.copy(sourcePage = 3)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, wrongPage)
+        }.isFailure)
+        assertTrue(runCatching {
+            gateway.explain("https://different.example/v1/chat/completions",
+                model, "", prepared, consent, request)
+        }.isFailure)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, "another-model", "", prepared, consent, request)
+        }.isFailure)
+        assertEquals(0, sockets)
+        // Rejected mismatches do not silently consume a valid explicit grant.
+        assertTrue(consent.permits(endpoint, model, request, seal))
+    }
+
+    @Test fun malformedCredentialAndLegacyGrantFailBeforeTransport() = runBlocking {
+        var sockets = 0
+        val gateway = CloudBrainGateway { url ->
+            sockets++
+            FakeHttpsConnection(url)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "bad\\nAuthorization: leaked", prepared, consent, request)
+        }.isFailure)
+        val legacy = CloudTransferConsent.grant(endpoint, model, request)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, legacy, request)
+        }.isFailure)
+        assertEquals(0, sockets)
+        assertTrue(consent.permits(endpoint, model, request, seal))
+    }
+
+    @Test fun forgedResponseIsRejectedAndCannotReplayConsumedApproval() = runBlocking {
+        var sockets = 0
+        val gateway = CloudBrainGateway { url ->
+            sockets++
+            FakeHttpsConnection(url,
+                """{"choices":[{"message":{"content":"شرح بلا استشهاد PDF"}}]}""")
+        }
+        val consent = CloudTransferConsent.grant(
+            endpoint, model, request, CloudEvidenceSeal.of(prepared, request))
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, sockets)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, sockets)
+    }
+}
