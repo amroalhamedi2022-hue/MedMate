@@ -4,10 +4,11 @@ package com.medmate.personal.brain
 data class BrainSearchResult(
     val evidence: List<Evidence>,
     val status: BrainSearchStatus,
-    val shownPages: Int
+    val shownPages: Int,
+    val excludedCorruptedPages: Int = 0
 )
 
-enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, TOO_SHORT }
+enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, CORRUPTED_PDF_TEXT, TOO_SHORT }
 
 object StudyBrain {
     // Bound retained PDF text and token maps: one active chapter at a time.
@@ -37,20 +38,27 @@ object StudyBrain {
         // A clearly corrupted PDF extraction must not become source evidence
         // for a generated medical explanation. Keep the original PDF intact;
         // the coverage panel identifies the excluded page for inspection.
-        val chapterPages = pages.filter {
-            it.chapterId == chapterId && !PdfCoverageAudit.likelyCorruptedText(it.text)
+        val scoped = pages.filter { it.chapterId == chapterId }
+        // Distinguish extraction damage from scanned/image-only pages. The
+        // latter may need OCR; corrupt text must never become LLM evidence.
+        val corruptInScope = scoped.count {
+            (onlyPage == null || it.pageIndex == onlyPage) &&
+                PdfCoverageAudit.likelyCorruptedText(it.text)
         }
+        val chapterPages = scoped.filterNot { PdfCoverageAudit.likelyCorruptedText(it.text) }
         val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
         val readablePages = valid.count { it.text.isNotBlank() }
         if (MedicalText.queryTokens(cleaned).isEmpty())
-            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages)
+            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages, corruptInScope)
         if (readablePages == 0)
-            return BrainSearchResult(emptyList(), BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, 0)
+            return BrainSearchResult(emptyList(), if (corruptInScope > 0)
+                BrainSearchStatus.CORRUPTED_PDF_TEXT else BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT,
+                0, corruptInScope)
         val index = reusableIndex(chapterId, chapterPages)
         val results = if (index != null) index.search(chapterId, cleaned, pageIndex = onlyPage, limit = 5)
             else EvidenceRetriever(PageSegmenter(850).split(valid)).search(chapterId, cleaned, limit = 5)
         return BrainSearchResult(results, if (results.isEmpty()) BrainSearchStatus.NO_MATCH else BrainSearchStatus.FOUND,
-            readablePages)
+            readablePages, corruptInScope)
     }
 
     fun prepareSourceOnly(chapterId: String, question: String, found: BrainSearchResult,
