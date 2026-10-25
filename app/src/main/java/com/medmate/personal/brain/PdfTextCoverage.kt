@@ -29,18 +29,22 @@ object PdfCoverageAudit {
     /**
      * Conservative warning gate for clearly damaged PDF text extraction.
      * A few replacement glyphs are common in otherwise valid textbooks;
-     * only dense U+FFFD sequences or embedded NUL controls trigger it.
+     * only dense U+FFFD sequences or repeated unsafe C0 controls trigger it.
      * This is NOT OCR quality scoring or a medical factuality check.
      */
     fun likelyCorruptedText(text: String): Boolean {
         if (text.isEmpty()) return false
         var replacements = 0
-        var nul = 0
+        var unsafeControls = 0
         for (char in text) {
             if (char == '\uFFFD') replacements++
-            if (char == '\u0000') nul++
+            // PDF extraction may return invisible C0 controls other than NUL.
+            // Preserve legitimate line breaks, tabs and page/form separators.
+            if (char.code < 0x20 && char != '\n' && char != '\r' &&
+                char != '\t' && char != '\u000C') unsafeControls++
         }
-        return nul >= 2 || (replacements >= 4 && replacements.toLong() * 12 >= text.length)
+        return unsafeControls >= 2 ||
+            (replacements >= 4 && replacements.toLong() * 12 >= text.length)
     }
 
     fun inspect(chapterId: String, totalPages: Int, pages: List<PageSource>,

@@ -81,6 +81,19 @@ class PdfTextCoverageTest {
         assertFalse(report.toString().contains("Neurovascular"))
     }
 
+    @Test fun repeatedInvisiblePdfControlsAreQuarantinedButNormalFormattingIsNot() {
+        val damaged = "Fracture of the forearm" + "\u0001\u0002" +
+            " requires clinical assessment of the patient."
+        val valid = "Fracture\nassessment\r\nwith\tclinical\u000Cpage breaks is searchable."
+        assertTrue(PdfCoverageAudit.likelyCorruptedText(damaged))
+        assertFalse(PdfCoverageAudit.likelyCorruptedText(valid))
+        assertFalse(PdfCoverageAudit.likelyCorruptedText("One stray \u0001 control with otherwise clean text."))
+        val report = PdfCoverageAudit.inspect(chapter, 2, listOf(page(0, damaged), page(1, valid)))
+        assertEquals(1, report.garbledPages)
+        assertEquals(1, report.readablePages)
+        assertEquals(listOf(0), report.firstUnusablePages)
+    }
+
     @Test fun largePageCountsBoundNavigationAndNeverRetainPdfText() {
         val report = PdfCoverageAudit.inspect(chapter, 20_000,
             listOf(page(10, "Enough clinical source material to index.")), maxListed = 5)

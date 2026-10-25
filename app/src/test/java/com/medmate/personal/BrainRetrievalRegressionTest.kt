@@ -119,6 +119,23 @@ class BrainRetrievalRegressionTest {
         assertTrue(damagedOnly.evidence.isEmpty())
     }
 
+    @Test fun invisibleControlDamageNeverBecomesMedicalEvidence() {
+        val damaged = PageSource("ortho", 0,
+            "Fracture management \u0001\u0002 includes important neurovascular assessment.")
+        val valid = PageSource("ortho", 1,
+            "Fracture management includes a documented neurovascular examination.")
+        val result = StudyBrain.search("ortho", listOf(damaged, valid), "fracture neurovascular")
+        assertEquals(BrainSearchStatus.FOUND, result.status)
+        assertEquals(1, result.excludedCorruptedPages)
+        assertEquals(0, result.firstCorruptedPage)
+        assertEquals(listOf(1), result.evidence.map { it.pageIndex }.distinct())
+        val prepared = StudyBrain.prepareSourceOnly("ortho", "fracture neurovascular", result)
+        assertEquals(listOf(1), prepared!!.presentedEvidence.map { it.pageIndex }.distinct())
+        val damagedOnly = StudyBrain.search("ortho", listOf(damaged, valid), "fracture", onlyPage = 0)
+        assertEquals(BrainSearchStatus.CORRUPTED_PDF_TEXT, damagedOnly.status)
+        assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", damagedOnly))
+    }
+
     @Test fun shortQuestionCountsOnlySelectedPdfPages() {
         val pages = listOf(
             PageSource("ortho", 0, "A fracture is a break in bone continuity."),
@@ -133,7 +150,7 @@ class BrainRetrievalRegressionTest {
         assertEquals(1, StudyBrain.search("surgery", pages, "?").shownPages)
     }
     @Test fun corruptedAndImageOnlyPdfPagesHaveDifferentGuidanceAndNoFalseCitations() {
-        val damaged = "Fracture " + "\\uFFFD".repeat(14)
+        val damaged = "Fracture " + "\uFFFD".repeat(14)
         val pages = listOf(
             PageSource("ortho", 0, damaged),
             PageSource("ortho", 1, "   "),

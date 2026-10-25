@@ -8,6 +8,7 @@ kotlinc \
   app/src/main/java/com/medmate/personal/brain/BrainCore.kt \
   app/src/main/java/com/medmate/personal/brain/IndexedEvidenceRetriever.kt \
   app/src/main/java/com/medmate/personal/brain/StudyBrain.kt \
+  app/src/main/java/com/medmate/personal/brain/PdfTextCoverage.kt \
   app/src/main/java/com/medmate/personal/brain/GatewayPolicy.kt \
   scripts/brain/BrainPipelineSmoke.kt \
   -include-runtime -d "$out/brain.jar"

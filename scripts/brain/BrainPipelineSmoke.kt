@@ -161,5 +161,23 @@ fun main() {
         verified(!GatewayPolicy.validSessionToken(bad), "reject unsafe bearer header")
     }
     verified(!GatewayPolicy.validSessionToken("x".repeat(2049)), "reject oversized bearer header")
+    // A PDF extractor may emit invisible C0 controls that masquerade as
+    // ordinary text. They must never enter source-grounded explanations.
+    val damagedControl = PageSource("ortho", 10,
+        "Fracture treatment \u0001\u0002 requires careful clinical assessment.")
+    val cleanControl = PageSource("ortho", 11,
+        "Fracture treatment requires careful clinical assessment.\nNext line.")
+    verified(PdfCoverageAudit.likelyCorruptedText(damagedControl.text),
+        "repeated unsafe controls quarantine extracted text")
+    verified(!PdfCoverageAudit.likelyCorruptedText(cleanControl.text),
+        "normal PDF line breaks are not corruption")
+    val controlSearch = StudyBrain.search("ortho", listOf(damagedControl, cleanControl), "fracture")
+    verified(controlSearch.excludedCorruptedPages == 1 &&
+        controlSearch.evidence.all { it.pageIndex == 11 },
+        "corrupt control page cannot become medical evidence")
+    verified(StudyBrain.search("ortho", listOf(damagedControl), "fracture").status ==
+        BrainSearchStatus.CORRUPTED_PDF_TEXT,
+        "corrupt-only PDF receives distinct source warning")
+
     println("PASS: $checks Brain pipeline and HTTPS security assertions")
 }
