@@ -479,7 +479,11 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                         nativeProbe?.let { probe ->
                             Text(
                                 "استدلال محلي: ${probe.modelName.take(32)} · ${probe.elapsedMs} ms · " +
-                                    "${probe.answerChars} حرف · رمز الاختبار: " +
+                                    "${probe.answerChars} حرف · مسار LlamaAndroidPort: " +
+                                    (if (probe.nativeBackendConfirmed) "PASS" else "FAIL") +
+                                    " · فحوص الاستجابة: " +
+                                    (if (probe.responseChecksPassed) "PASS" else "FAIL") +
+                                    " · رمز الاختبار: " +
                                     (if (probe.calibrationPhrasePresent) "PASS" else "FAIL") +
                                     " · صيغة المصدر: " +
                                     (if (probe.citationSyntaxValid) "PASS" else "FAIL") +
