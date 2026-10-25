@@ -1,3 +1,13 @@
+## 2026-10-25 — Bounded wrapped PDF MCQ stem recovery (Arabic + English)
+- **Functional SHA:** `14c48bc8dbd7ec1b14fcf54225eaa33a89863987`, existing draft PR #1 only.
+- **Production:** `OfflineStudyDrafts` now reconstructs up to four short PDF-wrapped question-stem lines before the first printed option, for Arabic and English textbook questions. A fifth line or overlong stem aborts extraction rather than attaching unrelated page text. Correct answers still require one explicit printed same-page key; duplicate/conflicting keys remain rejected.
+- **New JUnit cases:** wrapped English and Arabic stems, original chapter/page anchors, excessive continuation rejection and duplicate-key fail-closed. No generated medical claims, private PDFs, keys or model weights.
+- **Build rationale:** the actual Kotlin regex/branch logic, JUnit suite, Android lint and APK integration cannot be established by source review alone; a targeted CI build was warranted.
+- **PASS (Android CI):** [run 40222490095](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40222490095) completed successfully on functional SHA: `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, including new tests. Debug Artifact **12610695015**, reports **12610330785**.
+- **PASS (CI-calculated APK SHA-256):** `606e42674fb21c89312f368af5db85d9022363c580a7079e172ca0beae13bb94`. Independent artifact download/re-hash **NOT TESTED**.
+- **NOT TESTED:** real Pad 5 PDF extraction and MCQ rendering, human medical QA, genuine GGUF/llama.cpp inference, real HTTPS cloud allow/deny, memory/thermal, final signed release. JUnit and packaging do **not** prove on-device model execution.
+- No merge, main write or unrelated repository/library modifications. Debug is not final.
+
 ## 2026-10-25 — Offline Arabic textbook MCQ + definition extraction (functional milestone)
 
 - **Production:** `OfflineStudyDrafts` recognizes printed Arabic questions
