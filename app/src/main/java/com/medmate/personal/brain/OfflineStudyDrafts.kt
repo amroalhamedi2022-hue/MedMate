@@ -30,7 +30,7 @@ object OfflineStudyDrafts {
     private val questionHeader = Regex("^(?:(?:Q(?:uestion)?|س(?:ؤال)?)\\s*[-#.:]?\\s*)([0-9٠-٩۰-۹]{1,4})[.)\\s:：-]+(.{10,})$", RegexOption.IGNORE_CASE)
     // Printed Arabic medical MCQs often use أ/ب/ج/د/هـ rather than A-E.
     // Keep one canonical key space; never infer an answer from option order.
-    private val optionLine = Regex("^([a-eA-Eأابجدهـ])[.)]\\s*(.{2,})$")
+    private val optionLine = Regex("^([a-eA-Eأابجده]|هـ)[.)]\\s*(.{2,})$")
     private fun canonicalOption(raw: String): Char? = when (raw.lowercase(Locale.ROOT)) {
         "a", "أ", "ا" -> 'a'
         "b", "ب" -> 'b'
@@ -39,7 +39,7 @@ object OfflineStudyDrafts {
         "e", "ه", "هـ" -> 'e'
         else -> null
     }
-    private val answerLine = Regex("^(?:answer|correct answer|ans|الإجابة(?:\\s+الصحيحة)?|الاجابة(?:\\s+الصحيحة)?|الجواب|الحل)\\s*[:：-]\\s*([a-eA-Eأابجدهـ])\\s*[.)]?\\s*$", RegexOption.IGNORE_CASE)
+    private val answerLine = Regex("^(?:answer|correct answer|ans|الإجابة(?:\\s+الصحيحة)?|الاجابة(?:\\s+الصحيحة)?|الجواب|الحل)\\s*[:：-]\\s*([a-eA-Eأابجده]|هـ)\\s*[.)]?\\s*$", RegexOption.IGNORE_CASE)
     // Treat every printed answer label as a key attempt. A second key or an
     // unparseable key (e.g. "Answer: A and C") invalidates the whole MCQ.
     // Never silently keep an earlier valid key when the book is ambiguous.
@@ -168,7 +168,8 @@ object OfflineStudyDrafts {
             val explanation = explanationLine.matchEntire(line)
             when {
                 option != null -> {
-                    val letter = canonicalOption(option.groupValues[1]) ?: run { flush(); continue }
+                    val letter = canonicalOption(option.groupValues[1])
+                    if (letter == null) { flush(); continue }
                     if (s.key != null || s.options.containsKey(letter)) { flush(); continue }
                     s.options[letter] = option.groupValues[2].trim()
                     s.mode = "option"

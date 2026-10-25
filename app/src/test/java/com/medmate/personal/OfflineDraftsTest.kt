@@ -91,9 +91,9 @@ class OfflineDraftsTest {
             د) العبارة الرابعة المطبوعة.
             الإجابة: ب
         """.trimIndent()
-        for (bad in listOf(base + "\\nالإجابة: ج",
+        for (bad in listOf(base + "\nالإجابة: ج",
                 base.replace("الإجابة: ب", "الإجابة: أ و ج"),
-                base + "\\nالجواب: ب")) {
+                base + "\nالجواب: ب")) {
             assertTrue(OfflineStudyDrafts.extract(listOf(PageSource("arabic-book", 2, bad)))
                 .none { it.kind == DraftKind.SOURCE_MCQ })
         }
