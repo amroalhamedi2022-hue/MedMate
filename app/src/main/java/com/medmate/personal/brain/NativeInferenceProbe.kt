@@ -28,10 +28,16 @@ data class NativeProbeResult(
     val memoryBefore: NativeProbeMemory? = null,
     val memoryAfter: NativeProbeMemory? = null,
     // A model that merely echoes its source/prompt has not demonstrated retrieval.
-    val promptEchoDetected: Boolean = false
+    val promptEchoDetected: Boolean = false,
+    // A clean fake-port response is useful for contract tests, but it is not
+    // evidence that the production llama.cpp/JNI backend actually ran.
+    val nativeBackendConfirmed: Boolean
 ) {
-    val diagnosticPassed: Boolean
+    val responseChecksPassed: Boolean
         get() = calibrationPhrasePresent && citationSyntaxValid && !promptEchoDetected
+
+    val diagnosticPassed: Boolean
+        get() = nativeBackendConfirmed && responseChecksPassed
 }
 
 object NativeInferenceProbe {
@@ -95,7 +101,8 @@ object NativeInferenceProbe {
             promptEchoDetected = answer.contains(prepared.prompt, ignoreCase = true) ||
                 answer.contains(evidence.text, ignoreCase = true) ||
                 answer.contains("This is a synthetic calibration passage", ignoreCase = true) ||
-                answer.contains("Only report this code and cite the passage", ignoreCase = true)
+                answer.contains("Only report this code and cite the passage", ignoreCase = true),
+            nativeBackendConfirmed = port is LlamaAndroidPort
         )
     }
 }
