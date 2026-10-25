@@ -37,7 +37,9 @@ class NativeInferenceProbeTest {
         assertTrue(report.calibrationPhrasePresent)
         assertTrue(report.citationSyntaxValid)
         assertFalse(report.promptEchoDetected)
-        assertTrue(report.diagnosticPassed)
+        assertTrue(report.responseChecksPassed)
+        assertFalse(report.nativeBackendConfirmed)
+        assertFalse(report.diagnosticPassed)
         assertEquals(null, report.memoryBefore)
         assertEquals(null, report.memoryAfter)
         val prompt = requireNotNull(port.captured)
@@ -46,6 +48,14 @@ class NativeInferenceProbeTest {
         assertEquals("synthetic-native-probe", prompt.presentedEvidence.single().chapterId)
         assertTrue(prompt.prompt.contains(CHALLENGE))
         assertTrue(prompt.prompt.contains("[S1]"))
+    }
+
+    @Test fun aPerfectFakeResponseNeverCountsAsNativeInference() = runBlocking {
+        val fake = RecordingFakePort("The calibration code is ORBIT-001122334455 [S1].")
+        val result = NativeInferenceProbe.run(fake, challengeCode = CHALLENGE)
+        assertTrue(result.responseChecksPassed)
+        assertFalse(result.nativeBackendConfirmed)
+        assertFalse(result.diagnosticPassed)
     }
 
     @Test fun diagnosticMemorySamplesAreLabeledAndNeverCalledPeak() = runBlocking {
