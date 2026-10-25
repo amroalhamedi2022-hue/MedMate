@@ -83,6 +83,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var localAnswer by remember(chapter.sha256) { mutableStateOf<String?>(null) }
     var localCitationCheck by remember { mutableStateOf<CitationCheck?>(null) }
     var localInferenceAudit by remember(chapter.sha256) { mutableStateOf<LocalInferenceAudit?>(null) }
+    var localCitationLinks by remember(chapter.sha256) { mutableStateOf<List<SourceCitationLink>>(emptyList()) }
+    var cloudCitationLinks by remember(chapter.sha256) { mutableStateOf<List<SourceCitationLink>>(emptyList()) }
     val modelPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null && !localBusy) scope.launch {
             localBusy = true; localImportBytes = 0L; error = null
@@ -149,6 +151,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             busy = true; progress = 0; results = null; prepared = null; cloudAnswer = null
             generatedDrafts = emptyList(); rejectedGenerated = 0; reviewedGenerated = emptySet(); generatedBy = ""
             validation = null; localAnswer = null; localCitationCheck = null; localInferenceAudit = null
+            localCitationLinks = emptyList(); cloudCitationLinks = emptyList()
             error = null; explicitConsent = false; cloudConsent = null
             val capturedQuestion = question.trim()
             val capturedOnly = pageOnly
@@ -361,7 +364,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             val requestIdentity = BrainRequestIdentity(
                                 chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
                             localBusy = true; error = null; localAnswer = null
-                            localCitationCheck = null; localInferenceAudit = null
+                            localCitationCheck = null; localInferenceAudit = null; localCitationLinks = emptyList()
                             scope.launch {
                                 try {
                                     val startNanos = System.nanoTime()
@@ -374,6 +377,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                         localAnswer = response
                                         localCitationCheck = audit.citationCheck
                                         localInferenceAudit = audit
+                                        localCitationLinks = SourceCitationLinks.resolve(response, p.presentedEvidence)
                                     } else {
                                         error = "تغيّر السؤال أو الصفحة أثناء الاستدلال؛ تجاهلنا النتيجة القديمة."
                                     }
@@ -425,6 +429,14 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 style = MaterialTheme.typography.bodySmall, color = Muted)
                         }
                         Text(reply, style = MaterialTheme.typography.bodyMedium)
+                        if (localCitationLinks.isNotEmpty()) {
+                            Text("افتح صفحات PDF المرتبطة بعلامات الاستشهاد:", style = MaterialTheme.typography.bodySmall)
+                            localCitationLinks.forEach { link ->
+                                TextButton(onClick = { onJump(link.pageIndex) }) {
+                                    Text("[${link.marker}] ← صفحة ${link.pageNumber}")
+                                }
+                            }
+                        }
                         Text(if (localCitationCheck?.accepted == true)
                             "مراجع [S] موجودة، لكن صحتها الطبية لم تُثبت آليًا."
                         else "تحذير: الاستشهاد ناقص أو غير صالح؛ لا تعتمد الشرح للحفظ.",
@@ -474,7 +486,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
                     if (!consent.permits(endpoint, selectedModel, requestIdentity)) return@Button
                     cloudConsent = null; explicitConsent = false // one approval per transfer
-                    busy = true; error = null; cloudAnswer = null; validation = null
+                    busy = true; error = null; cloudAnswer = null; validation = null; cloudCitationLinks = emptyList()
                     scope.launch {
                         try {
                             val text = CloudBrainGateway().explain(endpoint, selectedModel, token, p, consent, requestIdentity)
@@ -482,6 +494,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
                                 cloudAnswer = text
                                 validation = CitationValidator.check(text, p.presentedEvidence.size)
+                                cloudCitationLinks = SourceCitationLinks.resolve(text, p.presentedEvidence)
                             }
                         } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر الحصول على الشرح" }
                         finally { busy = false }
@@ -571,6 +584,14 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             HorizontalDivider()
             Text("شرح AI — راجعه مع الكتاب", style = MaterialTheme.typography.titleMedium)
             Text(answer, style = MaterialTheme.typography.bodyMedium)
+            if (cloudCitationLinks.isNotEmpty()) {
+                Text("افتح صفحات PDF المرتبطة بعلامات الاستشهاد:", style = MaterialTheme.typography.bodySmall)
+                cloudCitationLinks.forEach { link ->
+                    TextButton(onClick = { onJump(link.pageIndex) }) {
+                        Text("[${link.marker}] ← صفحة ${link.pageNumber}")
+                    }
+                }
+            }
             Text(if (validation?.accepted == true) "علامات الاستشهاد ضمن المصادر المرسلة، لكن صحة كل ادعاء طبي لم تُثبت آليًا."
                 else "تحذير: الإجابة لا تتضمن استشهادًا صالحًا بالمقاطع المتاحة؛ لا تعتمدها للحفظ.",
                 color = if (validation?.accepted == true) Muted else MaterialTheme.colorScheme.error,
