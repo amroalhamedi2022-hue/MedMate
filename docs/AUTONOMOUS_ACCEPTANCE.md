@@ -444,3 +444,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS:** [Android CI 40181545922](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40181545922), functional SHA `e341aac08de92f46c91113984064d9ee06ad23ef`: Android JUnit (fake probe contract only), SQLite, lint, Compose and APK.
 - **PASS:** independently extracted 33,536,769-byte `app-debug.apk` from GitHub Artifact **12594915191**, SHA-256 `b4046e53f73a7087513bf548ba94670397fe8d619e1c8b59db5eb836de941920` matches CI. Dex includes `NativeInferenceProbe`, `ORBIT-27`, and the synthetic source ID; ARM64 `libllama.so`/`libllama_jni.so` packaged. No GGUF/PDF/keystore packaged.
 - **NOT TESTED:** actual GGUF inference on Xiaomi Pad 5, device privacy/thermal, medical citation accuracy. A fake unit test or packaged library is not a real model execution. Debug APK is not final.
+
+
+## 2026-10-25 — Native GGUF probe memory snapshots milestone
+- Production: optional diagnostic now samples Android own-process PSS and system available RAM immediately before and after a synthetic **real LlamaAndroidPort.generate** call. UI labels the readings as two snapshots, **not peak RAM or model-only memory**, and warns when Android reports low memory. The model and synthetic prompt remain local; no user PDF, GGUF or secrets enter GitHub.
+- Contract-only JUnit: `NativeInferenceProbeTest` verifies exactly two samples, values and negative-input rejection using a clearly **fake** port. **NOT TESTED:** genuine model inference, on-device readings, medical correctness or cloud HTTPS.
+- **Purposeful Android build question:** Does the new Compose diagnostics panel compile against Android ActivityManager APIs, and do JUnit, lint and APK packaging pass? Source-only tests cannot validate Compose/Android API linkage. Build only after the milestone source/tests, not after every edit.
+- **Acceptance:** Kotlin/JUnit/CI PENDING; Xiaomi Pad 5 real GGUF, RAM/thermal and PDF citations NOT TESTED. Debug is not final. No main merge.
