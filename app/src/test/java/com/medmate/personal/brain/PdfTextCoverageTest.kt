@@ -62,6 +62,25 @@ class PdfTextCoverageTest {
         }
     }
 
+    @Test fun denseReplacementGlyphsAndNullsAreNotCountedAsSearchableEvidence() {
+        val damaged = "Fracture fracture " + "\uFFFD".repeat(12)
+        val report = PdfCoverageAudit.inspect(chapter, 4, listOf(
+            page(0, damaged),
+            page(1, "Neurovascular examination is required for fracture assessment."),
+            page(2, "Fracture of the radius may affect the wrist. \uFFFD")
+        ))
+        assertEquals(1, report.garbledPages)
+        assertEquals(2, report.readablePages)
+        assertEquals(3, report.indexedPages)
+        assertEquals(listOf(0, 3), report.firstUnusablePages)
+        assertFalse(report.readyForFullChapterSearch)
+        assertTrue(PdfCoverageAudit.likelyCorruptedText("Long sentence \u0000\u0000 with PDF text"))
+        assertFalse(PdfCoverageAudit.likelyCorruptedText(
+            "One replacement \uFFFD inside an otherwise useful medical textbook paragraph."
+        ))
+        assertFalse(report.toString().contains("Neurovascular"))
+    }
+
     @Test fun largePageCountsBoundNavigationAndNeverRetainPdfText() {
         val report = PdfCoverageAudit.inspect(chapter, 20_000,
             listOf(page(10, "Enough clinical source material to index.")), maxListed = 5)
