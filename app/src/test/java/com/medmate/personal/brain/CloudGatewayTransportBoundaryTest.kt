@@ -2,6 +2,7 @@ package com.medmate.personal.brain
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.runBlocking
@@ -27,7 +28,8 @@ class CloudGatewayTransportBoundaryTest {
 
     private class FakeHttpsConnection(
         url: URL,
-        private val body: String = """{"choices":[{"message":{"content":"هذا شرح من المصدر [S1]"}}]}"""
+        private val body: String = """{"choices":[{"message":{"content":"هذا شرح من المصدر [S1]"}}]}""",
+        private val responseStream: InputStream? = null
     ) : HttpURLConnection(url) {
         val requestBytes = ByteArrayOutputStream()
         var disconnected = false
@@ -36,7 +38,7 @@ class CloudGatewayTransportBoundaryTest {
         override fun usingProxy() = false
         override fun getOutputStream() = requestBytes
         override fun getResponseCode() = 200
-        override fun getInputStream() = ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
+        override fun getInputStream(): InputStream = responseStream ?: ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
     }
 
     @Test fun approvedRequestWritesOnlyReviewedSyntheticContextOnce() = runBlocking {
@@ -132,5 +134,71 @@ class CloudGatewayTransportBoundaryTest {
             gateway.explain(endpoint, model, "", prepared, consent, request)
         }.isFailure)
         assertEquals(1, sockets)
+    }
+
+    @Test fun stalledResponseStreamFailsClosedAndDisconnects() = runBlocking {
+        var reads = 0
+        val stalled = object : InputStream() {
+            override fun read(): Int = 0
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                reads++
+                return 0
+            }
+        }
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, responseStream = stalled).also(opened::add)
+        }
+        val consent = CloudTransferConsent.grant(
+            endpoint, model, request, CloudEvidenceSeal.of(prepared, request))
+        val failure = runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+        assertEquals(9, reads)
+        assertEquals(1, opened.size)
+        assertTrue(opened.single().disconnected)
+        assertFalse(consent.permits(endpoint, model, request, CloudEvidenceSeal.of(prepared, request)))
+    }
+
+    @Test fun temporaryEmptyReadsRecoverWithoutDroppingValidGroundedAnswer() = runBlocking {
+        val valid = """{"choices":[{"message":{"content":"شرح اصطناعي من المصدر [S1]"}}]}"""
+        val payload = ByteArrayInputStream(valid.toByteArray(Charsets.UTF_8))
+        var reads = 0
+        val paused = object : InputStream() {
+            override fun read(): Int = payload.read()
+            override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                reads++
+                return if (reads <= 3) 0 else payload.read(buffer, offset, length)
+            }
+        }
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, responseStream = paused).also(opened::add)
+        }
+        val consent = CloudTransferConsent.grant(
+            endpoint, model, request, CloudEvidenceSeal.of(prepared, request))
+        val answer = gateway.explain(endpoint, model, "", prepared, consent, request)
+        assertTrue(answer.contains("[S1]"))
+        assertTrue(reads >= 4)
+        assertTrue(opened.single().disconnected)
+    }
+
+    @Test fun oversizedCloudResponseIsRejectedAndApprovalCannotBeReplayed() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, body = "X".repeat(200_001)).also(opened::add)
+        }
+        val consent = CloudTransferConsent.grant(
+            endpoint, model, request, CloudEvidenceSeal.of(prepared, request))
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, opened.size)
+        assertTrue(opened.single().disconnected)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, opened.size)
     }
 }
