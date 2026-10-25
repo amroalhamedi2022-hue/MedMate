@@ -1,10 +1,11 @@
-## 2026-10-25 — Cloud outbound payload byte cap (integration pending)
+## 2026-10-25 — Cloud outbound payload byte cap (validated build)
 
-- **Source SHA:** `c0b0e6f8528543daa6500d114fdfb66839633249`, draft PR #1 only.
+- **Production/test SHA:** `c0b0e6f8528543daa6500d114fdfb66839633249`, draft PR #1 only.
 - **Production:** `CloudBrainGateway` measures the exact UTF-8 serialized JSON body and rejects requests above 96 KiB **before consuming one-shot consent or opening a connection**. This protects against control-heavy input whose JSON escaping greatly expands its byte size; no prompt, PDF, credential or response is persisted.
-- **New Robolectric/JUnit cases:** a 17,000-NUL synthetic prompt must be rejected before transport while leaving its grant unused; HTTP 302 must fail closed without following a redirect, disconnect the connection and consume the one-shot approval.
-- **NOT TESTED on this SHA:** Android/JUnit/lint/Gradle integration is still running at [Actions run 40232014108](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40232014108); no APK artifact or new APK SHA is available yet. The previous successful run 40226941011 predates this source change.
-- **NOT TESTED:** actual HTTPS/TLS and consent allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, medical accuracy, device RAM/thermal and final signed release.
+- **New Robolectric/JUnit cases:** a 17,000-NUL synthetic prompt is rejected before transport while leaving its grant unused; HTTP 302 fails closed without following a redirect, disconnects the connection and consumes the one-shot approval.
+- **PASS Android CI:** [run 40232014108](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40232014108) completed SUCCESS on source SHA `c0b0e6f8528543daa6500d114fdfb66839633249`; `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` all passed. Build took 4m 43s.
+- **Debug APK artifact:** `12613092336`; CI-calculated inner APK SHA-256 `3f189ca4b1a36db9007f19006ef48f14cb9a7d219c16597cefbcf3bd79348c5c`. Reports artifact `12612808136`. Independent APK re-hash NOT TESTED.
+- **NOT TESTED:** actual HTTPS/TLS and consent allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, medical accuracy, device RAM/thermal and final signed release. This Debug APK is not final.
 
 ### Independent Debug APK verification — wrapped textbook MCQs
 - **PASS:** downloaded artifact **12610695015**, extracted 33,536,769-byte `app-debug.apk` and independently recalculated SHA-256 `606e42674fb21c89312f368af5db85d9022363c580a7079e172ca0beae13bb94`, matching CI `APK_SHA256.txt`. ARM64 `libllama.so` and `libllama_jni.so` packaged. This supersedes the earlier pending independent-hash line for this run.
