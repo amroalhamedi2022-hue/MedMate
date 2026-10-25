@@ -10,7 +10,7 @@ data class SourceCitationLink(val marker: String, val pageIndex: Int) {
 }
 
 object SourceCitationLinks {
-    private val marker = Regex("""\\[S([1-9]\\d*)]""")
+    private val marker = Regex("""\[S([1-9]\d*)]""")
 
     fun resolve(answer: String, evidence: List<Evidence>): List<SourceCitationLink> {
         if (evidence.isEmpty()) return emptyList()
