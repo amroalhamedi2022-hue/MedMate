@@ -1,3 +1,12 @@
+## 2026-10-25 — Cloud payload-bound consent + exact PDF preview
+- **Production:** `CloudEvidenceSeal.of` now fingerprints the entire reviewed explanation prompt in addition to question, chapter, page and exact excerpts; altered prompt text with unchanged excerpts cannot reuse a grant. Cloud study-draft generation validates the **original reviewed PreparedPrompt** and derives its JSON-only prompt deterministically from the same source excerpts, avoiding a mismatched consent seal.
+- **UI:** Cloud consent is disabled until the user opens a preview showing the exact bounded PDF excerpts (with [S#] page markers) and question. Preview-review state resets when the prepared question/PDF context changes; no PDF bytes, tokens or models are persisted/uploaded to GitHub.
+- **Tests committed:** JUnit regressions for changed prompt with unchanged source and deterministic draft-source consent, alongside prior one-shot/replay/mismatched chapter checks.
+- **PASS (source):** verified changed Kotlin source and UI integration paths against the same PR branch; previous cloud-citation CI run 40173779293 completed SUCCESS on older SHA `bb917c12`, **not** evidence for this batch.
+- **NOT TESTED:** new JUnit and Compose compilation/Android CI, actual HTTPS allow/deny behavior, real GGUF inference, Xiaomi Pad 5 and medical accuracy.
+- **Build question:** do new consent/JUnit contracts compile with the Compose preview and remain packaged without breaking the existing native llama binding? Source inspection cannot prove Kotlin/Compose compilation; one targeted CI run is justified.
+- **No final release:** PR #1 Draft; no `main` writes, no paid API, no Handoff/Library changes.
+
 ## 2026-10-25 — Reject cloud explanations with missing/forged PDF citations
 - Production: `CitationValidator.requireGroundedCloudAnswer` rejects ungrounded or forged cloud explanation output; `CloudBrainGateway.explain` invokes it before returning any answer to the UI. An explicit evidence-insufficient abstention without a fake citation remains valid. Study-draft JSON uses its separate quote/source validation, unchanged.
 - Regression: four checks added to `scripts/brain/BrainPipelineSmoke.kt` and a new Android JUnit `CloudAnswerGateTest.kt` for valid source markers, unsupported claims, forged markers and abstention.
