@@ -143,15 +143,18 @@ class BrainRetrievalRegressionTest {
         val corrupt = StudyBrain.search("ortho", pages, "fracture", onlyPage = 0)
         assertEquals(BrainSearchStatus.CORRUPTED_PDF_TEXT, corrupt.status)
         assertEquals(1, corrupt.excludedCorruptedPages)
+        assertEquals(0, corrupt.firstCorruptedPage)
         assertEquals(0, corrupt.shownPages)
         assertTrue(corrupt.evidence.isEmpty())
         assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", corrupt))
         val scanned = StudyBrain.search("ortho", pages, "fracture", onlyPage = 1)
         assertEquals(BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT, scanned.status)
         assertEquals(0, scanned.excludedCorruptedPages)
+        assertNull(scanned.firstCorruptedPage)
         val good = StudyBrain.search("ortho", pages, "fracture")
         assertEquals(BrainSearchStatus.FOUND, good.status)
         assertEquals(1, good.excludedCorruptedPages)
+        assertEquals(0, good.firstCorruptedPage)
         assertEquals(1, good.shownPages)
         assertEquals(listOf(2), good.evidence.map { it.pageIndex }.distinct())
         assertEquals(listOf(2), StudyBrain.prepareSourceOnly("ortho", "fracture", good)!!
@@ -159,6 +162,7 @@ class BrainRetrievalRegressionTest {
         val short = StudyBrain.search("ortho", pages, "?")
         assertEquals(BrainSearchStatus.TOO_SHORT, short.status)
         assertEquals(1, short.excludedCorruptedPages)
+        assertEquals(0, short.firstCorruptedPage)
         assertEquals(0, StudyBrain.search("foreign", pages, "fracture", onlyPage = 1).excludedCorruptedPages)
     }
 
