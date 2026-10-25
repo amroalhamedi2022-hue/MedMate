@@ -89,4 +89,37 @@ class GeneratedDraftsTest {
         }
     }
 
+    @Test fun arabicVowelMarksAndAlefVariantsStillRequireTheExactSourcePage() {
+        val source = Evidence("chapter:7:0", "chapter", 7,
+            "يحدث إِلْتِهَابُ العَظْمِ بعد العدوى ويحتاج إلى تقييم طبي.")
+        val card = GeneratedCandidate(GeneratedKind.FLASHCARD,
+            "ماذا يذكر النص عن التهاب العظم؟", "قد يحدث بعد العدوى",
+            sourceId = "S1", supportingQuote = "يحدث التهاب العظم بعد العدوى")
+        val accepted = GeneratedStudyDrafts.validate(listOf(card), listOf(source))
+        assertEquals(1, accepted.accepted.size)
+        assertEquals(7, accepted.accepted.single().pageIndex)
+        assertEquals(card.supportingQuote, accepted.accepted.single().sourceQuote)
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(card.copy(sourceId = "S2")),
+            listOf(source)).rejected)
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(card),
+            listOf(source.copy(text = "النص لا يحتوي هذه العبارة إطلاقا، ومصدره مختلف."))).rejected)
+    }
+
+    @Test fun adjacentNegationCannotBeSilentlyDroppedFromGeneratedQuote() {
+        val source = Evidence("chapter:2:0", "chapter", 2,
+            "No evidence of infection is present in the selected examination.")
+        val card = GeneratedCandidate(GeneratedKind.FLASHCARD,
+            "What does the excerpt say about infection?", "Infection",
+            sourceId = "S1", supportingQuote = "evidence of infection is present")
+        // The quote above does not appear contiguously; reject regardless of model claims.
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(card), listOf(source)).rejected)
+        val cropped = card.copy(supportingQuote = "evidence of infection")
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(cropped), listOf(source)).rejected)
+        val arabic = source.copy(text = "لا يوجد التهاب في العظم حسب الفحص المرفق.")
+        val omission = card.copy(supportingQuote = "يوجد التهاب في العظم")
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(omission), listOf(arabic)).rejected)
+        val faithful = card.copy(supportingQuote = "No evidence of infection")
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(faithful), listOf(source)).accepted.size)
+    }
+
 }
