@@ -54,10 +54,12 @@ class CloudBrainGateway {
         systemMessage: String,
         userMessage: String
     ): String = withContext(Dispatchers.IO) {
-        require(prepared.presentedEvidence.isNotEmpty()) { "ما في مقاطع كافية من الكتاب لنرسلها" }
+        // Bind the exact source excerpts/question/page to the user's one-time
+        // consent, not merely the chapter identifier. Reject before any socket.
+        val evidenceSeal = CloudEvidenceSeal.of(prepared, requestIdentity)
         // Enforce the UI approval again at the actual outbound network boundary.
         // A stale/replaced destination, model or PDF/question context fails closed.
-        require(consent.permits(gatewayUrl, model, requestIdentity)) {
+        require(consent.permits(gatewayUrl, model, requestIdentity, evidenceSeal)) {
             "الموافقة السحابية غير صالحة لهذا السؤال أو الوجهة؛ وافق مجددًا"
         }
         val safeUrl = consent.endpoint
@@ -71,7 +73,7 @@ class CloudBrainGateway {
                 .put(JSONObject().put("role", "user").put("content", userMessage)))
         // Claim consent at the final outbound boundary, after validating the
         // endpoint, token and payload. Failed requests require fresh approval.
-        require(consent.consume(gatewayUrl, model, requestIdentity)) {
+        require(consent.consume(gatewayUrl, model, requestIdentity, evidenceSeal)) {
             "الموافقة السحابية استُخدمت أو تغيّر السؤال/المصدر؛ وافق مجددًا"
         }
         val connection = (URL(safeUrl).openConnection() as HttpURLConnection).apply {

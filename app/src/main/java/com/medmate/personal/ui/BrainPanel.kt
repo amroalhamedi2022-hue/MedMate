@@ -564,7 +564,9 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 Checkbox(checked = explicitConsent, enabled = !busy, onCheckedChange = { approved ->
                     val grant = if (approved && prepared != null) runCatching {
                         CloudTransferConsent.grant(gateway, gatewayModel,
-                            BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage))
+                            BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage),
+                            CloudEvidenceSeal.of(prepared!!,
+                                BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)))
                     }.getOrNull() else null
                     cloudConsent = grant
                     explicitConsent = grant != null
@@ -575,7 +577,9 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             }
             Button(enabled = !busy && explicitConsent && prepared != null &&
                 cloudConsent?.permits(gateway, gatewayModel,
-                    BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)) == true &&
+                    BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage),
+                    prepared?.let { CloudEvidenceSeal.of(it,
+                        BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)) } ?: "") == true &&
                 question.trim() == lastQuestion && pageOnly == lastPageOnly &&
                 (!pageOnly || currentPage == lastSourcePage),
                 modifier = Modifier.fillMaxWidth(), onClick = {
@@ -583,7 +587,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val requestIdentity = BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
                     val consent = cloudConsent ?: return@Button
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
-                    if (!consent.permits(endpoint, selectedModel, requestIdentity)) return@Button
+                    if (!consent.permits(endpoint, selectedModel, requestIdentity,
+                        CloudEvidenceSeal.of(p, requestIdentity))) return@Button
                     cloudConsent = null; explicitConsent = false // one approval per transfer
                     busy = true; error = null; cloudAnswer = null; validation = null; cloudCitationLinks = emptyList()
                     scope.launch {
@@ -601,7 +606,9 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 }) { Text("أرسل المقاطع لشرحها") }
             OutlinedButton(enabled = !busy && explicitConsent && prepared != null &&
                 cloudConsent?.permits(gateway, gatewayModel,
-                    BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)) == true &&
+                    BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage),
+                    prepared?.let { CloudEvidenceSeal.of(it,
+                        BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)) } ?: "") == true &&
                 question.trim() == lastQuestion && pageOnly == lastPageOnly &&
                 (!pageOnly || currentPage == lastSourcePage),
                 modifier = Modifier.fillMaxWidth(), onClick = {
@@ -609,7 +616,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val requestIdentity = BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage)
                     val consent = cloudConsent ?: return@OutlinedButton
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
-                    if (!consent.permits(endpoint, selectedModel, requestIdentity)) return@OutlinedButton
+                    if (!consent.permits(endpoint, selectedModel, requestIdentity,
+                        CloudEvidenceSeal.of(p, requestIdentity))) return@OutlinedButton
                     cloudConsent = null; explicitConsent = false // one approval per transfer
                     busy = true; error = null; generatedDrafts = emptyList(); rejectedGenerated = 0
                     reviewedGenerated = emptySet()
