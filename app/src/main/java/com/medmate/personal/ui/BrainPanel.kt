@@ -482,9 +482,11 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     "${probe.answerChars} حرف · رمز الاختبار: " +
                                     (if (probe.calibrationPhrasePresent) "PASS" else "FAIL") +
                                     " · صيغة المصدر: " +
-                                    (if (probe.citationSyntaxValid) "PASS" else "FAIL"),
+                                    (if (probe.citationSyntaxValid) "PASS" else "FAIL") +
+                                    " · عدم ترديد نص المصدر: " +
+                                    (if (probe.promptEchoDetected) "FAIL" else "PASS"),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (probe.calibrationPhrasePresent && probe.citationSyntaxValid)
+                                color = if (probe.diagnosticPassed)
                                     Turquoise else MaterialTheme.colorScheme.error
                             )
                             if (probe.memoryBefore != null && probe.memoryAfter != null) {
