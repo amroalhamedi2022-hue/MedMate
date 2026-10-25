@@ -343,12 +343,18 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             when (result.status) {
                 BrainSearchStatus.TOO_SHORT -> Text("اكتب اسم مفهوم طبي أو سؤال فيه مصطلح محدد.")
                 BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT -> Text("ما فيه نص قابل للاستخراج في النطاق المطلوب. ملفات الصور تحتاج OCR.")
-                BrainSearchStatus.CORRUPTED_PDF_TEXT -> Text(
-                    "تم استبعاد ${result.excludedCorruptedPages} صفحة فيها نص PDF تالف؛ " +
-                        "هذا مش دليل إن الصفحات صور وتحتاج OCR. افتح فحص التغطية فوق " +
-                        "وراجع الصفحة الأصلية قبل الاعتماد على أي شرح.",
-                    color = MaterialTheme.colorScheme.error
-                )
+                BrainSearchStatus.CORRUPTED_PDF_TEXT -> Column {
+                    Text(
+                        "تم استبعاد ${result.excludedCorruptedPages} صفحة فيها نص PDF تالف؛ " +
+                            "هذا مش دليل إن الصفحات صور وتحتاج OCR. راجع الأصل قبل الشرح.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    result.firstCorruptedPage?.let { page ->
+                        TextButton(onClick = { onJump(page) }) {
+                            Text("افتح أول صفحة تالفة: ${page + 1} ↗")
+                        }
+                    }
+                }
                 BrainSearchStatus.NO_MATCH -> Text("ما لقيت مقاطع مطابقة. جرّب المصطلح بالإنجليزي، أو ابحث بكل الشبتر.")
                 BrainSearchStatus.FOUND -> {
                     if (result.excludedCorruptedPages > 0) {
@@ -356,6 +362,11 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             "الشرح والاستشهادات تستخدم النص السليم فقط.",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall)
+                        result.firstCorruptedPage?.let { page ->
+                            TextButton(onClick = { onJump(page) }) {
+                                Text("راجع الصفحة التالفة ${page + 1} ↗")
+                            }
+                        }
                     }
                     Text("${result.evidence.size} مقاطع من الكتاب · ${result.shownPages} صفحة قابلة للبحث",
                         style = MaterialTheme.typography.bodySmall, color = Muted)
