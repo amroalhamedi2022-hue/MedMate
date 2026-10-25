@@ -1,3 +1,32 @@
+## 2026-10-25 — Offline Arabic textbook MCQ + definition extraction (functional milestone)
+
+- **Production:** `OfflineStudyDrafts` recognizes printed Arabic questions
+  (`سؤال ١٧`, `س ۲`), options `أ/ب/ج/د/هـ`, printed
+  `الإجابة/الإجابة الصحيحة/الجواب` keys, and
+  `التفسير/الشرح/التعليل`. Arabic definitions of the form
+  `نقص التروية هو ...` become source-quoted flashcard drafts. Existing
+  English Q/A-E extraction and source page anchors are preserved.
+- **Safety:** correct options are taken ONLY from a single explicit
+  printed answer key on the same PDF page; missing, conflicting or multi-answer
+  keys are rejected, not inferred. Cards are exact source quotes, not generated
+  clinical facts. Human page review remains required before saving.
+- **Regression:** four new Android JUnit cases for Arabic-Indic/Eastern digits,
+  four/five choices, duplicate/multi-key rejection, Arabic definition/page
+  source. Existing English tests preserved; offline Kotlin smoke expanded.
+- **Source SHA:** `b9cd9a1d7a1af78680f40d91739bcb1570141249`.
+  [Targeted Android CI 40217712273](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40217712273)
+  **IN PROGRESS at checkpoint**. Kotlin/JUnit/Compose/lint/APK are
+  **NOT TESTED** on this SHA until CI finishes. No claim of genuine GGUF
+  inference or medical accuracy.
+- **Purposeful build question:** does the real Kotlin parser compile with
+  Arabic Unicode regexes and does it pass all English and Arabic JUnit tests
+  before Android packaging? Source inspection cannot answer that.
+- **NOT TESTED:** genuine GGUF/llama.cpp inference, actual PDF extraction on
+  Xiaomi Pad 5, device memory/thermal, clinical accuracy, real cloud HTTPS
+  consent/denial, final signed APK and independently verified SHA-256.
+- Draft PR only, no `main` write/merge, personal PDF, GGUF, token,
+  paid API or Library/Handoff access.
+
 ## 2026-10-25 — Cloud AI outbound transport consent integration milestone
 
 - **Production:** `CloudBrainGateway` now accepts an injectable HTTPS
