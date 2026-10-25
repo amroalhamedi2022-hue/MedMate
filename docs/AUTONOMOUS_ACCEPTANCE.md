@@ -20,7 +20,7 @@
   Debug artifact **12608059184**, reports **12608357767**;
   CI-calculated inner APK SHA-256
   `0c278b30c89c8a51883a50bb601b1bde614fdd8ffb2577b67f13907291a4b53a`.
-  Independent artifact rehash and physical device remain **NOT TESTED**. No claim of genuine GGUF
+  **PASS independent artifact verification:** downloaded Debug Artifact **12608059184**, extracted 33,536,769-byte APK and independently recalculated SHA-256 `0c278b30c89c8a51883a50bb601b1bde614fdd8ffb2577b67f13907291a4b53a`, matching CI. ARM64 `libllama.so` and `libllama_jni.so` packaged, but **no GGUF model** and no proof of real inference. Downloaded report artifact **12608357767**: **112 JUnit tests PASS, 0 failures, 0 ignored**; `OfflineDraftsTest` 7/7 PASS (including four new Arabic cases). Physical Pad 5 and real model remain **NOT TESTED**. No claim of genuine GGUF
   inference or medical accuracy.
 - **Purposeful build question:** does the real Kotlin parser compile with
   Arabic Unicode regexes and does it pass all English and Arabic JUnit tests
