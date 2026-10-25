@@ -1,52 +1,55 @@
-# MedMate Personal v0.9.1 — Local study drafts (SOURCE ONLY)
+# MedMate Personal — Android medical study app
 
-> Read `docs/V091_BRAIN_RELEASE_AND_GATES_AR.md` first. This ZIP is not an APK.
->
-> Added local GGUF study-draft generation, quote-grounded review, conserved source quote
-> on saved items, and a device-memory preflight. No database migration (schema v3).
-> Runtime Android / native model / real medical accuracy testing remains pending.
+**Current source baseline: v0.9.1, offline-first; IN PROGRESS.**
+The complete sanitized Android source and tests are on draft PR #1 branch
+`automation/medmate-v091-source-tree-20261023`. This is not a final APK.
 
-**Latest source:** v0.9.0 Local Brain experimental. Read `docs/LOCAL_AI_INTEGRATION_2026-10-23_AR.md` for precise completed/unverified status.
+## Study workflow
 
-# MERGED SOURCE v0.8.1 — read README_MERGED.md and docs/MERGE_REPORT_2026-10-23_AR.md first
+- Import private PDFs to app-private storage; extract embedded text, search
+  per chapter/page, open original PDF citations and navigate to cited pages.
+- The offline evidence path is **extractive**, not a generative model.
+  Scanned/image-only pages need OCR; **OCR is not yet implemented**.
+- The source includes an actual llama.cpp-compatible ARM64 integration via
+  `LlamaAndroidPort` and a user-imported GGUF model path. Packaged native
+  libraries or FakeLlama tests **do not prove actual model inference**.
+- PDF-grounded explanations, high-yield study notes, MCQ/flashcards,
+  spaced review (not FSRS yet), mistake history, study exports and explicit
+  ZIP backup/restore are in development.
+- Optional Cloud AI requires a user-provided HTTPS endpoint and **explicit,
+  one-request, context-bound consent**. No paid API is required and no PDF
+  should be sent automatically. Cloud transport and consent still need
+  physical-device verification.
+- Backups are **not encrypted**. Keep exports private; no personal PDFs,
+  GGUF weights, signing keys, tokens or credentials are committed publicly.
 
-# MedMate Personal — v0.6.1 Alpha
+## Latest validated milestone (2026-10-25)
 
-Offline-first Android medical study app for Xiaomi Pad 5 with a responsive phone layout and a Liquid Aurora interface.
+An offline PDF text coverage report distinguishes missing/unindexed,
+empty, low-information and readable pages, with explicit indexing and links
+to suspect pages. It is a source-readiness diagnostic, not OCR or medical QA.
 
-## Implemented
+**PASS:** [Android CI 40155275698](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40155275698)
+on functional SHA `a9ebd0ab32672df14f1ec3c7a96eafce8341e745`,
+including JUnit, Android Lint and Debug APK assembly.
 
-- SHA-256 content-addressed PDF import into app-private storage, Android `PdfRenderer` display, page navigation, last position and page-linked notes.
-- Per-page embedded-text extraction with PDFBox, exact page search and source navigation. Image-only PDFs still require future OCR.
-- Manually authored High-Yield notes, four-option MCQs, flashcards, review scheduling, mistake history and source-page links.
-- History-safe editing: reviewed answers/options stay locked while wording and explanation can be corrected.
-- Anki Basic TSV and High-Yield Markdown export.
-- Explicit ZIP backup/merge restore for PDFs, notes, study items and review history. v1 and v2 backups are readable; current backup format is v2. The ZIP is not encrypted.
-- No accounts and no `INTERNET` or broad-storage permission.
+**NOT TESTED:** real GGUF loading/generation on Xiaomi Pad 5, clinical
+correctness of AI answers and citations, cloud HTTPS on device, scanned
+PDF OCR, thermal/battery behavior, signed upgrade continuity, and final
+independent acceptance. Debug builds are not final releases.
 
-## Build state
+## Build and authoritative records
 
-A real Debug APK was produced from a clean build for v0.6.1-alpha (`versionCode 8`, package `com.medmate.personal`). The project includes the official Gradle 8.13 wrapper JAR and its distribution checksum.
-
-Requirements: JDK 17, Android SDK platform 36 and Build Tools 35.0.0.
+JDK 17, Android SDK platform 36 and the checked-in Gradle wrapper:
 
 ```sh
-./gradlew --no-daemon clean :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
-python3 scripts/test-database-contract.py
-python3 scripts/test-migrations.py
+bash ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
-The last clean Work run passed all 57 Gradle tasks, 28/28 JUnit tests and Android Lint with 0 errors. See `docs/V061_VERIFICATION.md` for the exact checks and remaining limits.
+Read `docs/AUTONOMOUS_ACCEPTANCE.md` for evidence and remaining gates,
+`docs/V091_BRAIN_RELEASE_AND_GATES_AR.md` for the native model plan,
+`docs/IMPORT_STATUS_2026-10-23.md` for sanitized-source provenance, and
+`docs/PAD5_FIRST_RUN_AR.md` for the physical-device checklist. Historical
+v0.6/v0.8 details are preserved in the versioned docs and changelog.
 
-## Data compatibility
-
-- SQLite schema: v3. Upgrades from v1 and v2 are additive; no destructive migration is present.
-- Backup schema: v2, with v1 restore support.
-- A stable debug signing key is kept in `signing/` so future development builds can install over this debug build without requiring an uninstall. It is not a production key.
-- Android automatic backup and device transfer are excluded. Use MedMate's explicit ZIP export and keep that unencrypted archive private.
-
-## Not yet verified
-
-The APK has not been installed on an emulator or a physical Xiaomi Pad 5 in this environment. PDF rendering performance, long-session battery/thermal behavior, rotation and real-device update/data retention still require the checklist in `docs/PAD5_FIRST_RUN_AR.md`.
-
-The next implementation priorities remain tiled/high-resolution PDF work, real FSRS, Exam Planner, then an optional source-grounded AI assistant. Existing storage contracts must be preserved while those features are added.
+No automatic merge, public release, paid service or direct `main` write.
