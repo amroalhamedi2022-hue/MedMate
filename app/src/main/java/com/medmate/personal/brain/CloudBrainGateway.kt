@@ -81,8 +81,15 @@ class CloudBrainGateway(
             .put("messages", JSONArray()
                 .put(JSONObject().put("role", "system").put("content", systemMessage))
                 .put(JSONObject().put("role", "user").put("content", userMessage)))
+        // JSON escaping can expand control-heavy input far beyond its character
+        // count. Bound the exact UTF-8 bytes before consuming consent or opening
+        // a socket; source excerpts and the student prompt stay in-memory only.
+        val payloadBytes = payload.toString().toByteArray(Charsets.UTF_8)
+        require(payloadBytes.size <= MAX_REQUEST_BYTES) {
+            "طلب بوابة AI تجاوز الحد الآمن؛ قلّل النص أو مقتطفات PDF"
+        }
         // Claim consent at the final outbound boundary, after validating the
-        // endpoint, token and payload. Failed requests require fresh approval.
+        // endpoint, token and exact bounded payload. Failed requests require fresh approval.
         require(consent.consume(gatewayUrl, model, requestIdentity, evidenceSeal)) {
             "الموافقة السحابية استُخدمت أو تغيّر السؤال/المصدر؛ وافق مجددًا"
         }
@@ -97,7 +104,7 @@ class CloudBrainGateway(
             if (ephemeralGatewayToken.isNotBlank()) setRequestProperty("Authorization", "Bearer $ephemeralGatewayToken")
         }
         try {
-            connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+            connection.outputStream.use { it.write(payloadBytes) }
             val status = connection.responseCode
             require(status == 200) { "بوابة AI رجّعت خطأ HTTP $status، تحقق من الرابط أو الإعدادات" }
             val response = connection.inputStream.use { limitedRead(it, 200_000) }
@@ -108,6 +115,10 @@ class CloudBrainGateway(
         } finally {
             connection.disconnect()
         }
+    }
+
+    private companion object {
+        const val MAX_REQUEST_BYTES = 96 * 1024
     }
 
     private fun limitedRead(stream: InputStream, max: Int): String {

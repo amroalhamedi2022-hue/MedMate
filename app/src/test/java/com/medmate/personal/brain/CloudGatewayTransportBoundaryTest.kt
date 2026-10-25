@@ -29,15 +29,20 @@ class CloudGatewayTransportBoundaryTest {
     private class FakeHttpsConnection(
         url: URL,
         private val body: String = """{"choices":[{"message":{"content":"هذا شرح من المصدر [S1]"}}]}""",
-        private val responseStream: InputStream? = null
+        private val responseStream: InputStream? = null,
+        private val responseCode: Int = 200,
+        private val failOutput: Boolean = false
     ) : HttpURLConnection(url) {
         val requestBytes = ByteArrayOutputStream()
         var disconnected = false
         override fun connect() = Unit
         override fun disconnect() { disconnected = true }
         override fun usingProxy() = false
-        override fun getOutputStream() = requestBytes
-        override fun getResponseCode() = 200
+        override fun getOutputStream(): ByteArrayOutputStream {
+            if (failOutput) throw java.io.IOException("synthetic write failure")
+            return requestBytes
+        }
+        override fun getResponseCode() = responseCode
         override fun getInputStream(): InputStream = responseStream ?: ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
     }
 
@@ -182,6 +187,41 @@ class CloudGatewayTransportBoundaryTest {
         assertTrue(answer.contains("[S1]"))
         assertTrue(reads >= 4)
         assertTrue(opened.single().disconnected)
+    }
+
+    @Test fun controlHeavyJsonExpansionIsRejectedBeforeSocketAndKeepsConsentUnused() = runBlocking {
+        var sockets = 0
+        val gateway = CloudBrainGateway { url ->
+            sockets++
+            FakeHttpsConnection(url)
+        }
+        // The prompt is within the character limit, but JSON escapes each NUL
+        // as six ASCII bytes. This guards the actual serialized request size.
+        val largePrepared = prepared.copy(prompt = "\u0000".repeat(17_000) + "\n" + excerpt)
+        val seal = CloudEvidenceSeal.of(largePrepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val failure = runCatching {
+            gateway.explain(endpoint, model, "", largePrepared, consent, request)
+        }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+        assertEquals(0, sockets)
+        assertTrue(consent.permits(endpoint, model, request, seal))
+    }
+
+    @Test fun redirectResponseIsRejectedAndNeverFollowed() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, responseCode = 302).also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, opened.size)
+        assertFalse(opened.single().instanceFollowRedirects)
+        assertTrue(opened.single().disconnected)
+        assertFalse(consent.permits(endpoint, model, request, seal))
     }
 
     @Test fun oversizedCloudResponseIsRejectedAndApprovalCannotBeReplayed() = runBlocking {
