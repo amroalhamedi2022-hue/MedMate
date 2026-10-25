@@ -1,3 +1,33 @@
+## 2026-10-25 — Cloud AI outbound transport consent integration milestone
+
+- **Production:** `CloudBrainGateway` now accepts an injectable HTTPS
+  connection factory for deterministic tests of the **actual outbound
+  boundary**; default production behavior still uses Android's
+  `HttpURLConnection`. Consent remains bound to the exact chapter,
+  question, PDF excerpt, page, prompt, HTTPS endpoint and model; a grant
+  is consumed once immediately before opening the connection.
+- **Regression:** `CloudGatewayTransportBoundaryTest.kt` exercises
+  the real gateway and in-memory HTTP connection with **synthetic**
+  non-medical text only: approved one-shot JSON payload and bearer header,
+  replay rejection, changed excerpt/prompt/page/endpoint/model fail-closed
+  before connection, invalid header token and unsealed legacy grant blocked,
+  and uncited cloud answer rejected even after a valid transport.
+  These are tests of client-side privacy behavior, not actual HTTPS/TLS
+  verification or medical correctness.
+- **Source SHA:** `1793e7b79590a3da417a04d2a1f840ebd95816e3`;
+  [Android CI 40203748330](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40203748330)
+  **IN PROGRESS at checkpoint**. Full JUnit/Compose/lint/Debug APK
+  remains **NOT TESTED** until CI reports a completed result.
+- **Purposeful build question:** do the injected Kotlin suspend transport,
+  Robolectric JSON/HTTP fake, production gateway and JUnit tests compile
+  and pass together? Static review cannot establish this.
+- **NOT TESTED:** real network/TLS/cloud transfer allow/deny on Pad 5,
+  actual native GGUF inference, model RAM/thermal, clinical correctness,
+  real PDF citations on device, independent APK hash and signed final
+  delivery. A fake connection is **not** a successful cloud transfer.
+- **Safety:** No real PDFs, model weights, private tokens or keys
+  committed; no paid APIs, main writes, PR merge or Library/Handoff changes.
+
 ## 2026-10-25 — Randomized native GGUF challenge (functional milestone)
 
 - **Production:** `NativeInferenceProbe.run` now generates a fresh
