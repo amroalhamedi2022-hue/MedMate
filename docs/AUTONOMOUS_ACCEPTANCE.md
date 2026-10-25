@@ -456,3 +456,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS Android CI:** [run 40185615010](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40185615010) on source SHA `fc649f9e36524f146be600253770a4c30c57d436`: JUnit including fake-port memory snapshot contract, SQLite, Android lint, Compose and Debug APK assembly.
 - **PASS independent artifact rehash:** artifact `12595688311`, `app-debug.apk` (33,536,769 bytes), SHA-256 `b86cad5bb4fc25d4e221f18b7ea8d3bcc50720dfb4f9b2f7c447a1dcbe49b6e4` independently extracted and matched `APK_SHA256.txt`. ARM64 `libllama.so` and `libllama_jni.so` present; no GGUF/PDF/keystore packaged.
 - **NOT TESTED:** physical Pad 5 actual GGUF inference, device PSS/available RAM snapshots, clinical correctness, HTTPS cloud consent/denial and final upgrade-signing compatibility. Fake-port JUnit and native libraries inside APK do **not** prove a model has run.
+
+
+## 2026-10-25 — Arabic PDF quote provenance and negation safety checkpoint
+- **Production/tests SHA:** `92ec45800dcf0e8faf6df2a73ba80e1a782bc667` on draft PR #1. No main changes.
+- **Production:** source-quote verification for generated High-yield/Flashcards/MCQs now folds Arabic vowel marks, tatweel and conservative alef/ya spelling variants for comparison only, preserving the original indexed PDF text/page. Rejects a model's partial quote when it omits an immediately preceding `no/not/without/لا/لم/لن/ليس` negation. This lexical guard is NOT semantic entailment or clinical correctness verification.
+- **Tests committed:** `GeneratedDraftsTest.kt` covers Arabic vocalized PDF text, correct page anchors, forged source IDs, unrelated PDF text, and adjacent negation omission in English/Arabic.
+- **NOT TESTED:** execution of new JUnit suite, Android CI/build on this SHA, actual PDF medical editorial validation, real GGUF/llama.cpp inference, cloud HTTPS allow/deny and Xiaomi Pad 5. No new verified APK or SHA-256.
+- **Next:** run JUnit/CI and investigate any failures; device/native-model and clinical review gates remain open.
