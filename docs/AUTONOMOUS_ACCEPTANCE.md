@@ -533,3 +533,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Tests committed:** `GeneratedDraftsTest.kt` covers Arabic vocalized PDF text, correct page anchors, forged source IDs, unrelated PDF text, and adjacent negation omission in English/Arabic.
 - **NOT TESTED:** execution of new JUnit suite, Android CI/build on this SHA, actual PDF medical editorial validation, real GGUF/llama.cpp inference, cloud HTTPS allow/deny and Xiaomi Pad 5. No new verified APK or SHA-256.
 - **Next:** run JUnit/CI and investigate any failures; device/native-model and clinical review gates remain open.
+
+
+## 2026-10-25 — Fail-closed bounded cloud response streaming
+- **Production:** `CloudBrainGateway.limitedRead` now tolerates up to eight consecutive zero-byte reads from a broken HTTPS input stream, then aborts rather than spinning indefinitely on the IO dispatcher. A successful read resets the counter. Existing 200 KB response cap and one-shot consent are preserved.
+- **Tests committed:** three Robolectric/JUnit transport-boundary cases for stalled input (nine empty reads, disconnect and consumed approval), transient empty reads followed by a valid synthetic grounded response, and oversized response rejection with no consent replay. No personal PDF, model or token was uploaded.
+- **PASS (isolated Kotlin/JVM):** compiled and ran an equivalent read-loop harness with three scenarios: stalled stream rejected after nine reads; three empty reads recover; 200001-byte response rejected. This is NOT execution of the committed Android JUnit tests.
+- **PASS (older CI only):** previously pending [run 40203748330](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40203748330) now reports successful build job; it predates this stream-hardening change.
+- **NOT TESTED:** new JUnit suite, Android compilation/lint/CI at the current head, actual HTTPS transport on device, true GGUF/llama.cpp inference, clinical accuracy, Pad 5 RAM/thermal and final APK.
+- **Build question:** will the new Robolectric response-stream tests compile and pass with the production gateway and its coroutine dependencies? Source-only checks cannot answer; one targeted CI validation is warranted.
+- **Acceptance:** cloud safety improved at source level; no new device/model acceptance gate can be marked PASS.
