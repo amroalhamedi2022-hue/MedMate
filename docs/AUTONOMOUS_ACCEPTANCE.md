@@ -1,7 +1,7 @@
 ## 2026-10-25 — Randomized native GGUF challenge (functional milestone)
 
 - **Production:** `NativeInferenceProbe.run` now generates a fresh
-  96-bit synthetic challenge (`ORBIT-<12 hex digits>`) per diagnostic.
+  48-bit synthetic challenge (`ORBIT-<12 hex digits>`) per diagnostic.
   The expected answer must contain the **whole current challenge token**
   and a valid source citation; stale hard-coded `ORBIT-27` answers
   or longer lookalike tokens cannot pass the calibration-code flag.
