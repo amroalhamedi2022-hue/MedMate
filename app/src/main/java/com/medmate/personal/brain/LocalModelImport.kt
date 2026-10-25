@@ -85,6 +85,11 @@ object LocalModelImport {
      * This is NOT a full GGUF parse, authenticity proof or actual inference.
      */
     fun validateForLoad(file: File, onBytes: (Long) -> Unit = {}) {
+        // Do not let a hash-shaped symlink redirect native loading outside the
+        // content-addressed model file, even if its target currently hashes OK.
+        require(!java.nio.file.Files.isSymbolicLink(file.toPath())) {
+            "ملف النموذج لا يجوز أن يكون رابطًا رمزيًا"
+        }
         require(file.isFile && file.extension.equals("gguf", ignoreCase = true)) {
             "اختر ملف GGUF محليًا صالحًا"
         }

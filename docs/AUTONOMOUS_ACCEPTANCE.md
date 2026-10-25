@@ -627,3 +627,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS test report:** downloaded report artifact `12617825278` records **122 tests, 0 failures, 0 ignored**; the new fake-vs-native gate regression passed.
 - **PASS independent APK hash:** downloaded artifact `12617595782`, extracted the 33,553,153-byte `app-debug.apk` and independently recalculated SHA-256 `a4d201eea082a346aae4c2b673addb2c99b2c2a4d3dfbfd89af3753fb6b7e728`, matching `APK_SHA256.txt` from CI. ARM64 llama.cpp libraries are packaged; no GGUF weights or personal PDF are included.
 - **NOT TESTED:** genuine GGUF/JNI inference on a physical Xiaomi Pad 5, clinical accuracy, real HTTPS consent/denial, actual RAM/thermal behavior and signed final release. A production-port gate in source and passing fake-port tests do not substitute for running a real model on device.
+
+
+## 2026-10-26 — Local GGUF import/load path hardening (CI pending)
+- **Production change:** `LocalModelImport.validateForLoad` now rejects symbolic-link model paths before reading the GGUF header or hashing the file. This prevents a hash-shaped symlink from redirecting native loading to another target, even if the target bytes currently match the content-addressed filename.
+- **New Android JUnit suite:** `LocalModelImportTest` covers synthetic header magic/version/tensor/metadata rejection, content-addressed storage and duplicate reuse, corruption detected before load, non-hash filenames, hash-named symlink rejection, and bounded zero-byte stream reads with temp-file cleanup.
+- Fixtures are tiny synthetic byte arrays used only to test the import boundary; they are **not complete GGUF files** and do not count as native parsing/inference evidence. No model weights, private PDF or key is committed.
+- **Purposeful CI question:** does the Android/JVM runtime support the symlink guard and do the importer regressions pass alongside existing tests, lint and APK assembly? Static review cannot prove the Kotlin/Android API linkage or JUnit behavior; one targeted CI build is justified.
+- **CI / test count / APK:** PENDING. Real GGUF/JNI inference, Xiaomi Pad 5, PDF grounding, clinical accuracy, live HTTPS consent/denial and device RAM/thermal remain **NOT TESTED**.
