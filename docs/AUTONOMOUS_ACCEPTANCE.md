@@ -15,8 +15,12 @@
   source. Existing English tests preserved; offline Kotlin smoke expanded.
 - **Source SHA:** `b9cd9a1d7a1af78680f40d91739bcb1570141249`.
   [Targeted Android CI 40217712273](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40217712273)
-  **IN PROGRESS at checkpoint**. Kotlin/JUnit/Compose/lint/APK are
-  **NOT TESTED** on this SHA until CI finishes. No claim of genuine GGUF
+  **PASS (completed)** on source SHA `b9cd9a1d7a1af78680f40d91739bcb1570141249`:
+  SQLite contracts, Android JUnit, lint and Debug APK assembly succeeded.
+  Debug artifact **12608059184**, reports **12608357767**;
+  CI-calculated inner APK SHA-256
+  `0c278b30c89c8a51883a50bb601b1bde614fdd8ffb2577b67f13907291a4b53a`.
+  Independent artifact rehash and physical device remain **NOT TESTED**. No claim of genuine GGUF
   inference or medical accuracy.
 - **Purposeful build question:** does the real Kotlin parser compile with
   Arabic Unicode regexes and does it pass all English and Arabic JUnit tests
