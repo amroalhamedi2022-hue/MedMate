@@ -144,6 +144,12 @@ class GeneratedDraftsTest {
             "No fracture and no evidence of dislocation were identified.",
             "no evidence of dislocation"))
         assertFalse(accepted(
+            "No fever, chills and cough were observed in the patient.",
+            "chills and cough were observed"))
+        assertFalse(accepted(
+            "لا توجد حرارة، سعال أو ضيق تنفس حسب الفحص.",
+            "سعال أو ضيق تنفس حسب الفحص"))
+        assertFalse(accepted(
             "لا توجد علامات التهاب في الصورة الشعاعية.",
             "علامات التهاب في الصورة الشعاعية"))
         assertTrue(accepted(
