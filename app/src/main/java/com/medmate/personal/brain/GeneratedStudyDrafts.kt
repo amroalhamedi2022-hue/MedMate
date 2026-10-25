@@ -55,6 +55,12 @@ object GeneratedStudyDrafts {
             .normalize(text, java.text.Normalizer.Form.NFKC)
             .replace(Regex("(?<=\\p{L})-\\s*\\r?\\n\\s*(?=\\p{L})"), "")
             .replace("\u00AD", "")
+            // Arabic vowel marks/tatweel and common alef/ya spellings differ
+            // between PDF extraction and a model's quotation. Fold them only
+            // for quote comparison, never rewrite the original stored source.
+            .replace(Regex("[\\u064B-\\u065F\\u0670\\u0640]"), "")
+            .replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا').replace('ٱ', 'ا')
+            .replace('ى', 'ي')
             .replace(Regex("\\s+"), " ")
             .trim()
             .lowercase(java.util.Locale.ROOT)
@@ -65,7 +71,14 @@ object GeneratedStudyDrafts {
                 val end = at + quote.length
                 val before = at == 0 || !source[at - 1].isLetterOrDigit()
                 val after = end == source.length || !source[end].isLetterOrDigit()
-                if (before && after) return true
+                // A cropped quote must not silently omit an immediately
+                // preceding negation ("no infection" -> "infection"). This
+                // narrow lexical guard is NOT a clinical entailment check.
+                val prefix = source.substring(0, at)
+                val preceding = if (prefix.lastOrNull()?.isWhitespace() == true)
+                    prefix.trimEnd().takeLastWhile { it.isLetter() } else ""
+                val omittedNegation = preceding in setOf("no", "not", "without", "لا", "لم", "لن", "ليس")
+                if (before && after && !omittedNegation) return true
                 at = source.indexOf(quote, at + 1)
             }
             return false
