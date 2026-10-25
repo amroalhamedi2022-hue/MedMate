@@ -32,6 +32,37 @@ class CloudEvidenceSealTest {
             request.copy(question = "Different question"), original))
     }
 
+    @Test fun changingOnlyPromptTextInvalidatesPreviouslyApprovedTransfer() {
+        val approved = CloudEvidenceSeal.of(prompt, request)
+        val altered = prompt.copy(prompt = prompt.prompt +
+            "\nPRIVATE ADDITION: unrelated confidential notes")
+        // The excerpt list, question and PDF page are intentionally identical.
+        assertEquals(prompt.presentedEvidence, altered.presentedEvidence)
+        assertNotEquals(approved, CloudEvidenceSeal.of(altered, request))
+        val grant = CloudTransferConsent.grant(
+            "https://example.org/v1/chat/completions", "model", request, approved)
+        assertFalse(grant.consume("https://example.org/v1/chat/completions", "model",
+            request, CloudEvidenceSeal.of(altered, request)))
+        assertTrue(grant.consume("https://example.org/v1/chat/completions", "model",
+            request, approved))
+    }
+
+    @Test fun draftMessageUsesSameReviewedSourcesWithoutReapproving() {
+        val approved = CloudEvidenceSeal.of(prompt, request)
+        val draft = StudyDraftPrompt.prepare(prompt)
+        assertEquals(prompt.presentedEvidence, draft.presentedEvidence)
+        assertTrue(draft.prompt.contains(excerpt))
+        assertNotEquals(prompt.prompt, draft.prompt)
+        // CloudBrainGateway seals original PreparedPrompt and transmits only
+        // its deterministic study-draft rendering, never an unrelated excerpt.
+        val grant = CloudTransferConsent.grant(
+            "https://example.org/v1/chat/completions", "model", request, approved)
+        assertTrue(grant.consume("https://example.org/v1/chat/completions", "model",
+            request, CloudEvidenceSeal.of(prompt, request)))
+        assertFalse(grant.permits("https://example.org/v1/chat/completions", "model",
+            request, approved))
+    }
+
     @Test fun mismatchedPdfPageAndPromptAreRejectedBeforeNetwork() {
         assertTrue(runCatching { CloudEvidenceSeal.of(prompt.copy(
             presentedEvidence = listOf(source.copy(chapterId = "other"))), request) }.isFailure)
