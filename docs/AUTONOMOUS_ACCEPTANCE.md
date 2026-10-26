@@ -973,3 +973,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Direct source-contract audit: **PASS** for the page-1 sentinel fixture and its exclusion from both prompt and evidence, guard wiring, HTTPS-only endpoint policy and redirects disabled.
 - GitHub Actions run/check and APK artifact for this functional SHA: **NOT VERIFIED** by the available run/status lookup. The earlier 142-test/ APK report is a baseline only and does not cover these changes.
 - Real GGUF/JNI inference, PDFBox page-2 round trip, live HTTPS consent/denial, Pad 5, clinical review, RAM/thermal and final signing: **NOT TESTED**.
+
+## CI result — 2026-10-26, source SHA `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f`
+
+- **PASS:** [Android debug validation run 40403719873](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873).
+- **143 JVM tests PASS, 0 failures, 0 ignored**; includes the new HTTPS-only destination/redirect regression. The source-contract step passed the page-1 exclusion-sentinel requirements and local/cloud boundary checks.
+- **PASS:** SQLite migration/schema guards, APK verifier drift tests, Android Lint, Debug APK and AndroidTest APK assembly, manifest/SDK/permissions checks and device-test bundle packaging.
+- Exact bundle: [Artifact 12691305315](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873/artifacts/12691305315). Independently re-hashed after download:
+  - `app-debug.apk` — 33,553,165 bytes, SHA-256 `f5d57bcea4ea860fa592ede9b2c5fee3d79d5f0fc838666d586098f568229f2f`.
+  - `app-debug-androidTest.apk` — 373,777 bytes, SHA-256 `fc3aecddec322aaa4a8e61e331198e85e9ed689b2b72ec9111aadba641a3cf3c`.
+- **Scope limit:** this proves source/JVM/Android compilation and artifact integrity, not execution of the instrumentation test. Real GGUF/JNI inference, PDFBox-to-page-2 native round trip, live HTTPS consent/denial, Xiaomi Pad 5, clinical review, RAM/thermal and final signing remain **NOT TESTED**.
