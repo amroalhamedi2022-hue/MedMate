@@ -124,12 +124,21 @@ object GeneratedStudyDrafts {
                 quoteOnWordBoundaries(normalizedQuote(s.text), normalizedQuote(quoted))
             val validBase = quoteVerifiable && prompt.length in 8..1500 && answer.length <= 3000 &&
                 explanation.length <= 3000 && !s!!.text.isBlank()
+            // An exact supporting quote alone does not prove that an AI-picked MCQ key
+            // or explanation follows from that quote. Require both the selected answer
+            // option and the explanation to be source-verbatim, word-bounded excerpts.
+            // This intentionally rejects many paraphrased drafts rather than accepting
+            // unsupported clinical claims; accepted items remain human-reviewed drafts.
+            val mcqEvidenceGrounded = s != null && c.correctIndex in options.indices &&
+                quoteOnWordBoundaries(normalizedQuote(s.text), normalizedQuote(options[c.correctIndex])) &&
+                explanation.length in 16..500 &&
+                quoteOnWordBoundaries(normalizedQuote(s.text), normalizedQuote(explanation))
             val validType = when (c.kind) {
                 GeneratedKind.HIGH_YIELD -> answer.isEmpty() && options.isEmpty() && c.correctIndex == -1
                 GeneratedKind.FLASHCARD -> answer.length in 3..1500 && options.isEmpty() && c.correctIndex == -1
                 GeneratedKind.MCQ -> answer.isEmpty() && options.size in 4..5 &&
                     options.all { it.length in 2..500 } && options.map { it.lowercase() }.distinct().size == options.size &&
-                    c.correctIndex in options.indices && explanation.isNotBlank()
+                    c.correctIndex in options.indices && mcqEvidenceGrounded
             }
             val key = "${s?.chapterId}|${s?.pageIndex}|${c.kind}|${prompt.lowercase(java.util.Locale.ROOT)}"
             if (!validBase || !validType || !seen.add(key)) { rejected++; continue }
