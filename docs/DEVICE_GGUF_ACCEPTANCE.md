@@ -23,3 +23,11 @@ A **PASS** means only that this GGUF loaded and passed the synthetic native infe
 ## Cleanup assertions (source change; device execution still pending)
 
 The instrumented test now asserts that loadedModelName, loadedModelSha256, and loadedModelBytes all clear after unload(). It also asserts that a model newly imported only for the test is deleted afterward, while a previously imported/reused model is preserved. CI compiles the AndroidTest APK; it does not execute this test without a real device and user-supplied GGUF.
+
+
+## Latest verified APK pair — 2026-10-26
+- CI run: [40302580485](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40302580485), source/test head `d945c07db1e3f33601fe5f3c90f608aa0af71656`.
+- Device-test bundle: [artifact 12641651670](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40302580485/artifacts/12641651670).
+- `app-debug.apk`: 33,553,153 bytes; SHA-256 `af107fee084a17b6d6c0886d90020910c84575bc5c7fdb84f1a301967cda3550`.
+- `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `5bd00633b3f7885f6179728495812ebb70aecdf02c56c85a7480371f650b9d2e`.
+- Both APK hashes were independently recalculated and match the bundled `SHA256SUMS`. The model/device execution remains **NOT TESTED** until a real GGUF is supplied locally and instrumentation runs on an ARM64 device.
