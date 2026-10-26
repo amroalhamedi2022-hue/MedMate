@@ -81,3 +81,13 @@ When `APP_APK` and `TEST_APK` are supplied, the runner now requires `APP_APK_SHA
 - app-debug-androidTest.apk: 372,149 bytes; SHA-256 48ab3f98f59ee83ccbeb2ab81c0c8d3056b6316352ff8bc76d24e8321f3b0652.
 - Both hashes were independently recomputed from the downloaded bundle and match SHA256SUMS. JUnit 142/142 PASS; lint, AndroidTest compile, APK assembly, manifest checks and script contract PASS.
 - The new device fixture places a fresh identifier only on PDF page 2 and requires a native answer's [S1] marker to map to PDF page 2. CI compilation does not execute instrumentation. Xiaomi Pad 5 plus a locally supplied GGUF is still required for a real inference PASS.
+## 2026-10-26 — Current prebuilt pair for physical-device acceptance
+
+The latest confirmed CI pair is from [run 40390430350](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40390430350), source commit `e4e6b4880b4854eb3c0ffde33810be4fd86b5209`, bundle artifact `12683001262`.
+
+- App APK SHA-256: `9982973d7e55f3e0fa27c5a6b4848472bc925ec27bb426f957de82a8b4a651ef` (33,553,165 bytes).
+- AndroidTest APK SHA-256: `f8edcd49e6c994bcf129cd7d95e6abfeac435f697793d4f20d65b3bc31145855` (373,377 bytes).
+- The bundle's `SHA256SUMS` was independently checked against both extracted files.
+- When using prebuilt files, set `APP_APK`, `TEST_APK`, `APP_APK_SHA256` and `TEST_APK_SHA256` before running `bash scripts/run-native-gguf-device-test.sh`. The runner refuses a hash mismatch before install, verifies the local GGUF hash/byte count on the device, requires a successful AndroidJUnitRunner/JUnit summary, and removes the temporary model on exit.
+- Supply only a model file already stored locally and authorized for testing. The script does not download or upload weights; do not commit or share GGUF files, personal PDFs, credentials or signing keys.
+- **NOT TESTED:** this pair has not yet been installed on Xiaomi Pad 5 and no actual GGUF inference result is claimed.
