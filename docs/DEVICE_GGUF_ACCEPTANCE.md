@@ -112,3 +112,15 @@ The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` on
 - CI run `40415248660` completed successfully on 2026-10-26. JUnit: 147 PASS / 0 FAIL / 0 ignored; Lint and both APK assemblies PASS. Device-test bundle artifact `12695946600` contains Debug and AndroidTest APKs plus SHA256SUMS. Debug SHA-256 `e6c9eca71342bb40cb279c3d0e88374b306b15569405ae315e8ab80b7e5e82e6`; AndroidTest SHA-256 `45021669120c53c1be3883fdc63526f9d45c5e402aa2373be448ef40cd1fb297`.
 
 - **Acceptance boundary remains open:** the build and JVM tests do not prove a physical PDF import on Xiaomi Pad 5, real GGUF/JNI inference, page-2 citation correctness, or actual network denial when cloud consent is refused. All remain NOT TESTED.
+
+
+## 2026-10-27 — GGUF device-runner storage preflight (source/CI PASS; device NOT TESTED)
+
+- Added a fail-closed free-space preflight to `scripts/run-native-gguf-device-test.sh`: before `adb push`, read available KiB with `toybox df -k` for the target device directory and require model bytes + 64 MiB reserve. If free space cannot be parsed or is insufficient, exit 6 before pushing the model; the cleanup trap remains active.
+- Extended `scripts/test-native-gguf-device-script.sh` with Fake ADB `df` output and a low-storage case. The test asserts the preflight runs, no GGUF push/instrumentation occurs, and no model file remains on the fake device.
+- CI Run 40418534168, commit `4816c228c881d2b0000918d03239f9e49e6d2e05`: PASS. Unit tests 147 passed, 0 failed, 0 ignored; Lint PASS; Debug and AndroidTest APK builds PASS; package/SDK/offline-permission verification PASS; device-test bundle packaged PASS.
+- Debug APK SHA-256: `1be41039e845b3ddf620c93a304f50e09a0d983a54d4af3b2e308e1b9bbb711a` (33,553,165 bytes). AndroidTest APK SHA-256: `1d178f4091f6e7e6111026b41afd773d0e237d992e643450e17f76bf7fb8f725` (373,777 bytes). Independently recomputed from the downloaded Artifact 12697601058 and matched `SHA256SUMS`.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168
+- Device bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697601058
+- Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697675874
+- Physical Xiaomi Pad 5 execution, real GGUF/llama.cpp inference, real two-page PDF citation validation, cloud-consent network test, and medical review remain NOT TESTED. The artifact contains APKs/checksums only; it does not contain a GGUF model, personal PDF, or API key.
