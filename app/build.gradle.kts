@@ -53,6 +53,11 @@ dependencies {
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    // Keep PDFBox's transitive Bouncy Castle modules on one maintained release.
+    // PDFBox-Android 2.0.27.0 still declares 1.72; the latest official BC Java release is 1.86.
+    implementation("org.bouncycastle:bcprov-jdk15to18:1.86")
+    implementation("org.bouncycastle:bcpkix-jdk15to18:1.86")
+    implementation("org.bouncycastle:bcutil-jdk15to18:1.86")
     // Experimental, pinned MIT-licensed native llama.cpp AAR; ARM64 only, no bundled weights.
     implementation("dev.ffmpegkit-maintained:llama-android:0.1.1")
     debugImplementation("androidx.compose.ui:ui-tooling")

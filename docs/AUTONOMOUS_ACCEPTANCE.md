@@ -1019,3 +1019,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Purposeful build question:** does the new early-rejection guard pass its shell contract tests while the Android debug/instrumentation artifacts still assemble cleanly? A targeted CI run is justified to execute the host-side safety contract and keep the exact APK pair available for a later real-device run.
 - **CI/APK:** PENDING for this change. Any artifact from an earlier source checkpoint is not evidence for this guard.
 - **NOT TESTED:** actual GGUF loading/inference, PDF page-2 citation round-trip, cloud consent/denial over a live network, Xiaomi Pad 5 performance, clinical review. The header check is not model validation; synthetic fixtures are not GGUF models.
+
+
+## 2026-10-27 — PDFBox/Bouncy Castle dependency security follow-up (CI pending)
+
+- **Finding:** the prior successful build had 18 lint warnings and no lint errors. Three `TrustAllX509TrustManager` warnings were located in cached transitive Bouncy Castle 1.72 JARs pulled by PDFBox-Android 2.0.27.0, not in MedMate Kotlin source. The PDFBox-Android upstream issue tracker records this known warning.
+- **Change:** align `bcprov-jdk15to18`, `bcpkix-jdk15to18`, and `bcutil-jdk15to18` to official Bouncy Castle Java 1.86 rather than mixing the transitive 1.72 modules.
+- **Purposeful build question:** does the current PDFBox-based extraction/citation test suite and Android build remain compatible with the aligned cryptography modules, and does lint still report the dependency trust-manager pattern? A CI build is justified because source-only inspection cannot validate Maven resolution, DEX packaging or runtime PDF parsing compatibility.
+- **CI/APK:** PENDING for the dependency alignment; the previous APK is not evidence for this dependency change.
+- **NOT TESTED:** real PDFBox/native GGUF citation round-trip on ARM64, live cloud consent/denial, clinical review, Xiaomi Pad 5 performance. Do not suppress or describe the lint warning as fixed unless the new report confirms it.

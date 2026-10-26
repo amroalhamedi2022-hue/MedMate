@@ -129,3 +129,8 @@ The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` on
 ## 2026-10-27 — GGUF header preflight (source/CI gate)
 
 Before any ADB interaction, APK installation or model transfer, `run-native-gguf-device-test.sh` now requires the local input to begin with the GGUF magic bytes (`47 47 55 46`, ASCII `GGUF`) and contain at least the 24-byte minimum header. A wrong-magic or truncated file exits with status 4 before ADB/Gradle. This is deliberately only a cheap format preflight: it does **not** establish that the file is a complete/compatible model, that llama.cpp can load it, or that the model is clinically valid. Genuine model acceptance still requires a user-supplied local GGUF and real ARM64 Android instrumentation. Synthetic headers in script tests are explicitly not models.
+
+
+## 2026-10-27 — Bouncy Castle dependency alignment (CI pending)
+
+The Gradle lint report for the prior successful build surfaced `TrustAllX509TrustManager` warnings inside the transitive Bouncy Castle 1.72 JARs brought by PDFBox-Android 2.0.27.0 (the report points to dependency-cache JARs, not MedMate source). Upstream PDFBox-Android issue #475 documents this long-standing dependency warning. To avoid staying on the 2022-era 1.72 cryptography modules, MedMate now pins `bcprov`, `bcpkix`, and `bcutil` together at the official Bouncy Castle Java 1.86 release. This is a dependency-alignment attempt, **not yet a claim that the lint warning is resolved**; CI must verify dependency resolution, PDF extraction tests, Android compilation and the new lint report. The real PDF/GGUF device acceptance remains separate.
