@@ -6,14 +6,30 @@ import org.junit.Test
 
 class GeneratedDraftsTest {
     @Test fun sourcePageComesFromIndexNotAI() {
-        val source = Evidence("book:11:0", "book", 11, "An indexed medical source excerpt.")
-        val c = GeneratedCandidate(GeneratedKind.MCQ, "Which answer matches the passage?", "",
-            listOf("First choice", "Second choice", "Third choice", "Fourth choice", "Fifth choice"),
-            4, "Review the source.", "[S1]", "An indexed medical source excerpt.")
+        val quote = "A fracture is a break in the continuity of bone."
+        val source = Evidence("book:11:0", "book", 11, "$quote The term fracture appears in this sentence.")
+        val c = GeneratedCandidate(GeneratedKind.MCQ, "Which term names a break in bone continuity?", "",
+            listOf("Sprain", "Dislocation", "Contusion", "Fracture", "Strain"),
+            3, quote, "[S1]", quote)
         val result = GeneratedStudyDrafts.validate(listOf(c), listOf(source))
         assertEquals(1, result.accepted.size)
         assertEquals(11, result.accepted.single().pageIndex)
-        assertEquals(4, result.accepted.single().candidate.correctIndex)
+        assertEquals(3, result.accepted.single().candidate.correctIndex)
+    }
+
+    @Test fun mcqAnswerKeyAndExplanationMustBeVerbatimSourceAnchors() {
+        val quote = "A fracture is a break in the continuity of bone."
+        val source = Evidence("book:0:0", "book", 0,
+            "$quote It is not a joint dislocation.")
+        val valid = GeneratedCandidate(GeneratedKind.MCQ,
+            "Which term names a break in bone continuity?", "",
+            listOf("Fracture", "Dislocation", "Sprain", "Contusion"), 0,
+            quote, "S1", quote)
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(valid), listOf(source)).accepted.size)
+        val unsupportedExplanation = valid.copy(explanation = "A fracture is a common cause of infection.")
+        assertEquals(0, GeneratedStudyDrafts.validate(listOf(unsupportedExplanation), listOf(source)).accepted.size)
+        val unsupportedKey = valid.copy(options = listOf("Osteoporosis", "Dislocation", "Sprain", "Contusion"))
+        assertEquals(0, GeneratedStudyDrafts.validate(listOf(unsupportedKey), listOf(source)).accepted.size)
     }
 
     @Test fun unknownCitationsAndInvalidKeysAreRejected() {
