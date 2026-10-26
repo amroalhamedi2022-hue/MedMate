@@ -4,7 +4,7 @@ Use the official [Qwen2.5-1.5B-Instruct-GGUF model repository](https://huggingfa
 
 On Xiaomi Pad 5 or another ARM64 Android device, download the GGUF locally and enable USB debugging. Connect exactly one device, then choose one of these paths.
 
-**Use the exact CI-built APK pair (no local Gradle build):** download and unzip the `MedMate-device-test-bundle` artifact from a successful Android debug workflow run, then point both variables at the extracted APKs:
+**Use the exact CI-built APK pair (no local Gradle build):** download and unzip the `MedMate-device-test-bundle` artifact from a successful Android debug workflow run. From the extracted bundle directory, first run `sha256sum -c SHA256SUMS`; continue only if both checksums pass, then point both variables at the extracted APKs:
 
 ```bash
 APP_APK=/absolute/path/app-debug.apk \
