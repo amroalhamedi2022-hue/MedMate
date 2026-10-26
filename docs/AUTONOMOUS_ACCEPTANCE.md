@@ -763,3 +763,15 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS artifact verification:** [Debug APK artifact 12634872842](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40288326628/artifacts/12634872842). APK size **33,553,153 bytes**; independent SHA-256 `28703738ad7a9fb74a985cf22ddeddef7598eb22927bc88198f9d834e21b0b02` matches the artifact manifest. ARM64 `libllama.so`, `libllama_jni.so`, and `libggml*.so` are present; no GGUF weights or PDF files are bundled.
 - **Purposeful test question answered:** can an MCQ's correct key and explanation pass merely because some other quote is valid? **No: both now need direct source anchors.**
 - **NOT TESTED:** real GGUF inference on Xiaomi Pad 5, clinical accuracy, live PDF citation taps, live HTTPS consent/denial, and device RAM/thermal performance. These gates reduce unsupported output but do not establish medical correctness. Debug APK only; PR remains Draft and unmerged.
+
+
+## 2026-10-26 — Prebuilt AndroidTest bundle for real GGUF device acceptance
+
+- **Production/test tooling SHA:** `37e011aaa33d96a6308d4067712a0ec71bc5b23a`.
+- The GGUF acceptance script now accepts `APP_APK` + `TEST_APK` together to install the exact CI-built pair without requiring a local Gradle rebuild; setting only one fails closed. Omitting both preserves the source-build path.
+- Behavioral fake-ADB contract now covers the prebuilt path as well as matching-digest instrumentation, device digest mismatch refusal, partial-push cleanup and no model download. **PASS** in the CI step `Validate GGUF device-test cleanup contract`; fake ADB remains script-contract evidence, not a device/model test.
+- **PASS Android CI:** [run 40296173616](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40296173616): 138 JUnit tests PASS, 0 failures, 0 ignored; lint, Compose/Kotlin compilation, AndroidTest APK assembly, app Debug APK assembly and artifact uploads all succeeded.
+- **PASS independent artifact verification:** [device bundle artifact 12639390452](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40296173616/artifacts/12639390452) contains `app-debug.apk` (33,553,153 bytes, SHA-256 `1180723b31b81ebe0f429851021a70723a92bf48004e1eff7f378ccf1a0c5388`) and `app-debug-androidTest.apk` (364,513 bytes, SHA-256 `09a5c446ec16829ae71ea221c3adfc6e3f36bf6fa83fd286c8f04c371dd41e2f`). Both hashes independently match `SHA256SUMS`; ARM64 llama.cpp/JNI libraries are present in the app APK.
+- **Privacy check PASS:** no GGUF, PDF, keystore or signing key embedded in the app APK. The bundle contains APKs and checksums only.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, real GGUF load/inference through JNI, medical PDF citations, clinical correctness, live HTTPS consent/denial, and device RAM/thermal behavior. The new bundle makes that real-device check easier but does not perform it.
+- No model weights, private PDFs or credentials committed; no `main` write or merge. Debug artifacts are not final releases.
