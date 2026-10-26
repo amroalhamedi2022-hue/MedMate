@@ -775,3 +775,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Privacy check PASS:** no GGUF, PDF, keystore or signing key embedded in the app APK. The bundle contains APKs and checksums only.
 - **NOT TESTED:** physical Xiaomi Pad 5 installation, real GGUF load/inference through JNI, medical PDF citations, clinical correctness, live HTTPS consent/denial, and device RAM/thermal behavior. The new bundle makes that real-device check easier but does not perform it.
 - No model weights, private PDFs or credentials committed; no `main` write or merge. Debug artifacts are not final releases.
+
+
+## 2026-10-26 — Fail-closed PDF citation navigation identity check
+- **Production change:** `SourceCitationLinks.resolve` now refuses to create tappable citation links if evidence rows have blank IDs/text, mixed chapters, invalid pages, or duplicate evidence IDs. This prevents ambiguous [S#] markers from silently resolving to an arbitrary excerpt/page.
+- Added regressions for duplicate IDs, blank identity and blank excerpt; existing valid source-order/page mapping and forged-marker tests remain in place.
+- **Purposeful CI question:** do the new fail-closed citation-link guards compile and preserve existing valid citation/page navigation? Source inspection alone cannot verify Kotlin compilation or the complete test suite; a targeted Android CI run is justified.
+- **CI / artifact: PENDING.** This is a citation-navigation integrity gate, not a medical fact checker.
+- **NOT TESTED:** live PDF citation taps on Xiaomi Pad 5, real PDF OCR/grounding quality, clinical correctness, actual GGUF inference, live cloud HTTPS consent, device RAM/thermal and final signed release. No PDF/model/credential was added to the public repository.
