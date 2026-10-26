@@ -99,6 +99,7 @@ class NativeGgufDeviceAcceptanceTest {
                 val firstPage = reader.page(0)
                 val secondPage = reader.page(1)
                 assertFalse("page 1 must not contain the calibration identifier", firstPage.contains(code))
+                assertTrue("page 1 must contain the unique exclusion sentinel", firstPage.contains("PAGE1-EXCLUDE-" + code))
                 assertTrue("PDFBox did not extract the identifier from page 2", secondPage.contains(code))
                 listOf(firstPage, secondPage)
             }
@@ -116,6 +117,8 @@ class NativeGgufDeviceAcceptanceTest {
                 "production source-only prompt preparation returned no evidence"
             }
             assertTrue("model prompt must present the PDF evidence", prepared.presentedEvidence.isNotEmpty())
+            assertFalse("page-1-only sentinel must not enter the native prompt", prepared.prompt.contains("PAGE1-EXCLUDE-" + code))
+            assertFalse("page-1-only sentinel must not enter presented evidence", prepared.presentedEvidence.any { it.text.contains("PAGE1-EXCLUDE-" + code) })
             val before = sampleMemory(context)
             val started = System.nanoTime()
             val answer = port.generate(prepared) { }
@@ -145,7 +148,7 @@ class NativeGgufDeviceAcceptanceTest {
     private fun writeSyntheticPdf(context: Context, file: File, code: String) {
         PDFBoxResourceLoader.init(context.applicationContext)
         PDDocument().use { document ->
-            addSyntheticPage(document, "Synthetic study page 1. No calibration identifier is present.")
+            addSyntheticPage(document, "Synthetic study page 1. Excluded sentinel: PAGE1-EXCLUDE-" + code + ". Never send this page for a page-2-only question.")
             addSyntheticPage(document, "Synthetic study page 2. Calibration identifier: " + code + ". This is a test fixture, not clinical advice.")
             document.save(file)
         }
