@@ -58,7 +58,15 @@ class NativeGgufDeviceAcceptanceTest {
                 "pssBeforeKb=${result.memoryBefore?.appPssKb} pssAfterKb=${result.memoryAfter?.appPssKb} " +
                 "availableBeforeBytes=${result.memoryBefore?.systemAvailableBytes} availableAfterBytes=${result.memoryAfter?.systemAvailableBytes}")
         } finally {
-            try { port.unload() } finally { if (!imported.reused) imported.file.delete() }
+            var unloadFailure: Throwable? = null
+            try { port.unload() } catch (failure: Throwable) { unloadFailure = failure }
+            val identityCleared = port.loadedModelName == null &&
+                port.loadedModelSha256 == null && port.loadedModelBytes == null
+            val temporaryModelRemoved = imported.reused ||
+                !imported.file.exists() || imported.file.delete()
+            unloadFailure?.let { throw it }
+            assertTrue("Loaded GGUF identity must clear after unload", identityCleared)
+            assertTrue("A test-only imported model must be removed after unload", temporaryModelRemoved)
         }
     }
 
