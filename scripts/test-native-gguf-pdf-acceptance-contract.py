@@ -17,6 +17,10 @@ required = {
     "grounded prompt preparation": "StudyBrain.prepareSourceOnly(",
     "citation syntax gate": "CitationValidator.check(",
     "page navigation mapping": "SourceCitationLinks.resolve(",
+    "two-page synthetic fixture": "addSyntheticPage(document, \"Synthetic study page 2.",
+    "second-page extraction": "reader.page(1)",
+    "page-scoped retrieval": "onlyPage = 1",
+    "page-two citation mapping": 'links.any { it.marker == "S1" && it.pageNumber == 2 }',
     "native calibration probe": "NativeInferenceProbe.run(port)",
 }
 for label, needle in required.items():

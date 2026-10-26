@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,17 +93,24 @@ class NativeGgufDeviceAcceptanceTest {
         val pdfFile = File(context.cacheDir, "medmate-synthetic-pdf-" + code.lowercase(java.util.Locale.ROOT) + ".pdf")
         try {
             writeSyntheticPdf(context, pdfFile, code)
-            val extracted = PdfTextExtractor(context, pdfFile).use { reader ->
-                assertEquals("synthetic PDF should contain one page", 1, reader.pageCount)
-                reader.page(0)
+            val pages = PdfTextExtractor(context, pdfFile).use { reader ->
+                assertEquals("synthetic PDF should contain two pages", 2, reader.pageCount)
+                val firstPage = reader.page(0)
+                val secondPage = reader.page(1)
+                assertFalse("page 1 must not contain the calibration identifier", firstPage.contains(code))
+                assertTrue("PDFBox did not extract the identifier from page 2", secondPage.contains(code))
+                listOf(firstPage, secondPage)
             }
-            assertTrue("PDFBox did not extract the fresh identifier", extracted.contains(code))
+            val extracted = pages[1]
             val chapterId = "device-pdf-" + code
-            val question = "What is the calibration identifier in this synthetic PDF page? Return the exact identifier and cite [S1]."
-            val found = StudyBrain.search(chapterId, listOf(PageSource(chapterId, 0, extracted)), question)
-            assertEquals("production PDF text must be retrievable", BrainSearchStatus.FOUND, found.status)
-            assertTrue("retrieved evidence must retain the extracted identifier",
-                found.evidence.any { it.pageIndex == 0 && it.text.contains(code) })
+            val question = "What is the calibration identifier on page 2 of this synthetic PDF? Return the exact identifier and cite [S1]."
+            val pageSources = pages.mapIndexed { index, text -> PageSource(chapterId, index, text) }
+            // Restrict evidence to zero-based page index 1. The returned S1 must
+            // still map to the human-facing PDF page number 2, not page 1.
+            val found = StudyBrain.search(chapterId, pageSources, question, onlyPage = 1)
+            assertEquals("production PDF text must be retrievable from page 2", BrainSearchStatus.FOUND, found.status)
+            assertTrue("retrieved evidence must retain the page-2 identifier",
+                found.evidence.any { it.pageIndex == 1 && it.text.contains(code) })
             val prepared = requireNotNull(StudyBrain.prepareSourceOnly(chapterId, question, found, maxEvidenceChars = 1000)) {
                 "production source-only prompt preparation returned no evidence"
             }
@@ -116,9 +124,9 @@ class NativeGgufDeviceAcceptanceTest {
             val citationCheck = CitationValidator.check(answer, prepared.presentedEvidence.size)
             assertTrue("real native answer failed citation validation: " + citationCheck.reason, citationCheck.accepted)
             val links = SourceCitationLinks.resolve(answer, prepared.presentedEvidence)
-            assertTrue("citation must navigate to actual PDF page 1", links.any { it.marker == "S1" && it.pageNumber == 1 })
+            assertTrue("S1 must navigate to actual PDF page 2", links.any { it.marker == "S1" && it.pageNumber == 2 })
             assertTrue("native answer must not echo the entire PDF excerpt", !answer.contains(extracted, ignoreCase = true))
-            Log.i("MedMateNativeGGUF", "PASS syntheticPdfBytes=" + pdfFile.length() +
+            Log.i("MedMateNativeGGUF", "PASS syntheticPdfPages=2 citationPage=2 syntheticPdfBytes=" + pdfFile.length() +
                 " extractedChars=" + extracted.length + " elapsedMs=" + elapsed +
                 " pssBeforeKb=" + (before?.appPssKb ?: -1) + " pssAfterKb=" + (after?.appPssKb ?: -1))
         } finally {
@@ -129,16 +137,21 @@ class NativeGgufDeviceAcceptanceTest {
     private fun writeSyntheticPdf(context: Context, file: File, code: String) {
         PDFBoxResourceLoader.init(context.applicationContext)
         PDDocument().use { document ->
-            val page = PDPage()
-            document.addPage(page)
-            PDPageContentStream(document, page).use { stream ->
-                stream.beginText()
-                stream.setFont(PDType1Font.HELVETICA, 12f)
-                stream.newLineAtOffset(48f, 740f)
-                stream.showText("Synthetic study page. Calibration identifier: " + code + ". This is a test fixture, not clinical advice.")
-                stream.endText()
-            }
+            addSyntheticPage(document, "Synthetic study page 1. No calibration identifier is present.")
+            addSyntheticPage(document, "Synthetic study page 2. Calibration identifier: " + code + ". This is a test fixture, not clinical advice.")
             document.save(file)
+        }
+    }
+
+    private fun addSyntheticPage(document: PDDocument, text: String) {
+        val page = PDPage()
+        document.addPage(page)
+        PDPageContentStream(document, page).use { stream ->
+            stream.beginText()
+            stream.setFont(PDType1Font.HELVETICA, 12f)
+            stream.newLineAtOffset(48f, 740f)
+            stream.showText(text)
+            stream.endText()
         }
     }
 
