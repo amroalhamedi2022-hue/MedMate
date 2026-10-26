@@ -68,11 +68,15 @@ case "${1:-}" in
         rm -f "$(map_path "$1")"
         ;;
       toybox)
-        cmd="$2"; remote="$3"; target="$(map_path "$remote")"
+        cmd="$2"
         case "$cmd" in
-          sha256sum) sha256sum "$target" ;;
+          sha256sum)
+            remote="$3"; target="$(map_path "$remote")"
+            sha256sum "$target"
+            ;;
           stat)
-            [[ "$remote" == "$4" ]] || true
+            [[ "$3" == "-c" && "$4" == "%s" ]] || { echo "unsupported toybox stat arguments" >&2; exit 90; }
+            remote="$5"; target="$(map_path "$remote")"
             wc -c < "$target" | tr -d '[:space:]'
             ;;
           *) echo "unsupported toybox command: $cmd" >&2; exit 90 ;;
