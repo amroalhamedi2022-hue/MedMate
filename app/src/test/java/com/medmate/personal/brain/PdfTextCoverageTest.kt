@@ -110,6 +110,22 @@ class PdfTextCoverageTest {
         }
     }
 
+    @Test fun safePageCountLimitIsInclusiveAndSharedByImportAndAudit() {
+        PdfCoverageAudit.requireSafePageCount(PdfCoverageAudit.MAX_AUDIT_PAGES)
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfCoverageAudit.requireSafePageCount(PdfCoverageAudit.MAX_AUDIT_PAGES + 1)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfCoverageAudit.requireSafePageCount(0)
+        }
+    }
+
+    @Test fun navigationPreviewMustRemainInDocumentOrder() {
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfTextCoverage(3, 2, 1, 1, 0, 0, 1, listOf(2, 0))
+        }
+    }
+
     @Test fun publicCoverageReportCannotRepresentImpossibleCountsOrPageAnchors() {
         assertThrows(IllegalArgumentException::class.java) {
             PdfTextCoverage(0, 0, 0, 0, 0, 0, 0, emptyList())

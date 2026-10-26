@@ -40,6 +40,7 @@ jobs:
           bash -n scripts/run-native-gguf-device-test.sh
           bash scripts/test-native-gguf-device-script.sh
           python3 scripts/test-native-gguf-pdf-acceptance-contract.py
+          python3 scripts/test-pdf-page-limit-contract.py
           python3 scripts/test-model-load-ui-contract.py
       - uses: gradle/actions/setup-gradle@v4
       - name: Validate SQLite schema and migration contracts

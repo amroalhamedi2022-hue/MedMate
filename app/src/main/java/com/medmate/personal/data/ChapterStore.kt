@@ -8,6 +8,7 @@ import android.provider.OpenableColumns
 import android.graphics.pdf.PdfRenderer
 import com.medmate.personal.domain.SearchSnippet
 import com.medmate.personal.brain.PageSource
+import com.medmate.personal.brain.PdfCoverageAudit
 import com.medmate.personal.reader.PdfTextExtractor
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
@@ -96,7 +97,7 @@ class ChapterStore(context: Context) {
             val fd = ParcelFileDescriptor.open(temp, ParcelFileDescriptor.MODE_READ_ONLY)
             val pageCount = try { PdfRenderer(fd).use { it.pageCount } }
                 catch (e: Exception) { fd.close(); throw e }
-            require(pageCount > 0) { "لا توجد صفحات في هذا الملف" }
+            PdfCoverageAudit.requireSafePageCount(pageCount)
             val target = File(documentDir, "$sha.pdf")
             if (!target.exists()) {
                 if (!temp.renameTo(target)) {
@@ -170,6 +171,8 @@ class ChapterStore(context: Context) {
     /** Resume-safe, explicit indexing: one PDFBox document, one saved row per PDF page. */
     suspend fun indexText(chapter: Chapter, onProgress: suspend (Int, Int) -> Unit = { _, _ -> }): IndexSummary =
         withContext(Dispatchers.IO) {
+            // Reject legacy or tampered metadata before querying/indexing a pathological document.
+            PdfCoverageAudit.requireSafePageCount(chapter.pageCount)
             val db = database.writableDatabase
             val already = mutableSetOf<Int>()
             db.rawQuery("SELECT page_index FROM page_text WHERE chapter_sha256=?", arrayOf(chapter.sha256)).use {

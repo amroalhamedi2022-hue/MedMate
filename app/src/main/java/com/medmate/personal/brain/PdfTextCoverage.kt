@@ -18,9 +18,7 @@ data class PdfTextCoverage(
     val firstUnusablePages: List<Int>
 ) {
     init {
-        require(totalPages in 1..PdfCoverageAudit.MAX_AUDIT_PAGES) {
-            "PDF page count is outside the safe local audit range"
-        }
+        PdfCoverageAudit.requireSafePageCount(totalPages)
         require(indexedPages in 0..totalPages && readablePages in 0..totalPages &&
             emptyPages in 0..totalPages && lowTextPages in 0..totalPages &&
             garbledPages in 0..totalPages && missingPages in 0..totalPages) {
@@ -32,7 +30,8 @@ data class PdfTextCoverage(
         }
         require(firstUnusablePages.size <= 32 &&
             firstUnusablePages.all { it in 0 until totalPages } &&
-            firstUnusablePages.distinct().size == firstUnusablePages.size) {
+            firstUnusablePages.distinct().size == firstUnusablePages.size &&
+            firstUnusablePages.zipWithNext().all { (first, next) -> first < next }) {
             "Invalid PDF coverage navigation preview"
         }
     }
@@ -70,11 +69,16 @@ object PdfCoverageAudit {
             (replacements >= 4 && replacements.toLong() * 12 >= text.length)
     }
 
+    fun requireSafePageCount(totalPages: Int) {
+        require(totalPages in 1..MAX_AUDIT_PAGES) {
+            "PDF page count is outside the safe local audit range"
+        }
+    }
+
     fun inspect(chapterId: String, totalPages: Int, pages: List<PageSource>,
                 maxListed: Int = 8): PdfTextCoverage {
-        require(chapterId.isNotBlank() && totalPages in 1..MAX_AUDIT_PAGES) {
-            "Invalid PDF identity or page count exceeds the safe local audit limit"
-        }
+        require(chapterId.isNotBlank()) { "Invalid PDF identity" }
+        requireSafePageCount(totalPages)
         require(maxListed in 0..32) { "Invalid coverage preview limit" }
         require(pages.size <= totalPages) { "Too many indexed PDF pages" }
         val states = ByteArray(totalPages) // 0 missing, 1 empty, 2 suspiciously short, 3 readable, 4 garbled
