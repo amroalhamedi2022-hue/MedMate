@@ -1,3 +1,11 @@
+## 2026-10-26 — Native GGUF + two-page PDF acceptance contract hardened
+
+- Added 11 static wiring assertions around the device-only test: production `LlamaAndroidPort`, matching loaded-model SHA-256/byte count, native diagnostic PASS, fresh page-2 identifier, exactly `[S1]`, rejection of invented `[S2]`, page-index 1 in the prompt, no full excerpt echo, model identity cleared after unload, and cleanup of test-only imported model.
+- **PASS — direct source-contract audit:** all 11 new needles are present in both the committed static guard and the Android instrumentation test. This is source inspection only; the Python guard itself and Kotlin/Android integration still require CI.
+- **Purposeful CI question:** does the strengthened contract script pass with the 142-test JVM suite, lint, AndroidTest compilation, APK verification and exact APK-pair packaging? Source inspection cannot prove Python execution or Android compilation.
+- **CI:** PENDING for guard commit `1e59f94166d1eb5000dc36c285ea0d6118ff9fcb`. The earlier run `40366568877` passed 142 JVM tests and packaged the two-page fixture, but predates this additional guard.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDFBox-to-native page-2 round-trip, live HTTPS consent/denial, clinical review, RAM/thermal and final signing. No GGUF, personal PDF, credentials or signing keys uploaded.
+
 ## 2026-10-25 — PDF citation uncertainty-preservation milestone
 - Production: `GeneratedStudyDrafts` now rejects a source quote that drops an adjacent uncertainty/possibility qualifier (e.g., **possible**, **may**, **cannot**, **ربما**, **احتمال**) within the existing six-word clause window. The previous negation guard remains, and separate sentences or contrastive clauses remain eligible. Original PDF text and page citations are unchanged; human review remains mandatory.
 - Regression: ten synthetic bilingual cases added to the actual Android JUnit suite: cropped vs faithful uncertainty, Arabic qualifiers, cannot-exclude, sentence and contrast boundaries.
