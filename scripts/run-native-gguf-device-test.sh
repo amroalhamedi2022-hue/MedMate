@@ -11,10 +11,19 @@ if [[ -n "${ANDROID_SERIAL:-}" ]]; then ADB=(adb -s "$ANDROID_SERIAL"); else
 fi
 "${ADB[@]}" get-state >/dev/null
 if [[ -x ./gradlew ]]; then GRADLE=(./gradlew); elif command -v gradle >/dev/null; then GRADLE=(gradle); else echo "Gradle wrapper or gradle required" >&2; exit 2; fi
+# Build and install before pushing the large model; package installation can reset external app storage.
+"${GRADLE[@]}" --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+APK="app/build/outputs/apk/debug/app-debug.apk"
+TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+[[ -f "$APK" && -f "$TEST_APK" ]] || { echo "Debug APKs were not produced" >&2; exit 3; }
+"${ADB[@]}" install -r "$APK"
+"${ADB[@]}" install -r "$TEST_APK"
+
 device_dir="/sdcard/Android/data/com.medmate.personal/files/native-test"
 device_file="$device_dir/medmate-acceptance.gguf"
 "${ADB[@]}" shell mkdir -p "$device_dir"
 "${ADB[@]}" push "$GGUF_FILE" "$device_file"
 cleanup(){ "${ADB[@]}" shell rm -f "$device_file" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
-"${GRADLE[@]}" --no-daemon :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.ggufPath=$device_file"
+# Invoke instrumentation directly so the install step cannot erase the just-pushed file.
+"${ADB[@]}" shell am instrument -w -e ggufPath "$device_file" com.medmate.personal.test/androidx.test.runner.AndroidJUnitRunner
