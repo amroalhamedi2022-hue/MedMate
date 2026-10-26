@@ -942,3 +942,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Strengthened the static wiring guard to require these assertions. This is a meaningful test-hardening change because a broad “any S1 maps to page 2” check could otherwise miss extra or wrong-page links.
 - **CI for this new source SHA: PENDING**. Android instrumentation is a device-only test and is not considered executed by unit tests or APK assembly.
 - **NOT TESTED:** real GGUF/JNI inference, the synthetic PDF→PDFBox→native model round-trip, Xiaomi Pad 5, clinical accuracy, live HTTPS cloud-consent allow/deny, RAM/thermal behavior and final signing. No GGUF, personal PDF, key or medical data was uploaded.
+## 2026-10-26 — Fail-closed native GGUF device harness: CI PASS
+
+- **PASS — Android CI:** [run 40390430350](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40390430350), commit `e4e6b4880b4854eb3c0ffde33810be4fd86b5209`. The workflow passed Bash syntax and fake-ADB regression tests (including reported JUnit failure and incomplete-output cases), native GGUF/PDF source-contract guards, local/cloud fallback guard, SQLite schema/migration checks, APK verifier tests, Android unit tests, lint, AndroidTest APK assembly, Debug APK assembly, manifest verification and exact APK-pair packaging.
+- **PASS — test report:** downloaded report artifact `12683826629`; Gradle report shows **142 tests, 0 failures, 0 ignored**.
+- **PASS — independently re-hashed CI device-test bundle:** [artifact 12683001262](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40390430350/artifacts/12683001262), containing the exact APK pair and `SHA256SUMS`.
+  - `app-debug.apk`: 33,553,165 bytes; SHA-256 `9982973d7e55f3e0fa27c5a6b4848472bc925ec27bb426f957de82a8b4a651ef`.
+  - `app-debug-androidTest.apk`: 373,377 bytes; SHA-256 `f8edcd49e6c994bcf129cd7d95e6abfeac435f697793d4f20d65b3bc31145855`.
+- **Important boundary:** the fake-ADB tests prove the host runner fails closed on digest/instrumentation failures and cleans up synthetic files. They do not run llama.cpp or prove a real model works. No GGUF, personal PDF, credential or signing key is included in the artifact.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 citation round-trip on-device, live HTTPS consent/denial, clinical review, RAM/thermal profiling and final signing.
