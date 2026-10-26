@@ -840,3 +840,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS package safety inspection:** ARM64 `libllama.so` and `libllama_jni.so` are present; no `.gguf` or `.pdf` payload is bundled. This confirms native libraries are packaged, **not** that a real model has loaded or inferred.
 - **Device kit prepared locally:** exact CI APK pair, checksums and run instructions are available for a physical-device test. ADB/physical device was unavailable in this run, so Xiaomi Pad 5 installation and real GGUF/JNI inference remain **NOT TESTED**.
 - **Still NOT TESTED:** PDF-grounded clinical accuracy, actual HTTPS/cloud consent and denial on-device, RAM/thermal performance, signed-upgrade continuity and final release signing. Draft PR #1 only; no main write/merge, personal PDF/model/key upload, paid API or Library/Handoff access.
+
+
+## 2026-10-26 — Concurrent cloud-consent gateway boundary regression (CI pending)
+
+- Added a 16-thread race against the **production `CloudBrainGateway.explain` boundary**, using only a synthetic excerpt and an in-memory `HttpURLConnection`; no live endpoint or patient data.
+- Acceptance: exactly one request may succeed/open a connection, the connection must be disconnected, the single-use grant must be exhausted, and no worker may stall. This complements the existing lower-level atomic `CloudTransferConsent.consume` test by exercising the full outbound call path.
+- **CI status:** pending at source checkpoint. Even after JVM/Android CI passes, live HTTPS consent/denial, real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, RAM/thermal behavior and final signing remain **NOT TESTED**. No model, private PDF, credential or paid API added; no main write/merge.
