@@ -64,6 +64,7 @@ class CloudGatewayTransportBoundaryTest {
         val connection = opened.single()
         assertTrue(connection.disconnected)
         assertEquals("POST", connection.requestMethod)
+        assertFalse("cloud gateway must never follow redirects with a PDF prompt or bearer token", connection.instanceFollowRedirects)
         assertEquals("Bearer SESSION-TOKEN", connection.getRequestProperty("Authorization"))
         val json = JSONObject(connection.requestBytes.toString("UTF-8"))
         assertEquals(model, json.getString("model"))
@@ -78,6 +79,22 @@ class CloudGatewayTransportBoundaryTest {
             gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
         }.isFailure)
         assertEquals(1, opened.size)
+    }
+
+
+    @Test fun nonHttpsAndCredentialBearingDestinationsCannotMintConsent() {
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val invalidEndpoints = listOf(
+            "http://example.org/v1/chat/completions",
+            "https://user:secret@example.org/v1/chat/completions",
+            "https://example.org/v1/chat/completions?token=secret",
+            "https://example.org/not-the-chat-endpoint"
+        )
+        invalidEndpoints.forEach { candidate ->
+            assertTrue("unsafe endpoint must be rejected before any socket: $candidate", runCatching {
+                CloudTransferConsent.grant(candidate, model, request, seal)
+            }.isFailure)
+        }
     }
 
     @Test fun changedPdfOrPromptAndWrongDestinationNeverOpenConnection() = runBlocking {
