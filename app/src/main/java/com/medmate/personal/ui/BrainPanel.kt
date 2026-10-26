@@ -493,6 +493,14 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 color = if (probe.diagnosticPassed)
                                     Turquoise else MaterialTheme.colorScheme.error
                             )
+                            Text(
+                                if (probe.nativeBackendConfirmed && probe.nativeModelSha256 != null && probe.nativeModelBytes != null)
+                                    "هوية GGUF المحمّل: SHA-256 ${probe.nativeModelSha256.take(12)}… · " +
+                                        "${(probe.nativeModelBytes ?: 0L) / 1_048_576} MiB على القرص"
+                                else "هوية GGUF الأصلية غير مؤكدة؛ نتيجة المنفذ الوهمي لا تُعد استدلالًا أصليًا",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (probe.nativeBackendConfirmed) Turquoise else MaterialTheme.colorScheme.error
+                            )
                             if (probe.memoryBefore != null && probe.memoryAfter != null) {
                                 val before = probe.memoryBefore
                                 val after = probe.memoryAfter
