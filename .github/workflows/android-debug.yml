@@ -43,8 +43,18 @@ jobs:
         run: |
           python3 scripts/test-database-contract.py
           python3 scripts/test-migrations.py
+      - name: Test APK verifier against metadata drift
+        run: python3 scripts/test-verify-apk.py
       - name: Run unit tests, lint, and assemble debug APK
         run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest :app:assembleDebug
+      - name: Verify built APK identity, SDK and offline permissions
+        shell: bash
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          test -f "$APK"
+          test -x "$AAPT"
+          python3 scripts/verify-apk.py "$APK" "$AAPT"
       - name: Record inner APK SHA-256 for future targeted builds
         if: success()
         shell: bash
