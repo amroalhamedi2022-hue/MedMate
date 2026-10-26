@@ -680,12 +680,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - CI, test count and APK artifact are pending. Real GGUF inference on Xiaomi Pad 5, PDF grounding/medical accuracy, HTTPS consent, device RAM/thermal and final signed release remain NOT TESTED.
 
 
-## 2026-10-26 — Native-load cancellation and session cleanup (CI pending)
-- Production: LlamaAndroidPort now checks coroutine cancellation after multi-GB digest validation, again before evicting a previously loaded session, and immediately after Llama.loadModel returns. A just-created session is released rather than published if cancellation or the existing model-file snapshot guard fails.
-- Added two JUnit regressions proving cancellation after simulated native load and post-load file mutation both release the unpublishable session. The session in these tests is synthetic; these are lifecycle-contract tests, not GGUF inference.
-- Purposeful build question: does the generic native-session acceptance helper compile with the pinned llama Android AAR and do cancellation/cleanup regressions pass in the real Android/JVM test suite? Source inspection cannot verify Kotlin/API integration, so one targeted CI build is justified.
-- CI/test count/APK/checksum will be recorded after the workflow completes. Real GGUF/JNI inference on Xiaomi Pad 5, PDF grounding, clinical accuracy, live HTTPS consent, device RAM/thermal and final signed release remain NOT TESTED.
-
+## 2026-10-26 — Native-load cancellation and session cleanup (validated)
+- **Production/test SHA:** `a62ba8c3b1a05b2adc0fa2b0fb831ce159964924` on the existing MedMate PR #1 branch. `LlamaAndroidPort` now checks coroutine cancellation after the full model digest, before unloading a prior session, and after `Llama.loadModel` returns. A just-created native session is released rather than published if cancellation or the existing model-file snapshot guard fails.
+- **PASS JUnit:** 137 tests, 0 failures, 0 ignored. Both new regressions passed: cancellation after simulated native load releases the unpublished session; post-load model-file mutation also releases it. The tests use synthetic sessions/headers and are lifecycle-contract tests, not genuine GGUF inference.
+- **PASS Android CI:** [run 40261137260](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40261137260) completed successfully; unit tests, Android Lint and Debug APK assembly passed.
+- **PASS independent APK verification:** Artifact [12624258365](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40261137260/artifacts/12624258365), extracted 33,553,153-byte APK, independently recalculated SHA-256 `e86047a58767c6fa659fd1db9dd18bc2bbb0ad86233bf7c1d84d7f6599da3a65`, matching `APK_SHA256.txt`. APK includes ARM64 llama.cpp/JNI libraries and contains no bundled GGUF or PDF.
+- Purposeful build question answered: the Kotlin native-load cancellation cleanup compiles against the pinned AAR and both cleanup regressions pass in Android/JVM tests. This still does **not** prove real model inference.
+- **NOT TESTED:** genuine GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, live HTTPS consent/denial, physical-device RAM/thermal behavior and final signed release. PR remains Draft; no main write/merge or unrelated repository/Library/Handoff changes.
 
 ### Real-device GGUF candidate and acceptance protocol (model not bundled)
 - Candidate for the first physical-device run: official `Qwen/Qwen2.5-1.5B-Instruct-GGUF`, `Q4_K_M` quantization (about 1.12 GB) under Apache-2.0 according to its model page: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF. The pinned Android wrapper documents arm64-v8a CPU/NEON inference and notes that Q4_K_M needs model size plus additional working RAM: https://github.com/ffmpegkit-maintained/llama-android. This is a test candidate, not a claim of clinical adequacy; do not download or commit its weights into the public repository.
