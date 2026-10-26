@@ -640,3 +640,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 ### Local GGUF import CI follow-up — 2026-10-26
 - **FAIL:** [Android CI 40246624901](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40246624901) compiled the changed source/test code, but JUnit rejected three expression-bodied test methods because their inferred return types were not `Unit`; the test class failed initialization before any of its cases ran. No Debug APK was produced. This was a test-harness declaration error, not a passing import-validation result.
 - **Repair:** declared the three affected tests as `Unit` and explicitly returned `Unit` from their temp-directory lambdas. Re-run is **PENDING**.
+
+
+## 2026-10-26 — Local GGUF probe bound to loaded model identity (validation pending)
+
+- **Production:** `LlamaAndroidPort` records the content-addressed SHA-256 filename and exact on-disk byte size only after `Llama.loadModel` returns successfully. Unload clears that identity. `NativeInferenceProbe` now requires the production port plus a valid lowercase 64-hex SHA and plausible file size before its backend gate can pass.
+- **UI:** the diagnostic displays the loaded model's SHA-256 prefix and file size separately from RAM snapshots. File bytes are explicitly not RAM usage. Fake ports expose no native model identity and remain a diagnostic FAIL even when their synthetic response passes response checks.
+- **Regression:** JUnit cases cover valid/invalid model identity shapes and ensure a perfect fake response carries no native model identity. No model weights, personal PDF, credential or secret is included in source.
+- **Purposeful build question:** do the new Kotlin fields, production adapter, diagnostic result, Compose UI and JUnit identity checks compile and pass together? Static review cannot prove Android/Compose compatibility; one targeted CI build is justified.
+- **Status at commit:** CI **PENDING**. This is traceability hardening, **not** evidence that a real GGUF has run.
+- **NOT TESTED:** real model import/load/inference through JNI on Xiaomi Pad 5, PDF-grounded answers, clinical accuracy, live HTTPS consent, peak RAM/thermal and final signed release. PR remains Draft; no main write or merge.
