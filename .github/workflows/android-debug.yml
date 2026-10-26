@@ -40,7 +40,7 @@ jobs:
           python3 scripts/test-database-contract.py
           python3 scripts/test-migrations.py
       - name: Run unit tests, lint, and assemble debug APK
-        run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+        run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest :app:assembleDebug
       - name: Record inner APK SHA-256 for future targeted builds
         if: success()
         shell: bash
