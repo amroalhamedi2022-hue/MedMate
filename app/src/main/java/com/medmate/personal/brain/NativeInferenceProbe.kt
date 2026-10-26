@@ -49,6 +49,20 @@ object NativeInferenceProbe {
         sha256 != null && Regex("^[0-9a-f]{64}$").matches(sha256) &&
             bytes != null && bytes in LocalModelImport.MIN_BYTES..LocalModelImport.MAX_BYTES
 
+    internal fun sameNativeModelIdentity(
+        beforeName: String?,
+        beforeSha256: String?,
+        beforeBytes: Long?,
+        afterName: String?,
+        afterSha256: String?,
+        afterBytes: Long?
+    ): Boolean =
+        beforeName != null && beforeName.isNotBlank() &&
+            beforeName == afterName &&
+            beforeSha256 == afterSha256 &&
+            beforeBytes == afterBytes &&
+            validNativeModelIdentity(beforeSha256, beforeBytes)
+
     // Fresh per-run code rejects stale/hard-coded responses. Not JNI attestation.
     private fun freshChallenge(): String {
         val bytes = ByteArray(6)
@@ -67,8 +81,14 @@ object NativeInferenceProbe {
         require(Regex("^ORBIT-[0-9A-F]{12}$").matches(challengeCode)) {
             "Invalid synthetic calibration challenge"
         }
+        val nativePort = port as? LlamaAndroidPort
         val name = port.loadedModelName?.takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Load a GGUF model before running the native probe")
+        // Snapshot the exact loaded model identity before inference. A different
+        // load/unload racing after generate() returns must not be attributed to
+        // the answer that just completed.
+        val nativeShaBefore = nativePort?.loadedModelSha256
+        val nativeBytesBefore = nativePort?.loadedModelBytes
         val evidence = Evidence(
             id = "$CHAPTER:0:0",
             chapterId = CHAPTER,
@@ -93,10 +113,13 @@ object NativeInferenceProbe {
         val elapsed = ((System.nanoTime() - start) / 1_000_000L).coerceAtLeast(0L)
         val memoryAfter = sampleMemory()
         require(answer.isNotBlank()) { "The native model returned an empty diagnostic answer" }
-        val nativePort = port as? LlamaAndroidPort
-        val nativeSha = nativePort?.loadedModelSha256
-        val nativeBytes = nativePort?.loadedModelBytes
-        val nativeIdentityValid = validNativeModelIdentity(nativeSha, nativeBytes)
+        val nativeShaAfter = nativePort?.loadedModelSha256
+        val nativeBytesAfter = nativePort?.loadedModelBytes
+        val nativeNameAfter = nativePort?.loadedModelName
+        val nativeIdentityValid = sameNativeModelIdentity(
+            name, nativeShaBefore, nativeBytesBefore,
+            nativeNameAfter, nativeShaAfter, nativeBytesAfter
+        )
         return NativeProbeResult(
             modelName = name,
             elapsedMs = elapsed,
@@ -115,8 +138,8 @@ object NativeInferenceProbe {
                 answer.contains("This is a synthetic calibration passage", ignoreCase = true) ||
                 answer.contains("Only report this code and cite the passage", ignoreCase = true),
             nativeBackendConfirmed = nativePort != null && nativeIdentityValid,
-            nativeModelSha256 = nativeSha?.takeIf { nativeIdentityValid },
-            nativeModelBytes = nativeBytes?.takeIf { nativeIdentityValid }
+            nativeModelSha256 = nativeShaAfter?.takeIf { nativeIdentityValid },
+            nativeModelBytes = nativeBytesAfter?.takeIf { nativeIdentityValid }
         )
     }
 }
