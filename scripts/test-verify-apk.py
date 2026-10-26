@@ -15,11 +15,11 @@ def value(pattern):
     assert match, f"Gradle value missing: {pattern}"
     return match.group(1)
 
-app_id = value(r'^\\s*applicationId\\s*=\\s*"([^"]+)"')
-version_code = value(r'^\\s*versionCode\\s*=\\s*(\\d+)')
-version_name = value(r'^\\s*versionName\\s*=\\s*"([^"]+)"')
-min_sdk = value(r'^\\s*minSdk\\s*=\\s*(\\d+)')
-target_sdk = value(r'^\\s*targetSdk\\s*=\\s*(\\d+)')
+app_id = value(r'^\s*applicationId\s*=\s*"([^"]+)"')
+version_code = value(r'^\s*versionCode\s*=\s*(\d+)')
+version_name = value(r'^\s*versionName\s*=\s*"([^"]+)"')
+min_sdk = value(r'^\s*minSdk\s*=\s*(\d+)')
+target_sdk = value(r'^\s*targetSdk\s*=\s*(\d+)')
 verifier = ROOT / "scripts/verify-apk.py"
 
 with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
@@ -28,13 +28,13 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
     apk.write_bytes(b"x" * 12_000)
     aapt = tmp / "aapt"
     aapt.write_text(
-        "#!/usr/bin/env python3\\n"
-        "import os,sys\\n"
-        "if sys.argv[1:3] == ['dump','badging']:\\n"
-        " print(os.environ['FAKE_BADGING'])\\n"
-        "elif sys.argv[1:3] == ['dump','permissions']:\\n"
-        " print(os.environ.get('FAKE_PERMISSIONS',''))\\n"
-        "else: raise SystemExit(2)\\n",
+        "#!/usr/bin/env python3\n"
+        "import os,sys\n"
+        "if sys.argv[1:3] == ['dump','badging']:\n"
+        " print(os.environ['FAKE_BADGING'])\n"
+        "elif sys.argv[1:3] == ['dump','permissions']:\n"
+        " print(os.environ.get('FAKE_PERMISSIONS',''))\n"
+        "else: raise SystemExit(2)\n",
         encoding="utf-8",
     )
     aapt.chmod(0o755)
@@ -43,9 +43,9 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
                 minimum=min_sdk, target=target_sdk):
         return (
             f"package: name='{package}' versionCode='{code}' versionName='{name}' "
-            "platformBuildVersionName='16' platformBuildVersionCode='36'\\n"
-            f"sdkVersion:'{minimum}'\\n"
-            f"targetSdkVersion:'{target}'\\n"
+            "platformBuildVersionName='16' platformBuildVersionCode='36'\n"
+            f"sdkVersion:'{minimum}'\n"
+            f"targetSdkVersion:'{target}'\n"
         )
 
     def run(label, output, permissions="", expected=0):
@@ -57,8 +57,8 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
             cwd=ROOT, env=env, text=True, capture_output=True
         )
         assert (result.returncode == 0) == (expected == 0), (
-            f"{label}: expected exit {expected}, got {result.returncode}\\n"
-            f"stdout:\\n{result.stdout}\\nstderr:\\n{result.stderr}"
+            f"{label}: expected exit {expected}, got {result.returncode}\n"
+            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
         print(f"PASS: {label}")
 

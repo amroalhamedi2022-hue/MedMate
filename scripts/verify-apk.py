@@ -16,11 +16,11 @@ def gradle_value(pattern: str, label: str) -> str:
     return match.group(1)
 
 
-APP_ID = gradle_value(r'^\\s*applicationId\\s*=\\s*"([^"]+)"', "applicationId")
-VERSION_CODE = gradle_value(r'^\\s*versionCode\\s*=\\s*(\\d+)', "versionCode")
-VERSION_NAME = gradle_value(r'^\\s*versionName\\s*=\\s*"([^"]+)"', "versionName")
-MIN_SDK = gradle_value(r'^\\s*minSdk\\s*=\\s*(\\d+)', "minSdk")
-TARGET_SDK = gradle_value(r'^\\s*targetSdk\\s*=\\s*(\\d+)', "targetSdk")
+APP_ID = gradle_value(r'^\s*applicationId\s*=\s*"([^"]+)"', "applicationId")
+VERSION_CODE = gradle_value(r'^\s*versionCode\s*=\s*(\d+)', "versionCode")
+VERSION_NAME = gradle_value(r'^\s*versionName\s*=\s*"([^"]+)"', "versionName")
+MIN_SDK = gradle_value(r'^\s*minSdk\s*=\s*(\d+)', "minSdk")
+TARGET_SDK = gradle_value(r'^\s*targetSdk\s*=\s*(\d+)', "targetSdk")
 
 if len(sys.argv) != 3:
     raise SystemExit("usage: verify-apk.py APK AAPT")
