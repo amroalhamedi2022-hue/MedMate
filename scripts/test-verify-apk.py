@@ -35,6 +35,8 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
         "elif sys.argv[1:3] == ['dump','permissions']:\n"
         " print(os.environ.get('FAKE_PERMISSIONS',''))\n"
         "elif sys.argv[1:3] == ['dump','xmltree']:\n"
+        " if len(sys.argv) != 5 or not sys.argv[3].endswith('app-debug.apk') or sys.argv[4] != 'AndroidManifest.xml':\n"
+        "  print('expected: aapt dump xmltree APK AndroidManifest.xml', file=sys.stderr); raise SystemExit(2)\n"
         " print(os.environ.get('FAKE_XMLTREE','A: android:usesCleartextTraffic(0x010104ec)=false'))\n"
         "else: raise SystemExit(2)\n",
         encoding="utf-8",
