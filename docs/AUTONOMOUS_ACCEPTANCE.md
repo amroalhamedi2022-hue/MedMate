@@ -653,3 +653,9 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS independent APK verification:** extracted 33,553,153-byte app-debug.apk and independently recalculated SHA-256 c14119ada16dbdcc6b54dc1102f0f19c98591cf83abffd14cf1d607ba50c371e, matching APK_SHA256.txt. ARM64 libllama.so and libllama_jni.so are packaged; no GGUF weights or personal PDFs are included.
 - **Purposeful build question answered:** Kotlin model-identity fields, production adapter, diagnostic result, Compose UI and JUnit checks compile and pass together. This is source/CI evidence only.
 - **NOT TESTED:** actual model import/load/inference through JNI on Xiaomi Pad 5, PDF-grounded answer quality, clinical accuracy, live HTTPS consent, peak RAM/thermal and final signed release. A real GGUF run remains required; this traceability gate is not native-inference proof. PR remains Draft; no main write, merge or unrelated repository/Library/Handoff change.
+
+
+### Native model identity race-guard CI checkpoint — 2026-10-26
+- Source/test changes are committed on the draft PR branch. The probe now snapshots model name, SHA-256 and byte size before inference and compares them after generation; a model switch or unload during result capture cannot be credited as the model that produced the answer. Identity fields are volatile-published.
+- Regression coverage checks stable identity and rejects changed model name, digest, byte size or missing identity. This is not a real-GGUF test.
+- **CI:** pending on current branch head; real GGUF/JNI on Xiaomi Pad 5, PDF grounding, medical correctness, cloud consent, RAM/thermal and final signing remain NOT TESTED.
