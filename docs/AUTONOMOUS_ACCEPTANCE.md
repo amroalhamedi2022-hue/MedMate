@@ -983,3 +983,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - `app-debug.apk` — 33,553,165 bytes, SHA-256 `f5d57bcea4ea860fa592ede9b2c5fee3d79d5f0fc838666d586098f568229f2f`.
   - `app-debug-androidTest.apk` — 373,777 bytes, SHA-256 `fc3aecddec322aaa4a8e61e331198e85e9ed689b2b72ec9111aadba641a3cf3c`.
 - **Scope limit:** this proves source/JVM/Android compilation and artifact integrity, not execution of the instrumentation test. Real GGUF/JNI inference, PDFBox-to-page-2 native round trip, live HTTPS consent/denial, Xiaomi Pad 5, clinical review, RAM/thermal and final signing remain **NOT TESTED**.
+
+
+## 2026-10-26 — Bounded PDF coverage audit and report invariants (CI pending)
+
+- **Production source:** `PdfCoverageAudit.inspect` now rejects pathological page counts above 100,000 before allocating per-page state, preventing an untrusted PDF page count from causing a large audit allocation. `PdfTextCoverage` now rejects impossible count combinations, out-of-range/duplicate navigation preview indices, and zero/oversized page totals.
+- **Regression coverage:** added tests for the pre-allocation page-count guard and invalid report construction. Existing 20,000-page sparse-index test remains within the safe bound and confirms the navigation preview stays capped.
+- **Functional commits:** audit guard `d0181cccec572ef71c0566f04358d36aaff3e378`; tests `e9718622a2ef02847b05b2c0498ee327b9bc88e5`; final invariant hardening `d59d3eb3d56d84b9f259b857ee3a437927fcff40`.
+- **CI/APK for this source head:** NOT VERIFIED in the available workflow-status lookup. The earlier successful run 40403719873 is a baseline at `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f` and does not include these PDF coverage changes.
+- **NOT TESTED:** real GGUF/JNI inference, PDFBox page-2 native round trip, live HTTPS consent/denial, Xiaomi Pad 5, clinical review, RAM/thermal, and final signing. No model, PDF, credential or signing key was added to the repository.
