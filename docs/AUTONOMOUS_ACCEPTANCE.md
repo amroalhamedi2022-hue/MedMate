@@ -678,3 +678,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Added three JUnit regressions: stable snapshot acceptance, changed-size rejection even when the old timestamp is restored, and symlink replacement rejection. Fixtures are tiny synthetic GGUF headers only; no real model weights, PDFs, secrets or paid services are used.
 - Purposeful CI question: do the new snapshot return type, native-load cleanup path and import regressions compile and pass in the actual Android/JVM suite? Source inspection alone cannot validate Kotlin API compatibility or native adapter compilation; a targeted CI build is justified.
 - CI, test count and APK artifact are pending. Real GGUF inference on Xiaomi Pad 5, PDF grounding/medical accuracy, HTTPS consent, device RAM/thermal and final signed release remain NOT TESTED.
+
+
+## 2026-10-26 — Native-load cancellation and session cleanup (CI pending)
+- Production: LlamaAndroidPort now checks coroutine cancellation after multi-GB digest validation, again before evicting a previously loaded session, and immediately after Llama.loadModel returns. A just-created session is released rather than published if cancellation or the existing model-file snapshot guard fails.
+- Added two JUnit regressions proving cancellation after simulated native load and post-load file mutation both release the unpublishable session. The session in these tests is synthetic; these are lifecycle-contract tests, not GGUF inference.
+- Purposeful build question: does the generic native-session acceptance helper compile with the pinned llama Android AAR and do cancellation/cleanup regressions pass in the real Android/JVM test suite? Source inspection cannot verify Kotlin/API integration, so one targeted CI build is justified.
+- CI/test count/APK/checksum will be recorded after the workflow completes. Real GGUF/JNI inference on Xiaomi Pad 5, PDF grounding, clinical accuracy, live HTTPS consent, device RAM/thermal and final signed release remain NOT TESTED.

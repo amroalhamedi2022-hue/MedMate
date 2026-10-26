@@ -6,6 +6,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
+import java.util.concurrent.CancellationException
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -161,6 +162,45 @@ class LocalModelImportTest {
         assertThrows(IllegalArgumentException::class.java) {
             LocalModelImport.requireSameFileSnapshot(snapshot, imported.file)
         }
+        Unit
+    }
+
+
+
+    @Test fun cancellationAfterNativeLoadReleasesSessionBeforePublishingIdentity(): Unit = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        val snapshot = LocalModelImport.validateForLoad(imported.file)
+        val session = Any()
+        var released = false
+        assertThrows(CancellationException::class.java) {
+            verifyNativeSessionBeforePublishing(
+                snapshot = snapshot,
+                file = imported.file,
+                session = session,
+                ensureActive = { throw CancellationException("cancelled during native load") },
+                releaseSession = { released = it === session }
+            )
+        }
+        assertTrue(released)
+        Unit
+    }
+
+    @Test fun changedModelAfterNativeLoadReleasesUnpublishedSession(): Unit = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        val snapshot = LocalModelImport.validateForLoad(imported.file)
+        imported.file.appendBytes(byteArrayOf(0x55))
+        imported.file.setLastModified(snapshot.lastModifiedMillis)
+        var released = false
+        assertThrows(IllegalArgumentException::class.java) {
+            verifyNativeSessionBeforePublishing(
+                snapshot = snapshot,
+                file = imported.file,
+                session = Any(),
+                ensureActive = {},
+                releaseSession = { released = true }
+            )
+        }
+        assertTrue(released)
         Unit
     }
 

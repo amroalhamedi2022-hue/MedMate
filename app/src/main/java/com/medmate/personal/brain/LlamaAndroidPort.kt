@@ -14,6 +14,29 @@ import java.io.File
  * Uses inference off the main thread. The free AAR returns a final answer, NOT token streaming.
  * Must be tested with real model and memory/thermal measurements on Pad 5 before release.
  */
+
+/**
+ * Accept a just-created native session only if its coroutine is still active and the
+ * exact validated model file is unchanged. On cancellation or a file race, release
+ * the unpublishable native session and preserve the original failure.
+ */
+internal fun <T> verifyNativeSessionBeforePublishing(
+    snapshot: ValidatedGgufSnapshot,
+    file: File,
+    session: T,
+    ensureActive: () -> Unit,
+    releaseSession: (T) -> Unit
+): T {
+    try {
+        ensureActive()
+        LocalModelImport.requireSameFileSnapshot(snapshot, file)
+        return session
+    } catch (failure: Throwable) {
+        try { releaseSession(session) } catch (_: Throwable) { /* preserve cancellation/validation failure */ }
+        throw failure
+    }
+}
+
 class LlamaAndroidPort : OnDeviceLlmPort {
     private val gate = Mutex()
     @Volatile override var loadedModelName: String? = null
@@ -36,19 +59,21 @@ class LlamaAndroidPort : OnDeviceLlmPort {
         val snapshot = withContext(Dispatchers.IO) {
             LocalModelImport.validateForLoad(file) { caller.ensureActive() }
         }
+        caller.ensureActive()
         gate.lock()
         try {
+        caller.ensureActive()
         releaseInternal()
-        val session = Llama.loadModel(
-            modelPath = file.absolutePath,
-            config = LlamaConfig(contextSize = 2048, threads = 4)
+        val session = verifyNativeSessionBeforePublishing(
+            snapshot = snapshot,
+            file = file,
+            session = Llama.loadModel(
+                modelPath = file.absolutePath,
+                config = LlamaConfig(contextSize = 2048, threads = 4)
+            ),
+            ensureActive = { caller.ensureActive() },
+            releaseSession = { Llama.releaseModel(it) }
         )
-        try {
-            LocalModelImport.requireSameFileSnapshot(snapshot, file)
-        } catch (failure: Throwable) {
-            try { Llama.releaseModel(session) } catch (_: Throwable) { /* preserve validation failure */ }
-            throw failure
-        }
         releaser = { Llama.releaseModel(session) }
         completion = { prepared ->
             val isDraft = prepared.task == BrainTask.STUDY_DRAFTS
