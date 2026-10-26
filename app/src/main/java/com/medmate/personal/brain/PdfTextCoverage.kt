@@ -17,6 +17,20 @@ data class PdfTextCoverage(
     val missingPages: Int,
     val firstUnusablePages: List<Int>
 ) {
+    init {
+        require(totalPages > 0) { "PDF page count must be positive" }
+        require(indexedPages in 0..totalPages && readablePages >= 0 &&
+            emptyPages >= 0 && lowTextPages >= 0 && garbledPages >= 0 &&
+            missingPages in 0..totalPages) { "Invalid PDF coverage counts" }
+        require(indexedPages == readablePages + emptyPages + lowTextPages + garbledPages &&
+            missingPages == totalPages - indexedPages) { "Inconsistent PDF coverage counts" }
+        require(firstUnusablePages.size <= 32 &&
+            firstUnusablePages.all { it in 0 until totalPages } &&
+            firstUnusablePages.distinct().size == firstUnusablePages.size) {
+            "Invalid PDF coverage navigation preview"
+        }
+    }
+
     val complete: Boolean get() = indexedPages == totalPages
     val readyForFullChapterSearch: Boolean get() = complete && readablePages == totalPages
     val hasSearchableEvidence: Boolean get() = readablePages > 0
@@ -25,6 +39,9 @@ data class PdfTextCoverage(
 
 /** Pure Kotlin; no filesystem/network or Android dependencies. */
 object PdfCoverageAudit {
+    // The audit allocates one byte per PDF page. Bound hostile or pathological
+    // page counts before allocation so a malformed document cannot trigger an OOM.
+    const val MAX_AUDIT_PAGES = 100_000
     private const val MIN_TEXT_CHARS = 16
     /**
      * Conservative warning gate for clearly damaged PDF text extraction.
@@ -49,7 +66,9 @@ object PdfCoverageAudit {
 
     fun inspect(chapterId: String, totalPages: Int, pages: List<PageSource>,
                 maxListed: Int = 8): PdfTextCoverage {
-        require(chapterId.isNotBlank() && totalPages > 0) { "Invalid PDF identity/page count" }
+        require(chapterId.isNotBlank() && totalPages in 1..MAX_AUDIT_PAGES) {
+            "Invalid PDF identity or page count exceeds the safe local audit limit"
+        }
         require(maxListed in 0..32) { "Invalid coverage preview limit" }
         require(pages.size <= totalPages) { "Too many indexed PDF pages" }
         val states = ByteArray(totalPages) // 0 missing, 1 empty, 2 suspiciously short, 3 readable, 4 garbled
