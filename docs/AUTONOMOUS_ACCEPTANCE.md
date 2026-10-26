@@ -741,3 +741,14 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS (local static shell check):** `bash -n` and `scripts/test-native-gguf-device-script.sh` completed successfully using an isolated temporary copy of the current scripts; no ADB device or model was used.
 - **CI for head `9fc7de0effd47a51ee4cd67e2d4d184cb795bd53`: NOT VERIFIED.** Previous run `40276893414` validated the earlier cleanup-only contract, not this new host/device digest gate. No new APK is claimed; the change is in the test harness, not the app binary.
 - **NOT TESTED:** actual device-side checksum comparison, Xiaomi Pad 5 GGUF loading/inference, medical correctness, PDF citation grounding, cloud HTTPS/consent, memory/thermal behavior. Never use fake inference as evidence of real GGUF success.
+
+
+## 2026-10-26 — Behavioral GGUF transfer-gate tests (validated)
+
+- **Functional/test SHA:** `51ef85f7c6b39617583e58ffa5624d63367df506` on the existing MedMate PR #1 branch.
+- Replaced the static-only shell contract with isolated fake-ADB behavioral cases around the production `run-native-gguf-device-test.sh`. The fixture is a short synthetic file explicitly **not a GGUF model**.
+- **PASS:** matching host/device digest and byte count reaches the instrumentation invocation; a corrupted device copy exits with code 4 before instrumentation; a failed partial push exits non-zero and the EXIT trap removes the partial file. The test also guards against model-download commands.
+- **PASS Android CI:** [run 40287127756](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40287127756) completed successfully. The fake-ADB behavior test passed; Android unit tests, lint, AndroidTest compilation, and Debug APK assembly passed.
+- **PASS artifact verification:** [Debug APK artifact 12635280454](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40287127756/artifacts/12635280454). Extracted APK is **33,553,153 bytes**; independent SHA-256 is `8acae96fabc07009458f19bcded50f06016e0b01b29f933de2adc14c5bd80139`, matching the artifact manifest. ARM64 `libllama.so`, `libllama_jni.so`, and `libggml*.so` are present; no GGUF weights or PDF files are bundled.
+- **Purposeful test question answered:** does the transfer gate actually prevent inference after a mismatched copy and clean partial uploads, rather than merely containing the right strings? **PASS at isolated fake-ADB + CI level.**
+- **NOT TESTED:** real device-side checksum comparison, real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded answer correctness, clinical accuracy, live HTTPS consent/denial, and device RAM/thermal behavior. A fake-ADB test and CI compile are not real-model evidence. The APK is Debug/test only, not final delivery; PR remains Draft and unmerged.
