@@ -18,6 +18,12 @@ class LlamaAndroidPort : OnDeviceLlmPort {
     private val gate = Mutex()
     override var loadedModelName: String? = null
         private set
+    /** SHA-256 of the content-addressed GGUF file whose native load succeeded. */
+    var loadedModelSha256: String? = null
+        private set
+    /** Exact file bytes for the same successfully loaded GGUF; not RAM usage. */
+    var loadedModelBytes: Long? = null
+        private set
     private var completion: (suspend (PreparedPrompt) -> String)? = null
     private var releaser: (suspend () -> Unit)? = null
 
@@ -53,6 +59,8 @@ class LlamaAndroidPort : OnDeviceLlmPort {
             answer.text
         }
         loadedModelName = file.name
+        loadedModelSha256 = file.nameWithoutExtension
+        loadedModelBytes = file.length()
         } finally { gate.unlock() }
     }
 
@@ -80,6 +88,8 @@ class LlamaAndroidPort : OnDeviceLlmPort {
         releaser = null
         completion = null
         loadedModelName = null
+        loadedModelSha256 = null
+        loadedModelBytes = null
         close?.invoke()
     }
 }
