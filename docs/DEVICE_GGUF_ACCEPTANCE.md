@@ -31,3 +31,12 @@ The instrumented test now asserts that loadedModelName, loadedModelSha256, and l
 - `app-debug.apk`: 33,553,153 bytes; SHA-256 `af107fee084a17b6d6c0886d90020910c84575bc5c7fdb84f1a301967cda3550`.
 - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `5bd00633b3f7885f6179728495812ebb70aecdf02c56c85a7480371f650b9d2e`.
 - Both APK hashes were independently recalculated and match the bundled `SHA256SUMS`. The model/device execution remains **NOT TESTED** until a real GGUF is supplied locally and instrumentation runs on an ARM64 device.
+
+
+## Latest verified APK pair — 2026-10-26 (one-shot consent concurrency gate)
+- CI run: [40305964124](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124), test/source head `a1ecb7f7277e2ae75031a55f5276cac8a8a1aee5`.
+- Device-test bundle: [artifact 12642516742](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124/artifacts/12642516742).
+- `app-debug.apk`: 33,553,153 bytes; SHA-256 `e3c80cbf8f3190605fc9611ddacb9a82cebca3ab7a34f782ab9b08edc455217b`.
+- `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `434289f1baffbbaaaaebed3af6046e1982b948a70f3219e51e04d7f572015aac`.
+- Both hashes were independently recalculated from the downloaded bundle and match `SHA256SUMS`. The bundle contains no model weights, private PDFs or credentials.
+- The concurrency regression is a JVM test. Physical-device installation and genuine GGUF/llama.cpp inference remain **NOT TESTED** until a local model is supplied and the instrumentation script runs on an ARM64 device.
