@@ -1,3 +1,10 @@
+## 2026-10-26 — Local/cloud safety regression wired into CI
+
+- Updated `.github/workflows/android-debug.yml` so the build runs `python3 scripts/test-model-load-ui-contract.py` alongside the native GGUF/PDF contract checks.
+- **PASS — direct source-contract audit:** local explanation and local draft error regions contain no `CloudBrainGateway` call; cloud explanation/draft calls remain separate and the source retains `CloudTransferConsent` and `CloudEvidenceSeal`.
+- **CI:** NOT VERIFIED for workflow commit `95690ee82b0bd2c476d36f86f148607d6cbc8ea6`. The available GitHub workflow-run lookup returns no run/check for the new branch commits; do not infer a pass. The last confirmed CI run remains `40366568877`, which predates the latest source/guard changes.
+- **NOT TESTED:** real GGUF/JNI inference, two-page PDF round-trip on Xiaomi Pad 5, live HTTPS allow/deny, clinical review, RAM/thermal and final signing.
+
 ## 2026-10-26 — Local-to-cloud fallback regression
 
 - Added a source-contract regression to `scripts/test-model-load-ui-contract.py`: local explanation errors and local draft-generation errors must not invoke `CloudBrainGateway`; the optional cloud actions remain separate and must retain `CloudTransferConsent` plus `CloudEvidenceSeal`.
