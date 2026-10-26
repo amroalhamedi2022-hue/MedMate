@@ -69,6 +69,18 @@ host_sha="$(sha256sum "$GGUF_FILE" | awk '{print $1}')"
 host_bytes="$(wc -c < "$GGUF_FILE" | tr -d '[:space:]')"
 [[ "$host_sha" =~ ^[0-9a-f]{64}$ && "$host_bytes" =~ ^[0-9]+$ ]] || { echo "Could not calculate a valid host model digest/size" >&2; exit 4; }
 printf 'Host GGUF SHA-256: %s\nHost GGUF bytes: %s\n' "$host_sha" "$host_bytes"
+# Fail closed before pushing a large local model if device storage cannot be verified.
+# A 64 MiB reserve protects app/runtime data from a nearly-full shared data partition.
+free_kb="$("${ADB[@]}" shell toybox df -k "$device_dir" | tr -d '\r' | awk 'NF >= 4 && $1 !~ /^Filesystem$/ {available=$4} END {if (available ~ /^[0-9]+$/) print available; else exit 1}')"
+if [[ ! "$free_kb" =~ ^[0-9]+$ ]]; then
+  echo "FAIL: cannot verify device free storage; refusing to push GGUF" >&2
+  exit 6
+fi
+if ! awk -v available_kb="$free_kb" -v model_bytes="$host_bytes" 'BEGIN { required=model_bytes+67108864; exit !(available_kb*1024 >= required) }'; then
+  echo "FAIL: insufficient device free storage for GGUF; refusing push (requires model bytes + 64 MiB margin)" >&2
+  exit 6
+fi
+printf 'Device free storage: %s KiB; storage preflight passed.\n' "$free_kb"
 "${ADB[@]}" push "$GGUF_FILE" "$device_file"
 device_sha="$("${ADB[@]}" shell toybox sha256sum "$device_file" | tr -d '\r' | awk '{print $1}')"
 device_bytes="$("${ADB[@]}" shell toybox stat -c %s "$device_file" | tr -d '\r')"
