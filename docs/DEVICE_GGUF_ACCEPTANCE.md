@@ -47,3 +47,13 @@ The instrumented test now asserts that loadedModelName, loadedModelSha256, and l
 ## Prebuilt APK integrity gate (2026-10-26)
 
 When `APP_APK` and `TEST_APK` are supplied, the runner now requires `APP_APK_SHA256` and `TEST_APK_SHA256` and verifies both files before installing either APK. Missing or malformed hashes fail closed; a mismatch exits with status 4 before install, model push, or instrumentation. The script-contract regression exercises both the valid pair and a deliberately incorrect digest. The source-build path remains available without prebuilt hash variables. This is an artifact-integrity guard, not proof of real GGUF inference; device/model acceptance stays **NOT TESTED** until instrumentation runs on a real ARM64 device with a locally supplied model.
+
+
+## Latest verified CI pair — 2026-10-26 (prebuilt APK hash guard)
+
+- CI run: [40344711259](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40344711259), source/test commit `b6a70c15b548437e4a18d0ba744558c43498577f`.
+- Device-test bundle: [artifact 12660049516](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40344711259/artifacts/12660049516).
+- `app-debug.apk`: 33,553,165 bytes; SHA-256 `ef570a66a13045521fc63690cc4c759fc16cd29cc4d9d7f1b51ea33eb9a37b5c`.
+- `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `100adcbe1dd6dba338a99bd60d3cccf127b7454d8079cfbd7fba578c5398ffbd`.
+- Both hashes were recalculated from the downloaded artifact and match `SHA256SUMS`. The updated runner now requires both expected SHA-256 values for prebuilt APKs and refuses a mismatch before installation.
+- The bundle contains no GGUF model, personal PDF, provider credential, or signing key. Physical-device native inference remains **NOT TESTED**.

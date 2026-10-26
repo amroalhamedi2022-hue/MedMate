@@ -854,3 +854,15 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - `app-debug-androidTest.apk` — 364,513 bytes — `85e30936879a4f62da30ba847355a241239d48f92e1936635c0d72a06af9a9a9`.
 - **NOT TESTED:** real GGUF loading/inference through llama.cpp/JNI on Xiaomi Pad 5, PDF-grounded clinical accuracy/citations, live HTTPS approval/denial behavior, RAM/thermal performance, upgrade continuity, and final release signing. CI and APK packaging do not prove model inference.
 - No GGUF, personal PDF, credential, signing key, paid API, or user medical content was uploaded. PR #1 remains Draft; no main write or merge.
+
+
+## 2026-10-26 — Prebuilt APK integrity gate
+
+- **PASS — CI:** [run 40344711259](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40344711259), source/test commit `b6a70c15b548437e4a18d0ba744558c43498577f`.
+- **PASS — JVM:** 142 tests, 0 failures, 0 ignored (23.291 seconds).
+- **PASS — device-script contract:** correct prebuilt APK hashes proceed; a deliberately incorrect APK digest fails closed before install; GGUF digest mismatch and partial push fail closed and clean up; no model download; Gradle is skipped for a supplied prebuilt pair.
+- **PASS — Android source/packaging:** lint, Debug APK, AndroidTest APK, compiled-manifest identity/SDK/permission checks and the device-test bundle all completed successfully.
+- **Verified device-test bundle:** [artifact 12660049516](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40344711259/artifacts/12660049516).
+  - `app-debug.apk`: 33,553,165 bytes; SHA-256 `ef570a66a13045521fc63690cc4c759fc16cd29cc4d9d7f1b51ea33eb9a37b5c`.
+  - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `100adcbe1dd6dba338a99bd60d3cccf127b7454d8079cfbd7fba578c5398ffbd`.
+- **NOT TESTED:** a physical ARM64 device with a user-supplied real GGUF; real llama.cpp/JNI inference; PDF citation accuracy; live HTTPS cloud-consent approval/denial; RAM/thermal behavior; final release signing. Fake ports remain contract-only and are not accepted as native inference evidence.
