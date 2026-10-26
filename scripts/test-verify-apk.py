@@ -34,6 +34,8 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
         " print(os.environ['FAKE_BADGING'])\n"
         "elif sys.argv[1:3] == ['dump','permissions']:\n"
         " print(os.environ.get('FAKE_PERMISSIONS',''))\n"
+        "elif sys.argv[1:3] == ['dump','xmltree']:\n"
+        " print(os.environ.get('FAKE_XMLTREE','A: android:usesCleartextTraffic(0x010104ec)=false'))\n"
         "else: raise SystemExit(2)\n",
         encoding="utf-8",
     )
@@ -48,10 +50,11 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
             f"targetSdkVersion:'{target}'\n"
         )
 
-    def run(label, output, permissions="", expected=0):
+    def run(label, output, permissions="", expected=0, xmltree="A: android:usesCleartextTraffic(0x010104ec)=false"):
         env = os.environ.copy()
         env["FAKE_BADGING"] = output
         env["FAKE_PERMISSIONS"] = permissions
+        env["FAKE_XMLTREE"] = xmltree
         result = subprocess.run(
             [sys.executable, str(verifier), str(apk), str(aapt)],
             cwd=ROOT, env=env, text=True, capture_output=True
@@ -62,10 +65,14 @@ with tempfile.TemporaryDirectory(prefix="medmate-apk-verifier-") as td:
         )
         print(f"PASS: {label}")
 
-    run("matches Gradle identity and offline permissions", badging())
+    internet = "uses-permission: name='android.permission.INTERNET'"
+    run("matches Gradle identity and explicit optional-cloud permission", badging(), internet)
     run("rejects stale version metadata", badging(code="8", name="0.6.1-alpha"), expected=1)
     run("rejects wrong package ID", badging(package="com.example.other"), expected=1)
     run("rejects target SDK drift", badging(target=str(int(target_sdk) - 1)), expected=1)
-    run("rejects INTERNET permission", badging(), "uses-permission: name='android.permission.INTERNET'", 1)
+    run("rejects missing declared INTERNET permission", badging(), expected=1)
+    run("rejects broad storage permission", badging(), internet + "\\nuses-permission: name='android.permission.READ_EXTERNAL_STORAGE'", 1)
+    run("rejects cleartext-enabled APK", badging(), internet, 1,
+        "A: android:usesCleartextTraffic(0x010104ec)=true")
 
-print("PASS: APK verifier metadata-drift regression suite")
+print("PASS: APK verifier metadata, optional-cloud permission, cleartext and broad-storage regression suite")

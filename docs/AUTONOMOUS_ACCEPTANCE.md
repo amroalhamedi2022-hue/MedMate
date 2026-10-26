@@ -796,3 +796,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS independent APK verification:** artifact [12642516742](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124/artifacts/12642516742) contains the exact app/test APK pair and `SHA256SUMS`. Independently recalculated hashes match the manifest: `app-debug.apk` 33,553,153 bytes, SHA-256 `e3c80cbf8f3190605fc9611ddacb9a82cebca3ab7a34f782ab9b08edc455217b`; `app-debug-androidTest.apk` 364,513 bytes, SHA-256 `434289f1baffbbaaaaebed3af6046e1982b948a70f3219e51e04d7f572015aac`.
 - **PASS privacy check:** bundle contains only APKs and checksums; no GGUF, PDF, keystore or signing key.
 - **NOT TESTED:** this proves one-shot grant concurrency only. Real GGUF/JNI inference on Xiaomi Pad 5, PDF citation taps/grounding, clinical correctness, live HTTPS consent/denial, device RAM/thermal and final signed release remain **NOT TESTED**. Debug only; no main write or merge.
+
+
+## 2026-10-26 — APK permission verifier aligned with optional cloud-AI contract
+
+- Latest CI [40310142232](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40310142232) **FAILED** at APK verification because the verifier prohibited `android.permission.INTERNET`, while the approved requirement includes optional user-configured cloud AI over HTTPS. The app manifest already declared the normal permission; this was a policy-check mismatch, not a reason to remove cloud functionality.
+- Correction: verifier requires the packaged INTERNET permission to match the source manifest, rejects broad-storage permissions, and verifies `android:usesCleartextTraffic="false"` in the source and compiled APK. The manifest explicitly disables cleartext.
+- Regressions cover the declared optional-cloud permission, missing permission, broad-storage permission and cleartext-enabled APK. The cloud gateway still requires a validated HTTPS endpoint and a one-shot grant sealed to the exact request/evidence; INTERNET permission alone is not consent.
+- **CI for this correction: NOT VERIFIED at commit time.** The next build must pass verifier regressions, unit tests, lint, AndroidTest compilation and APK assembly.
+- **NOT TESTED:** live HTTPS allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, PDF-grounded answer quality, clinical correctness and device memory/thermal. No model, PDF or credentials added.

@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADLE = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+MANIFEST = (ROOT / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
 
 
 def gradle_value(pattern: str, label: str) -> str:
@@ -54,14 +55,43 @@ for label, pattern in expected_patterns.items():
             f"APK {label} does not match current Gradle configuration\n"
             f"Expected pattern: {pattern}\nActual aapt badging:\n{badging}"
         )
+# INTERNET is intentional for the user's optional, explicitly consented
+# HTTPS cloud-AI path. It is a normal permission, not user consent itself.
+internet = "android.permission.INTERNET"
+declared_internet = bool(re.search(
+    r'<uses-permission\s+android:name=["\']android\.permission\.INTERNET["\']',
+    MANIFEST
+))
+if declared_internet != (internet in permissions):
+    raise SystemExit(
+        "APK INTERNET permission does not match explicit app manifest: "
+        f"declared={declared_internet}, packaged={internet in permissions}"
+    )
+
 for forbidden in (
-    "android.permission.INTERNET",
     "android.permission.MANAGE_EXTERNAL_STORAGE",
     "android.permission.READ_EXTERNAL_STORAGE",
     "android.permission.WRITE_EXTERNAL_STORAGE",
 ):
     if forbidden in permissions:
-        raise SystemExit(f"forbidden permission present: {forbidden}")
-print("PASS: APK identity/version/SDK match Gradle; no forbidden network/broad-storage permissions")
+        raise SystemExit(f"forbidden broad-storage permission present: {forbidden}")
+
+if not re.search(r'android:usesCleartextTraffic\s*=\s*"false"', MANIFEST):
+    raise SystemExit("Manifest must explicitly disable cleartext traffic")
+manifest_tree = run("dump", "xmltree", "--file", "AndroidManifest.xml")
+cleartext_line = next(
+    (line for line in manifest_tree.splitlines() if "usesCleartextTraffic" in line),
+    None
+)
+if cleartext_line is None or not re.search(
+    r'(?:=\s*false\b|=\s*\(type 0x12\)0x0+\b)',
+    cleartext_line
+):
+    raise SystemExit(
+        "APK must package android:usesCleartextTraffic=false; "
+        f"found: {cleartext_line!r}"
+    )
+
+print("PASS: APK identity/version/SDK match Gradle; declared optional-cloud INTERNET matches APK; cleartext disabled; no broad-storage permissions")
 print(next(line for line in badging.splitlines() if line.startswith("package:")))
 print(permissions.strip() or "uses-permission: none")
