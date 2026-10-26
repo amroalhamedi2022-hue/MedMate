@@ -33,7 +33,7 @@ class LlamaAndroidPort : OnDeviceLlmPort {
         // SHA-256 verification may scan several GB: run it on IO threads and
         // honor cancellation without blocking Compose or holding the native gate.
         val caller = currentCoroutineContext()
-        withContext(Dispatchers.IO) {
+        val snapshot = withContext(Dispatchers.IO) {
             LocalModelImport.validateForLoad(file) { caller.ensureActive() }
         }
         gate.lock()
@@ -43,6 +43,12 @@ class LlamaAndroidPort : OnDeviceLlmPort {
             modelPath = file.absolutePath,
             config = LlamaConfig(contextSize = 2048, threads = 4)
         )
+        try {
+            LocalModelImport.requireSameFileSnapshot(snapshot, file)
+        } catch (failure: Throwable) {
+            try { Llama.releaseModel(session) } catch (_: Throwable) { /* preserve validation failure */ }
+            throw failure
+        }
         releaser = { Llama.releaseModel(session) }
         completion = { prepared ->
             val isDraft = prepared.task == BrainTask.STUDY_DRAFTS
@@ -59,8 +65,8 @@ class LlamaAndroidPort : OnDeviceLlmPort {
             answer.text
         }
         loadedModelName = file.name
-        loadedModelSha256 = file.nameWithoutExtension
-        loadedModelBytes = file.length()
+        loadedModelSha256 = snapshot.sha256
+        loadedModelBytes = snapshot.bytes
         } finally { gate.unlock() }
     }
 

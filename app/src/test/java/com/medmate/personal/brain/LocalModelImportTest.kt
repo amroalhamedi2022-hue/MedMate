@@ -129,6 +129,41 @@ class LocalModelImportTest {
         Unit
     }
 
+
+    @Test fun validatedSnapshotCarriesExactContentAddressAndStableFileMetadata(): Unit = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        val snapshot = LocalModelImport.validateForLoad(imported.file)
+        assertEquals(imported.sha256, snapshot.sha256)
+        assertEquals(imported.bytes, snapshot.bytes)
+        assertEquals(imported.file.canonicalPath, snapshot.canonicalPath)
+        assertEquals(imported.file.lastModified(), snapshot.lastModifiedMillis)
+        LocalModelImport.requireSameFileSnapshot(snapshot, imported.file)
+        Unit
+    }
+
+    @Test fun postLoadSnapshotRejectsSizeChangeBeforePublishingNativeIdentity(): Unit = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        val snapshot = LocalModelImport.validateForLoad(imported.file)
+        imported.file.appendBytes(byteArrayOf(0x7f))
+        imported.file.setLastModified(snapshot.lastModifiedMillis)
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.requireSameFileSnapshot(snapshot, imported.file)
+        }
+        Unit
+    }
+
+    @Test fun postLoadSnapshotRejectsSymlinkReplacement(): Unit = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        val snapshot = LocalModelImport.validateForLoad(imported.file)
+        val target = File(dir, "detached-after-validation.gguf")
+        assertTrue(imported.file.renameTo(target))
+        Files.createSymbolicLink(imported.file.toPath(), target.toPath())
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.requireSameFileSnapshot(snapshot, imported.file)
+        }
+        Unit
+    }
+
     @Test fun repeatedZeroByteReadsAbortAndCleanTheTemporaryFile() = inTempDir { dir ->
         var reads = 0
         val stalled = object : InputStream() {

@@ -670,3 +670,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Purposeful build question answered: do the importer symlink-reuse guard and large-PDF page-scope fallback regression pass under the actual Android/JVM test suite and packaging? Yes at source/CI level.
 - NOT TESTED: genuine GGUF/JNI inference with a real model on Xiaomi Pad 5, PDF-grounded clinical correctness, live HTTPS consent/denial, physical-device RAM/thermal behavior and final signed release. The native model identity/race gate now has CI coverage but still does not prove real inference.
 - PR remains Draft; no main write/merge, no model weights, private PDF, secret, paid API, other repository or Library/Handoff change.
+
+
+## 2026-10-26 — Validate GGUF file identity across native load (CI pending)
+- `LocalModelImport.validateForLoad` now returns a snapshot containing the validated content-addressed SHA-256, exact byte count, canonical path and modification timestamp. It verifies the file metadata did not change while the pre-load digest was being computed.
+- `LlamaAndroidPort` rechecks the same non-symlink canonical file, byte count and timestamp after `Llama.loadModel` returns and before publishing model identity. If the file was replaced or changed during the native load window, the just-created session is released and the validation failure is preserved. The guard avoids a second full multi-GB hash pass; it is a metadata/path race guard, not cryptographic proof against same-size/same-timestamp mutation and not inference evidence.
+- Added three JUnit regressions: stable snapshot acceptance, changed-size rejection even when the old timestamp is restored, and symlink replacement rejection. Fixtures are tiny synthetic GGUF headers only; no real model weights, PDFs, secrets or paid services are used.
+- Purposeful CI question: do the new snapshot return type, native-load cleanup path and import regressions compile and pass in the actual Android/JVM suite? Source inspection alone cannot validate Kotlin API compatibility or native adapter compilation; a targeted CI build is justified.
+- CI, test count and APK artifact are pending. Real GGUF inference on Xiaomi Pad 5, PDF grounding/medical accuracy, HTTPS consent, device RAM/thermal and final signed release remain NOT TESTED.

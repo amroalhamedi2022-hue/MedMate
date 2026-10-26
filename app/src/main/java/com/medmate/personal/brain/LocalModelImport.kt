@@ -13,6 +13,14 @@ import java.security.MessageDigest
  */
 data class ImportedGguf(val file: File, val sha256: String, val bytes: Long, val reused: Boolean)
 
+data class ValidatedGgufSnapshot internal constructor(
+    val canonicalPath: String,
+    val sha256: String,
+    val bytes: Long,
+    val lastModifiedMillis: Long
+)
+
+
 object LocalModelImport {
     const val MIN_BYTES = 128L
     const val MAX_BYTES = 8L * 1024 * 1024 * 1024
@@ -87,16 +95,19 @@ object LocalModelImport {
      * The callback supports coroutine cancellation during multi-GB disk reads.
      * This is NOT a full GGUF parse, authenticity proof or actual inference.
      */
-    fun validateForLoad(file: File, onBytes: (Long) -> Unit = {}) {
-        // Do not let a hash-shaped symlink redirect native loading outside the
-        // content-addressed model file, even if its target currently hashes OK.
+    fun validateForLoad(file: File, onBytes: (Long) -> Unit = {}): ValidatedGgufSnapshot {
+        // Reject links before resolving the canonical path. Capture file identity
+        // before hashing so ordinary swaps/modifications during validation fail closed.
         require(!java.nio.file.Files.isSymbolicLink(file.toPath())) {
             "ملف النموذج لا يجوز أن يكون رابطًا رمزيًا"
         }
         require(file.isFile && file.extension.equals("gguf", ignoreCase = true)) {
             "اختر ملف GGUF محليًا صالحًا"
         }
-        require(file.length() in MIN_BYTES..MAX_BYTES) {
+        val canonicalPath = file.canonicalPath
+        val initialBytes = file.length()
+        val initialModified = file.lastModified()
+        require(initialBytes in MIN_BYTES..MAX_BYTES) {
             "حجم ملف GGUF غير صالح أو خارج الحد المسموح"
         }
         val header = ByteArray(24)
@@ -115,6 +126,29 @@ object LocalModelImport {
         }
         require(digestFile(file, onBytes) == expectedDigest) {
             "تغيّر محتوى النموذج المحفوظ؛ أعد استيراده قبل التشغيل"
+        }
+        require(!java.nio.file.Files.isSymbolicLink(file.toPath()) && file.isFile &&
+            file.canonicalPath == canonicalPath && file.length() == initialBytes &&
+            file.lastModified() == initialModified) {
+            "تغيّر ملف النموذج أثناء التحقق؛ أعد استيراده قبل التشغيل"
+        }
+        return ValidatedGgufSnapshot(canonicalPath, expectedDigest, initialBytes, initialModified)
+    }
+
+    /**
+     * Check the same private file is still present after native loading and before
+     * publishing model identity. This is a path/size/timestamp race guard, not a
+     * second full-file hash and not proof of successful inference.
+     */
+    fun requireSameFileSnapshot(snapshot: ValidatedGgufSnapshot, file: File) {
+        require(!java.nio.file.Files.isSymbolicLink(file.toPath())) {
+            "ملف النموذج لا يجوز أن يكون رابطًا رمزيًا"
+        }
+        require(file.isFile && file.extension.equals("gguf", ignoreCase = true) &&
+            file.nameWithoutExtension == snapshot.sha256 &&
+            file.canonicalPath == snapshot.canonicalPath && file.length() == snapshot.bytes &&
+            file.lastModified() == snapshot.lastModifiedMillis) {
+            "تغيّر ملف النموذج أثناء التحميل؛ أعد استيراده قبل تشغيل الاستدلال"
         }
     }
 
