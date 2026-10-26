@@ -91,3 +91,7 @@ The latest confirmed CI pair is from [run 40390430350](https://github.com/amroal
 - When using prebuilt files, set `APP_APK`, `TEST_APK`, `APP_APK_SHA256` and `TEST_APK_SHA256` before running `bash scripts/run-native-gguf-device-test.sh`. The runner refuses a hash mismatch before install, verifies the local GGUF hash/byte count on the device, requires a successful AndroidJUnitRunner/JUnit summary, and removes the temporary model on exit.
 - Supply only a model file already stored locally and authorized for testing. The script does not download or upload weights; do not commit or share GGUF files, personal PDFs, credentials or signing keys.
 - **NOT TESTED:** this pair has not yet been installed on Xiaomi Pad 5 and no actual GGUF inference result is claimed.
+
+## 2026-10-26 — Explicit page-1 exclusion sentinel
+
+The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` only on PDF page 1. The requested page-2 prompt must not contain this sentinel in either `PreparedPrompt.prompt` or `presentedEvidence`. This is a negative privacy/scope assertion in addition to requiring the unique calibration identifier on page 2, a single `[S1]` marker, and navigation to page 2. CI compilation and static wiring are still separate from actually running the test with a real local GGUF on Xiaomi Pad 5.
