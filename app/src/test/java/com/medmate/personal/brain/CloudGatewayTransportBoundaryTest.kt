@@ -31,13 +31,18 @@ class CloudGatewayTransportBoundaryTest {
         private val body: String = """{"choices":[{"message":{"content":"هذا شرح من المصدر [S1]"}}]}""",
         private val responseStream: InputStream? = null,
         private val responseCode: Int = 200,
-        private val failOutput: Boolean = false
+        private val failOutput: Boolean = false,
+        private val failRequestProperty: Boolean = false
     ) : HttpURLConnection(url) {
         val requestBytes = ByteArrayOutputStream()
         var disconnected = false
         override fun connect() = Unit
         override fun disconnect() { disconnected = true }
         override fun usingProxy() = false
+        override fun setRequestProperty(key: String, value: String) {
+            if (failRequestProperty) throw java.io.IOException("synthetic request setup failure")
+            super.setRequestProperty(key, value)
+        }
         override fun getOutputStream(): ByteArrayOutputStream {
             if (failOutput) throw java.io.IOException("synthetic write failure")
             return requestBytes
@@ -268,6 +273,21 @@ class CloudGatewayTransportBoundaryTest {
         assertFalse(consent.permits(endpoint, model, request, seal))
     }
 
+
+    @Test fun connectionSetupFailureStillDisconnectsAndConsumesGrant() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, failRequestProperty = true).also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, opened.size)
+        assertTrue("connection must be disconnected even when request configuration throws", opened.single().disconnected)
+        assertFalse("a failed outbound attempt must not reuse the one-shot grant", consent.permits(endpoint, model, request, seal))
+    }
 
     @Test fun concurrentGatewayCallsConsumeOneConsentAndOpenAtMostOneConnection() {
         val opened = java.util.Collections.synchronizedList(mutableListOf<FakeHttpsConnection>())
