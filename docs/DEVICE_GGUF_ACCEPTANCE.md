@@ -57,3 +57,13 @@ When `APP_APK` and `TEST_APK` are supplied, the runner now requires `APP_APK_SHA
 - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `100adcbe1dd6dba338a99bd60d3cccf127b7454d8079cfbd7fba578c5398ffbd`.
 - Both hashes were recalculated from the downloaded artifact and match `SHA256SUMS`. The updated runner now requires both expected SHA-256 values for prebuilt APKs and refuses a mismatch before installation.
 - The bundle contains no GGUF model, personal PDF, provider credential, or signing key. Physical-device native inference remains **NOT TESTED**.
+
+
+## Latest CI-built APK pair — two-page citation fixture (2026-10-26)
+
+- CI run: [40366568877](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877), source/test SHA baa6b7cff1939fe24d1448806514bde9071a667b.
+- Device-test bundle: [artifact 12670667759](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877/artifacts/12670667759).
+- app-debug.apk: 33,553,165 bytes; SHA-256 ee0b6682a44c12bda76e8cd9fcb8b17cde2fc8b8893efa42ff54e58ac434c715.
+- app-debug-androidTest.apk: 372,149 bytes; SHA-256 48ab3f98f59ee83ccbeb2ab81c0c8d3056b6316352ff8bc76d24e8321f3b0652.
+- Both hashes were independently recomputed from the downloaded bundle and match SHA256SUMS. JUnit 142/142 PASS; lint, AndroidTest compile, APK assembly, manifest checks and script contract PASS.
+- The new device fixture places a fresh identifier only on PDF page 2 and requires a native answer's [S1] marker to map to PDF page 2. CI compilation does not execute instrumentation. Xiaomi Pad 5 plus a locally supplied GGUF is still required for a real inference PASS.
