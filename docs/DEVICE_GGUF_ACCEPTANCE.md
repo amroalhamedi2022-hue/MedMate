@@ -95,3 +95,10 @@ The latest confirmed CI pair is from [run 40390430350](https://github.com/amroal
 ## 2026-10-26 — Explicit page-1 exclusion sentinel
 
 The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` only on PDF page 1. The requested page-2 prompt must not contain this sentinel in either `PreparedPrompt.prompt` or `presentedEvidence`. This is a negative privacy/scope assertion in addition to requiring the unique calibration identifier on page 2, a single `[S1]` marker, and navigation to page 2. CI compilation and static wiring are still separate from actually running the test with a real local GGUF on Xiaomi Pad 5.
+
+## 2026-10-26 — CI artifact for the page-isolation/HTTPS regression
+
+- CI run: [40403719873](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873), source SHA `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f).
+- Device-test bundle: [12691305315](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873/artifacts/12691305315).
+- App SHA-256: `f5d57bcea4ea860fa592ede9b2c5fee3d79d5f0fc838666d586098f568229f2f` (33,553,165 bytes); AndroidTest SHA-256: `fc3aecddec322aaa4a8e61e331198e85e9ed689b2b72ec9111aadba641a3cf3c` (373,777 bytes). Both independently match the bundle's `SHA256SUMS`.
+- The 143 JVM tests and the AndroidTest APK compilation passed. The instrumentation still needs to run on a physical device with a user-supplied local GGUF; the new page-1 exclusion assertion has **not** been executed against native inference.
