@@ -31,15 +31,15 @@ trap 'exit 143' TERM
 host_sha="$(sha256sum "$GGUF_FILE" | awk '{print $1}')"
 host_bytes="$(wc -c < "$GGUF_FILE" | tr -d '[:space:]')"
 [[ "$host_sha" =~ ^[0-9a-f]{64}$ && "$host_bytes" =~ ^[0-9]+$ ]] || { echo "Could not calculate a valid host model digest/size" >&2; exit 4; }
-printf 'Host GGUF SHA-256: %s\\nHost GGUF bytes: %s\\n' "$host_sha" "$host_bytes"
+printf 'Host GGUF SHA-256: %s\nHost GGUF bytes: %s\n' "$host_sha" "$host_bytes"
 "${ADB[@]}" push "$GGUF_FILE" "$device_file"
-device_sha="$("${ADB[@]}" shell toybox sha256sum "$device_file" | tr -d '\\r' | awk '{print $1}')"
-device_bytes="$("${ADB[@]}" shell toybox stat -c %s "$device_file" | tr -d '\\r')"
+device_sha="$("${ADB[@]}" shell toybox sha256sum "$device_file" | tr -d '\r' | awk '{print $1}')"
+device_bytes="$("${ADB[@]}" shell toybox stat -c %s "$device_file" | tr -d '\r')"
 if [[ "$device_sha" != "$host_sha" || "$device_bytes" != "$host_bytes" ]]; then
   echo "FAIL: device-side GGUF digest/size differs from the local source; refusing native inference" >&2
   echo "Host: $host_sha ($host_bytes bytes); device: $device_sha ($device_bytes bytes)" >&2
   exit 4
 fi
-printf 'PASS: device GGUF SHA-256 and byte count match the local source (%s bytes).\\n' "$device_bytes"
+printf 'PASS: device GGUF SHA-256 and byte count match the local source (%s bytes).\n' "$device_bytes"
 # Invoke instrumentation directly so the install step cannot erase the just-pushed file.
 "${ADB[@]}" shell am instrument -w -e ggufPath "$device_file" com.medmate.personal.test/androidx.test.runner.AndroidJUnitRunner
