@@ -733,3 +733,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Debug APK artifact: [12630408235](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40276893414/artifacts/12630408235), 33,553,153 bytes. SHA-256 independently recomputed after downloading/extracting the artifact: `05cdd6a854a64ee5fc83183c330cc0830092c62742714acd5e013f615fd57aa4`, matching the CI manifest.
 - APK inspection confirms ARM64 llama.cpp libraries are packaged (`libllama.so`, `libllama_jni.so`, `libggml*.so`) and no `.gguf` model or PDF is bundled. The artifact remains a **debug/test build**, not a final release.
 - **NOT TESTED:** physical Xiaomi Pad 5 inference with a real user-supplied GGUF, clinical correctness, PDF citation grounding, cloud consent over HTTPS, and device memory/thermal behaviour. CI did not download or upload model weights.
+
+
+## 2026-10-26 — Verify user-supplied GGUF transfer before native inference
+- The device harness now computes the local GGUF SHA-256 and byte count, pushes the file, then checks device-side `toybox sha256sum` and `toybox stat` **before instrumentation**. A mismatch fails closed; the EXIT cleanup trap remains installed before directory creation/push. No download or model upload is introduced.
+- Added a shell contract regression for host/device digest checks, byte-size check, fail-closed ordering, no model download, and cleanup-before-push.
+- **PASS (local static shell check):** `bash -n` and `scripts/test-native-gguf-device-script.sh` completed successfully using an isolated temporary copy of the current scripts; no ADB device or model was used.
+- **CI for head `9fc7de0effd47a51ee4cd67e2d4d184cb795bd53`: NOT VERIFIED.** Previous run `40276893414` validated the earlier cleanup-only contract, not this new host/device digest gate. No new APK is claimed; the change is in the test harness, not the app binary.
+- **NOT TESTED:** actual device-side checksum comparison, Xiaomi Pad 5 GGUF loading/inference, medical correctness, PDF citation grounding, cloud HTTPS/consent, memory/thermal behavior. Never use fake inference as evidence of real GGUF success.
