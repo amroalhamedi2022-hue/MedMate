@@ -659,3 +659,14 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Source/test changes are committed on the draft PR branch. The probe now snapshots model name, SHA-256 and byte size before inference and compares them after generation; a model switch or unload during result capture cannot be credited as the model that produced the answer. Identity fields are volatile-published.
 - Regression coverage checks stable identity and rejects changed model name, digest, byte size or missing identity. This is not a real-GGUF test.
 - **CI:** pending on current branch head; real GGUF/JNI on Xiaomi Pad 5, PDF grounding, medical correctness, cloud consent, RAM/thermal and final signing remain NOT TESTED.
+
+## 2026-10-26 — GGUF symlink-reuse hardening + bounded PDF fallback page isolation (validated)
+- Functional/test SHA: 813d2d9a67c548a62ddbb68fe2c417304bb74ec9 on the existing MedMate PR #1 branch.
+- Production: LocalModelImport now rejects a content-addressed target that is a symbolic link during duplicate reuse, including a dangling link, rather than reporting it as a reusable model. This complements the pre-load symlink guard and full digest check.
+- PDF retrieval regression: IndexedSearchTest forces StudyBrain above its 350,000-character cache ceiling with synthetic text, then verifies the uncached fallback still obeys selected-page and PDF/chapter boundaries. This is a lexical retrieval test, not native inference.
+- PASS Android CI: run 40253582479 completed SUCCESS; SQLite schema/migration contracts, Android JUnit, lint, Compose/Kotlin compilation and Debug APK assembly all passed.
+- PASS JUnit report artifact 12621786373: 132 tests PASS, 0 failures, 0 ignored. LocalModelImportTest 7/7 PASS, including hash-named symlink reuse rejection; IndexedSearchTest 3/3 PASS, including large-document selected-page isolation.
+- PASS independent APK verification: downloaded artifact 12622115456, extracted the 33,553,153-byte app-debug.apk and independently recalculated SHA-256 e8009f077c7e85edcbc0a831e01b5512e2a112fddda9bdf965ee8f1491d15d53, matching APK_SHA256.txt. ARM64 libllama.so and libllama_jni.so are packaged; no GGUF weights or PDF files are bundled. This is a Debug APK, not final delivery.
+- Purposeful build question answered: do the importer symlink-reuse guard and large-PDF page-scope fallback regression pass under the actual Android/JVM test suite and packaging? Yes at source/CI level.
+- NOT TESTED: genuine GGUF/JNI inference with a real model on Xiaomi Pad 5, PDF-grounded clinical correctness, live HTTPS consent/denial, physical-device RAM/thermal behavior and final signed release. The native model identity/race gate now has CI coverage but still does not prove real inference.
+- PR remains Draft; no main write/merge, no model weights, private PDF, secret, paid API, other repository or Library/Handoff change.
