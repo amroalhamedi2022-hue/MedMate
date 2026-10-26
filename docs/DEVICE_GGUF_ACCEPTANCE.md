@@ -1,3 +1,7 @@
+## Source-version caveat for the latest verified pair
+
+The APK pair from run `40366568877` is the last **verified CI baseline**, not proof of the newest PR source. It predates the Chapter/source checkpoint `dd5201e9dd056a4ffce58450f50f3db8cf7603cf` and later host-side guard changes. It can be used for a preliminary device smoke, but a pass with this pair must not close the latest exact-marker/cleanup or local-cloud regression gates. A fresh CI-built pair for the current PR head is required.
+
 ## Latest two-page PDF citation test APK pair — 2026-10-26
 
 - CI run: [40366568877](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877), source/test SHA `baa6b7cff1939fe24d1448806514bde9071a667b`.
