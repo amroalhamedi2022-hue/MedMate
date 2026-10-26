@@ -1,3 +1,13 @@
+## Latest two-page PDF citation test APK pair — 2026-10-26
+
+- CI run: [40366568877](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877), source/test SHA `baa6b7cff1939fe24d1448806514bde9071a667b`.
+- Device-test bundle: [artifact 12670667759](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877/artifacts/12670667759).
+- `app-debug.apk`: 33,553,165 bytes; SHA-256 `ee0b6682a44c12bda76e8cd9fcb8b17cde2fc8b8893efa42ff54e58ac434c715`.
+- `app-debug-androidTest.apk`: 372,149 bytes; SHA-256 `48ab3f98f59ee83ccbeb2ab81c0c8d3056b6316352ff8bc76d24e8321f3b0652`.
+- Both hashes independently recomputed and match `SHA256SUMS`. CI passed 142 JVM tests (0 failures/ignored), lint, APK + AndroidTest assembly, manifest verification and runner contract.
+- The device-only instrumentation creates a synthetic two-page PDF, keeps a fresh identifier on page 2, invokes production PDFBox/retrieval and the real `LlamaAndroidPort`/llama.cpp JNI path, then requires `[S1]` to resolve to human-facing page 2. **The test is compiled, not executed.**
+- **NOT TESTED:** Xiaomi Pad 5, actual GGUF inference, PDFBox-to-native citation round-trip, live HTTPS consent/denial, clinical review, RAM/thermal and final signing. Bundle includes no model weights, personal PDFs or credentials.
+
 # MedMate — real GGUF device acceptance
 
 Use the official [Qwen2.5-1.5B-Instruct-GGUF model repository](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF) and review its Apache-2.0 model license. A Q4_K_M file is a reasonable first ARM64 smoke candidate, but this general model is **not medically validated**. Do not commit model weights or upload them to GitHub.
