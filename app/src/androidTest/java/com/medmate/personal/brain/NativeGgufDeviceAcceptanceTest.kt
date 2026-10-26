@@ -5,6 +5,12 @@ import android.content.Context
 import android.os.Debug
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPage
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.medmate.personal.reader.PdfTextExtractor
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -53,6 +59,7 @@ class NativeGgufDeviceAcceptanceTest {
             assertTrue("Real native probe failed", result.diagnosticPassed)
             assertEquals(imported.sha256, result.nativeModelSha256)
             assertEquals(imported.bytes, result.nativeModelBytes ?: -1L)
+            assertRealPdfCitationRoundTrip(context, port)
             Log.i("MedMateNativeGGUF", "PASS sha256=${imported.sha256} bytes=${imported.bytes} " +
                 "elapsedMs=${result.elapsedMs} answerChars=${result.answerChars} " +
                 "pssBeforeKb=${result.memoryBefore?.appPssKb} pssAfterKb=${result.memoryAfter?.appPssKb} " +
@@ -67,6 +74,71 @@ class NativeGgufDeviceAcceptanceTest {
             unloadFailure?.let { throw it }
             assertTrue("Loaded GGUF identity must clear after unload", identityCleared)
             assertTrue("A test-only imported model must be removed after unload", temporaryModelRemoved)
+        }
+    }
+
+
+    /**
+     * Device-only PDF-to-native-inference round trip. The PDF is generated inside
+     * app cache from a fresh synthetic identifier; no personal document is read,
+     * packaged, logged, or transmitted. This exercises PDFBox, page extraction,
+     * source retrieval, prompt preparation, the real JNI model and page-link mapping.
+     */
+    private suspend fun assertRealPdfCitationRoundTrip(context: Context, port: LlamaAndroidPort) {
+        val randomBytes = ByteArray(6).also { java.security.SecureRandom().nextBytes(it) }
+        val code = "PDF-" + randomBytes.joinToString("") {
+            (it.toInt() and 0xff).toString(16).padStart(2, '0')
+        }.uppercase(java.util.Locale.ROOT)
+        val pdfFile = File(context.cacheDir, "medmate-synthetic-pdf-" + code.lowercase(java.util.Locale.ROOT) + ".pdf")
+        try {
+            writeSyntheticPdf(context, pdfFile, code)
+            val extracted = PdfTextExtractor(context, pdfFile).use { reader ->
+                assertEquals("synthetic PDF should contain one page", 1, reader.pageCount)
+                reader.page(0)
+            }
+            assertTrue("PDFBox did not extract the fresh identifier", extracted.contains(code))
+            val chapterId = "device-pdf-" + code
+            val question = "What is the calibration identifier in this synthetic PDF page? Return the exact identifier and cite [S1]."
+            val found = StudyBrain.search(chapterId, listOf(PageSource(chapterId, 0, extracted)), question)
+            assertEquals("production PDF text must be retrievable", BrainSearchStatus.FOUND, found.status)
+            assertTrue("retrieved evidence must retain the extracted identifier",
+                found.evidence.any { it.pageIndex == 0 && it.text.contains(code) })
+            val prepared = requireNotNull(StudyBrain.prepareSourceOnly(chapterId, question, found, maxEvidenceChars = 1000)) {
+                "production source-only prompt preparation returned no evidence"
+            }
+            assertTrue("model prompt must present the PDF evidence", prepared.presentedEvidence.isNotEmpty())
+            val before = sampleMemory(context)
+            val started = System.nanoTime()
+            val answer = port.generate(prepared) { }
+            val elapsed = ((System.nanoTime() - started) / 1_000_000L).coerceAtLeast(0L)
+            val after = sampleMemory(context)
+            assertTrue("real native answer did not preserve the fresh PDF identifier", answer.contains(code, ignoreCase = true))
+            val citationCheck = CitationValidator.check(answer, prepared.presentedEvidence.size)
+            assertTrue("real native answer failed citation validation: " + citationCheck.reason, citationCheck.accepted)
+            val links = SourceCitationLinks.resolve(answer, prepared.presentedEvidence)
+            assertTrue("citation must navigate to actual PDF page 1", links.any { it.marker == "S1" && it.pageNumber == 1 })
+            assertTrue("native answer must not echo the entire PDF excerpt", !answer.contains(extracted, ignoreCase = true))
+            Log.i("MedMateNativeGGUF", "PASS syntheticPdfBytes=" + pdfFile.length() +
+                " extractedChars=" + extracted.length + " elapsedMs=" + elapsed +
+                " pssBeforeKb=" + (before?.appPssKb ?: -1) + " pssAfterKb=" + (after?.appPssKb ?: -1))
+        } finally {
+            pdfFile.delete()
+        }
+    }
+
+    private fun writeSyntheticPdf(context: Context, file: File, code: String) {
+        PDFBoxResourceLoader.init(context.applicationContext)
+        PDDocument().use { document ->
+            val page = PDPage()
+            document.addPage(page)
+            PDPageContentStream(document, page).use { stream ->
+                stream.beginText()
+                stream.setFont(PDType1Font.HELVETICA, 12f)
+                stream.newLineAtOffset(48f, 740f)
+                stream.showText("Synthetic study page. Calibration identifier: " + code + ". This is a test fixture, not clinical advice.")
+                stream.endText()
+            }
+            document.save(file)
         }
     }
 

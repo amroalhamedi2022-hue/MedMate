@@ -866,3 +866,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - `app-debug.apk`: 33,553,165 bytes; SHA-256 `ef570a66a13045521fc63690cc4c759fc16cd29cc4d9d7f1b51ea33eb9a37b5c`.
   - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `100adcbe1dd6dba338a99bd60d3cccf127b7454d8079cfbd7fba578c5398ffbd`.
 - **NOT TESTED:** a physical ARM64 device with a user-supplied real GGUF; real llama.cpp/JNI inference; PDF citation accuracy; live HTTPS cloud-consent approval/denial; RAM/thermal behavior; final release signing. Fake ports remain contract-only and are not accepted as native inference evidence.
+
+
+## 2026-10-26 — End-to-end synthetic PDF → local GGUF device gate (checkpoint pending)
+
+- Extended the device-only acceptance test to generate a fresh synthetic PDF in app cache, extract it through production PDFBox, retrieve the exact page through StudyBrain, send the grounded prompt to the real LlamaAndroidPort/JNI session, and require the fresh identifier plus a valid [S1] link resolving to PDF page 1. The temporary synthetic PDF is deleted in finally; no user document/model is included or uploaded.
+- Added a static CI wiring guard for the real native port, PDFBox extraction, retrieval, citation validation, page mapping, and device runner. This guard is source-contract evidence only; it does not run Android instrumentation or prove model quality.
+- **Purposeful build question:** does the AndroidTest source compile against the production PDFBox API and actual JNI-backed LlamaAndroidPort, while preserving the existing device runner and cleanup contract? Source inspection alone cannot verify AndroidTest compilation/AAR API compatibility.
+- **PENDING:** Android CI/JUnit/lint/APK artifact and checksum for this new test. **NOT TESTED:** real GGUF execution on Xiaomi Pad 5, model answer/citation acceptance, PDFBox runtime extraction on device, cloud approval/denial, RAM/thermal behavior, and final release signing.
