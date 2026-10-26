@@ -696,6 +696,6 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 
 ## 2026-10-26 — Real GGUF instrumented acceptance harness (CI compile pending)
 - Added a device-only AndroidJUnit test that requires a user-supplied GGUF path, imports it with the production content-addressed importer, checks available RAM, loads it through the actual `LlamaAndroidPort`/JNI adapter, and runs the fresh synthetic `NativeInferenceProbe`. It asserts native model identity, the random calibration code, citation syntax and no full prompt/source echo; no fake port can satisfy this test.
-- Added `scripts/run-native-gguf-device-test.sh` and `docs/DEVICE_GGUF_ACCEPTANCE.md`. The script never downloads model weights or uploads them; it removes the temporary external device copy, and the test preserves pre-existing imported models.
+- Added `scripts/run-native-gguf-device-test.sh` and `docs/DEVICE_GGUF_ACCEPTANCE.md`. The script never downloads model weights or uploads them; it installs both APKs before pushing the temporary external copy, then launches instrumentation directly and removes the external copy. The test preserves pre-existing imported models.
 - **Purposeful build question:** does the new instrumented test and AndroidX test-runner integration compile against the pinned llama AAR and Android project? CI will compile the test but will not execute it.
 - **NOT TESTED:** genuine GGUF/JNI inference on Xiaomi Pad 5, clinical accuracy, PDF-grounded answer quality, live HTTPS consent, device RAM/thermal under real inference, and final signed release. A CI compile is not a model-inference PASS.
