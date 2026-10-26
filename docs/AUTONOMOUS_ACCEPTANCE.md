@@ -842,28 +842,15 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Still NOT TESTED:** PDF-grounded clinical accuracy, actual HTTPS/cloud consent and denial on-device, RAM/thermal performance, signed-upgrade continuity and final release signing. Draft PR #1 only; no main write/merge, personal PDF/model/key upload, paid API or Library/Handoff access.
 
 
-## 2026-10-26 — Concurrent cloud-consent gateway boundary regression (CI pending)
+## 2026-10-26 — Cloud gateway consent and cleanup regressions (CI VERIFIED)
 
-- Added a 16-thread race against the **production `CloudBrainGateway.explain` boundary**, using only a synthetic excerpt and an in-memory `HttpURLConnection`; no live endpoint or patient data.
-- Acceptance: exactly one request may succeed/open a connection, the connection must be disconnected, the single-use grant must be exhausted, and no worker may stall. This complements the existing lower-level atomic `CloudTransferConsent.consume` test by exercising the full outbound call path.
-- **CI status:** pending at source checkpoint. Even after JVM/Android CI passes, live HTTPS consent/denial, real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, RAM/thermal behavior and final signing remain **NOT TESTED**. No model, private PDF, credential or paid API added; no main write/merge.
-
-
-### Outbound consent race regression — CI visibility
-
-- Source/test commit: `116b1ac78e6e44b83a510c31dd4e56d494ede0e2`; acceptance-record commit before this note: `44f406b505bdc294707c97fb0f547ae640b84705`.
-- The GitHub connector returned no PR-triggered workflow run/status for the new test commit at the time of this record. Therefore compilation/JUnit results for the new concurrency test and a fresh APK pair are **NOT VERIFIED**, not PASS. The previously verified APK pair predates this test.
-
-
-### Outbound gateway race — source wiring review, 2026-10-26
-
-- **PASS static review:** the new test drives the production `CloudBrainGateway.explain` path with 16 concurrent callers and a fake in-memory `HttpURLConnection`; asserts one success and one connection; production consent uses synchronized one-shot consumption before socket creation, disables redirects and disconnects in `finally`.
-- **NOT VERIFIED:** Kotlin compilation, JUnit execution, Android CI and a fresh APK pair for this test. This source review is not a substitute for the pending build. Live HTTPS, real GGUF/JNI on Pad 5 and clinical accuracy remain **NOT TESTED**.
-
-
-## 2026-10-26 — Cloud connection-setup cleanup guard
-
-- **Production change:** `CloudBrainGateway.complete` now places request-method/header/output configuration inside the same `try/finally` as transport I/O. If connection setup throws after a connection object is created, `disconnect()` still runs; the already-consumed one-shot consent remains non-replayable.
-- **Regression added:** `connectionSetupFailureStillDisconnectsAndConsumesGrant` injects an in-memory HTTPS connection that throws while setting a request property and asserts failure, guaranteed disconnect, and exhausted consent. No network, patient PDF, GGUF or credential is used.
-- **Source review:** PASS. **Kotlin/JUnit/Android CI:** NOT VERIFIED; the available GitHub Actions integration exposes no workflow-dispatch operation in this run, and the previous successful CI predates this change. Do not treat the old APK as containing this fix.
-- **Still NOT TESTED:** physical-device HTTPS consent/denial, real GGUF/JNI inference, PDF-grounded medical accuracy, Xiaomi Pad 5 RAM/thermal behavior and final signing.
+- **PASS — current head:** `77c46c0807caf7be5117505209ff1326ff87f474`.
+- **PASS — GitHub Actions:** [Run 40335885140](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40335885140), completed successfully on 2026-10-26.
+- **PASS — JVM tests:** 142 passed, 0 failures, 0 ignored; Gradle report duration 15.895 s. The report explicitly marks both `concurrentGatewayCallsConsumeOneConsentAndOpenAtMostOneConnection` and `connectionSetupFailureStillDisconnectsAndConsumesGrant` as passed.
+- **PASS — source/test contracts:** GGUF test-script cleanup and digest ordering; SQLite schema/migrations; APK metadata-drift regression suite.
+- **PASS — Android:** Gradle unit tests, Lint, Debug APK, AndroidTest APK, and APK manifest verifier. The verifier confirmed package/version/SDK consistency, optional-cloud INTERNET permission consistency, `usesCleartextTraffic=false`, and no broad-storage permissions.
+- **PASS — artifact pair:** [Device-test bundle 12655889546](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40335885140/artifacts/12655889546). Independent SHA-256 recomputation matched `SHA256SUMS`:
+  - `app-debug.apk` — 33,553,165 bytes — `cbba30f01eac856d2a8a04e78261aaa866c4e7d9bdb33d4c92ddca3c23986524`.
+  - `app-debug-androidTest.apk` — 364,513 bytes — `85e30936879a4f62da30ba847355a241239d48f92e1936635c0d72a06af9a9a9`.
+- **NOT TESTED:** real GGUF loading/inference through llama.cpp/JNI on Xiaomi Pad 5, PDF-grounded clinical accuracy/citations, live HTTPS approval/denial behavior, RAM/thermal performance, upgrade continuity, and final release signing. CI and APK packaging do not prove model inference.
+- No GGUF, personal PDF, credential, signing key, paid API, or user medical content was uploaded. PR #1 remains Draft; no main write or merge.

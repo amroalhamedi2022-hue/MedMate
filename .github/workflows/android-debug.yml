@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [automation/medmate-v091-source-tree-20261023]
+    paths-ignore: ['docs/**']
 permissions:
   contents: read
 
