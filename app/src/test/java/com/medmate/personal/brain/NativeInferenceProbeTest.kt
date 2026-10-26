@@ -146,4 +146,24 @@ class NativeInferenceProbeTest {
         assertEquals(0, port.calls)
     }
 
+    @Test fun nativeDiagnosticRequiresTheSameModelIdentityBeforeAndAfterInference() {
+        val digest = "a".repeat(64)
+        val bytes = 256L
+        assertTrue(NativeInferenceProbe.sameNativeModelIdentity(
+            "model.gguf", digest, bytes, "model.gguf", digest, bytes
+        ))
+        assertFalse(NativeInferenceProbe.sameNativeModelIdentity(
+            "model.gguf", digest, bytes, "other.gguf", digest, bytes
+        ))
+        assertFalse(NativeInferenceProbe.sameNativeModelIdentity(
+            "model.gguf", digest, bytes, "model.gguf", "b".repeat(64), bytes
+        ))
+        assertFalse(NativeInferenceProbe.sameNativeModelIdentity(
+            "model.gguf", digest, bytes, "model.gguf", digest, bytes + 1
+        ))
+        assertFalse(NativeInferenceProbe.sameNativeModelIdentity(
+            "model.gguf", null, null, "model.gguf", null, null
+        ))
+    }
+
 }
