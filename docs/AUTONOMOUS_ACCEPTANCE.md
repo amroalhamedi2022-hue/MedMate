@@ -786,3 +786,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS privacy check:** bundle contains only APKs and checksums; no GGUF, PDF, key or signing secret.
 - This is a citation-navigation integrity gate, not a medical fact checker.
 - **NOT TESTED:** live PDF citation taps on Xiaomi Pad 5, real PDF OCR/grounding quality, clinical correctness, actual GGUF inference, live cloud HTTPS consent, device RAM/thermal and final signed release. No PDF/model/credential was added to the public repository.
+
+
+## 2026-10-26 — One-shot cloud consent under concurrent callers (validated)
+- **Production behavior under test:** the existing synchronized, evidence-sealed `CloudTransferConsent.consume` capability must allow at most one of many concurrent callers to claim the same reviewed PDF/question payload.
+- Added `oneShotConsentAllowsAtMostOneConcurrentConsumer`: 16 threads cross a start barrier and race the same exact endpoint/model/request/evidence seal. It asserts exactly one successful consume, all threads terminate, and the grant no longer permits reuse afterward. No network or real/private PDF is used.
+- **Purposeful build rationale:** a concurrency race cannot be established by reading the synchronized implementation alone; the real JVM/JUnit suite plus AndroidTest compilation and packaging are the appropriate integration gate.
+- **PASS Android CI:** [run 40305964124](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124) on test/source SHA `a1ecb7f7277e2ae75031a55f5276cac8a8a1aee5`. **140 tests PASS, 0 failures, 0 ignored**; lint, AndroidTest compilation, Debug APK assembly and device-bundle packaging passed.
+- **PASS independent APK verification:** artifact [12642516742](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124/artifacts/12642516742) contains the exact app/test APK pair and `SHA256SUMS`. Independently recalculated hashes match the manifest: `app-debug.apk` 33,553,153 bytes, SHA-256 `e3c80cbf8f3190605fc9611ddacb9a82cebca3ab7a34f782ab9b08edc455217b`; `app-debug-androidTest.apk` 364,513 bytes, SHA-256 `434289f1baffbbaaaaebed3af6046e1982b948a70f3219e51e04d7f572015aac`.
+- **PASS privacy check:** bundle contains only APKs and checksums; no GGUF, PDF, keystore or signing key.
+- **NOT TESTED:** this proves one-shot grant concurrency only. Real GGUF/JNI inference on Xiaomi Pad 5, PDF citation taps/grounding, clinical correctness, live HTTPS consent/denial, device RAM/thermal and final signed release remain **NOT TESTED**. Debug only; no main write or merge.
