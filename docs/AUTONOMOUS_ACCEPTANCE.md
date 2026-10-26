@@ -859,3 +859,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 
 - **PASS static review:** the new test drives the production `CloudBrainGateway.explain` path with 16 concurrent callers and a fake in-memory `HttpURLConnection`; asserts one success and one connection; production consent uses synchronized one-shot consumption before socket creation, disables redirects and disconnects in `finally`.
 - **NOT VERIFIED:** Kotlin compilation, JUnit execution, Android CI and a fresh APK pair for this test. This source review is not a substitute for the pending build. Live HTTPS, real GGUF/JNI on Pad 5 and clinical accuracy remain **NOT TESTED**.
+
+
+## 2026-10-26 — Cloud connection-setup cleanup guard
+
+- **Production change:** `CloudBrainGateway.complete` now places request-method/header/output configuration inside the same `try/finally` as transport I/O. If connection setup throws after a connection object is created, `disconnect()` still runs; the already-consumed one-shot consent remains non-replayable.
+- **Regression added:** `connectionSetupFailureStillDisconnectsAndConsumesGrant` injects an in-memory HTTPS connection that throws while setting a request property and asserts failure, guaranteed disconnect, and exhausted consent. No network, patient PDF, GGUF or credential is used.
+- **Source review:** PASS. **Kotlin/JUnit/Android CI:** NOT VERIFIED; the available GitHub Actions integration exposes no workflow-dispatch operation in this run, and the previous successful CI predates this change. Do not treat the old APK as containing this fix.
+- **Still NOT TESTED:** physical-device HTTPS consent/denial, real GGUF/JNI inference, PDF-grounded medical accuracy, Xiaomi Pad 5 RAM/thermal behavior and final signing.
