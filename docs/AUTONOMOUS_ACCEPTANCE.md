@@ -642,11 +642,14 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Repair:** declared the three affected tests as `Unit` and explicitly returned `Unit` from their temp-directory lambdas. Re-run is **PENDING**.
 
 
-## 2026-10-26 — Local GGUF probe bound to loaded model identity (validation pending)
+## 2026-10-26 — Local GGUF probe bound to loaded model identity (validated source/CI; device pending)
 
-- **Production:** `LlamaAndroidPort` records the content-addressed SHA-256 filename and exact on-disk byte size only after `Llama.loadModel` returns successfully. Unload clears that identity. `NativeInferenceProbe` now requires the production port plus a valid lowercase 64-hex SHA and plausible file size before its backend gate can pass.
-- **UI:** the diagnostic displays the loaded model's SHA-256 prefix and file size separately from RAM snapshots. File bytes are explicitly not RAM usage. Fake ports expose no native model identity and remain a diagnostic FAIL even when their synthetic response passes response checks.
-- **Regression:** JUnit cases cover valid/invalid model identity shapes and ensure a perfect fake response carries no native model identity. No model weights, personal PDF, credential or secret is included in source.
-- **Purposeful build question:** do the new Kotlin fields, production adapter, diagnostic result, Compose UI and JUnit identity checks compile and pass together? Static review cannot prove Android/Compose compatibility; one targeted CI build is justified.
-- **Status at commit:** CI **PENDING**. This is traceability hardening, **not** evidence that a real GGUF has run.
-- **NOT TESTED:** real model import/load/inference through JNI on Xiaomi Pad 5, PDF-grounded answers, clinical accuracy, live HTTPS consent, peak RAM/thermal and final signed release. PR remains Draft; no main write or merge.
+- **Functional/test source SHA:** 6350b1992f4ea20bd62edf53354d62d2a18d3dd1 on the existing MedMate PR #1 branch.
+- **Production:** LlamaAndroidPort records the content-addressed SHA-256 filename and exact on-disk byte size only after Llama.loadModel returns successfully; unload clears the identity. NativeInferenceProbe requires the production port plus a valid lowercase 64-hex SHA and plausible file size before the backend gate can pass.
+- **UI:** the diagnostic displays the loaded model's SHA-256 prefix and file size separately from RAM snapshots. File bytes are not described as RAM usage. Fake ports expose no native model identity and remain diagnostic FAIL even when synthetic response checks pass.
+- **Regression PASS:** 129 JUnit tests, 0 failures, 0 ignored. NativeInferenceProbeTest is 11/11 PASS, including valid/invalid model identity shapes and the rule that a perfect fake response carries no native model identity.
+- **PASS Android CI:** [run 40248705067](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40248705067) on the source SHA above; SQLite contracts, testDebugUnitTest, lintDebug, Compose compilation and assembleDebug succeeded in 4m 42s.
+- **Debug APK artifact:** [12619492566](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40248705067/artifacts/12619492566); test/lint reports artifact **12619512397**.
+- **PASS independent APK verification:** extracted 33,553,153-byte app-debug.apk and independently recalculated SHA-256 c14119ada16dbdcc6b54dc1102f0f19c98591cf83abffd14cf1d607ba50c371e, matching APK_SHA256.txt. ARM64 libllama.so and libllama_jni.so are packaged; no GGUF weights or personal PDFs are included.
+- **Purposeful build question answered:** Kotlin model-identity fields, production adapter, diagnostic result, Compose UI and JUnit checks compile and pass together. This is source/CI evidence only.
+- **NOT TESTED:** actual model import/load/inference through JNI on Xiaomi Pad 5, PDF-grounded answer quality, clinical accuracy, live HTTPS consent, peak RAM/thermal and final signed release. A real GGUF run remains required; this traceability gate is not native-inference proof. PR remains Draft; no main write, merge or unrelated repository/Library/Handoff change.
