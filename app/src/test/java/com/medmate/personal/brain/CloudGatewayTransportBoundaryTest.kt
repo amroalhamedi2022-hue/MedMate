@@ -241,4 +241,30 @@ class CloudGatewayTransportBoundaryTest {
         }.isFailure)
         assertEquals(1, opened.size)
     }
+
+    @Test fun oneShotConsentAllowsAtMostOneConcurrentConsumer() {
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val ready = java.util.concurrent.CountDownLatch(16)
+        val start = java.util.concurrent.CountDownLatch(1)
+        val results = java.util.Collections.synchronizedList(mutableListOf<Boolean>())
+        val workers = (0 until 16).map {
+            Thread {
+                ready.countDown()
+                if (start.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    results.add(consent.consume(endpoint, model, request, seal))
+                }
+            }.apply { start() }
+        }
+        assertTrue("workers did not reach the barrier", ready.await(5, java.util.concurrent.TimeUnit.SECONDS))
+        start.countDown()
+        workers.forEach { worker ->
+            worker.join(5_000)
+            assertFalse("consent consumer thread stalled", worker.isAlive)
+        }
+        assertEquals(16, results.size)
+        assertEquals("a single consent capability must authorize at most one concurrent transfer",
+            1, results.count { it })
+        assertFalse(consent.permits(endpoint, model, request, seal))
+    }
 }
