@@ -899,3 +899,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - app-debug-androidTest.apk — 372,149 bytes; 48ab3f98f59ee83ccbeb2ab81c0c8d3056b6316352ff8bc76d24e8321f3b0652
 - The AndroidTest fixture now creates a two-page synthetic PDF, keeps the random calibration identifier only on page 2, retrieves only zero-based page index 1, and requires [S1] to resolve to human-facing PDF page 2 through the real LlamaAndroidPort path.
 - **Strict status:** instrumentation was compiled, not executed. Real GGUF/JNI inference, PDFBox-to-native page-2 round-trip, Xiaomi Pad 5 behavior, clinical correctness, live HTTPS consent/denial, RAM/thermal and final signing remain **NOT TESTED**. No model weights, personal PDF, provider key or signing key is included.
+
+## 2026-10-26 — Local-first routing and cloud-boundary source audit
+
+- **PASS — source audit:** `BrainPanel` constructs the production `LlamaAndroidPort` for local inference. Local generation errors are shown as local errors; the failure handler does not invoke `CloudBrainGateway` or retry through the network.
+- **PASS — explicit cloud path:** cloud actions require the reviewed prepared excerpts, a one-time `CloudTransferConsent` sealed to the exact prompt/source identity, and a second check at the `CloudBrainGateway` outbound boundary. The transport disables redirects and disconnects in `finally`.
+- **PASS — CI boundary tests:** run 40366568877 confirms the 142-test suite, lint, APK pair, and device-runner contract. These tests use an in-memory transport and synthetic text; they are not live HTTPS/device proof.
+- **NOT TESTED:** actual network capture on Xiaomi Pad 5, real GGUF inference, the two-page PDFBox-to-native citation round-trip, clinical factual review, RAM/thermal measurements, and final signing. Do not mark local-brain acceptance complete until the physical-device runner emits a passing log with the real model SHA-256 and page-2 citation result.
