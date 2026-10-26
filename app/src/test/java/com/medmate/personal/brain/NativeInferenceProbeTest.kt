@@ -12,6 +12,16 @@ import org.junit.Test
  * They DO NOT count as a real GGUF / llama.cpp inference test.
  */
 class NativeInferenceProbeTest {
+    @Test fun modelIdentityMustBeAContentAddressedShaAndPlausibleFileSize() {
+        assertTrue(NativeInferenceProbe.validNativeModelIdentity("a".repeat(64), LocalModelImport.MIN_BYTES))
+        assertTrue(NativeInferenceProbe.validNativeModelIdentity("0123456789abcdef".repeat(4), 1_048_576L))
+        assertFalse(NativeInferenceProbe.validNativeModelIdentity(null, 1024L))
+        assertFalse(NativeInferenceProbe.validNativeModelIdentity("not-a-hash", 1024L))
+        assertFalse(NativeInferenceProbe.validNativeModelIdentity("A".repeat(64), 1024L))
+        assertFalse(NativeInferenceProbe.validNativeModelIdentity("a".repeat(64), 0L))
+        assertFalse(NativeInferenceProbe.validNativeModelIdentity("a".repeat(64), LocalModelImport.MAX_BYTES + 1))
+    }
+
     private val CHALLENGE = "ORBIT-001122334455"
 
     private class RecordingFakePort(private val response: String) : OnDeviceLlmPort {
@@ -39,6 +49,8 @@ class NativeInferenceProbeTest {
         assertFalse(report.promptEchoDetected)
         assertTrue(report.responseChecksPassed)
         assertFalse(report.nativeBackendConfirmed)
+        assertEquals(null, report.nativeModelSha256)
+        assertEquals(null, report.nativeModelBytes)
         assertFalse(report.diagnosticPassed)
         assertEquals(null, report.memoryBefore)
         assertEquals(null, report.memoryAfter)
