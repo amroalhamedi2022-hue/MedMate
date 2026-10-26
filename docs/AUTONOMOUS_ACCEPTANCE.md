@@ -718,3 +718,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS independent APK verification:** downloaded artifact [12628968633](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40272196382/artifacts/12628968633); extracted `app-debug.apk` is 33,553,153 bytes with independently recomputed SHA-256 `daa2b9468909c45744750eca1e014420ecb051c795c0c008f629853e410adddc`, matching `APK_SHA256.txt`. ARM64 llama.cpp/JNI libraries are packaged; no GGUF or PDF is bundled.
 - **Purposeful build question answered:** does the device acceptance harness compile against the production JNI adapter, and do its cleanup assertions coexist with the app's unit tests and packaging? PASS at CI level.
 - **NOT TESTED:** real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, live HTTPS consent/denial, device RAM/thermal under real inference and final signed release. This is not an inference PASS or clinical validation.
+
+
+## 2026-10-26 — GGUF device-script cleanup fail-safe
+- Moved the EXIT cleanup trap before the temporary model directory creation and `adb push`, and added INT/TERM exit handlers. A failed or interrupted push now attempts to remove any partial device-side model file.
+- Added a shell contract regression and CI syntax check; this validates script ordering without requiring ADB, downloading weights, or pretending to run a real model.
+- **Purposeful CI question:** does the private model test harness fail closed and retain cleanup protection when pushing a large user-supplied GGUF fails midway? Source inspection alone is insufficient to prevent future ordering regressions; CI will run a static shell regression.
+- Physical-device GGUF inference remains **NOT TESTED** until a user-supplied model and Xiaomi Pad 5 are available. No model or personal PDF is uploaded.
