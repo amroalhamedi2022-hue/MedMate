@@ -95,14 +95,14 @@ class CloudBrainGateway(
         }
         val connection = connectionFactory(URL(safeUrl))
         try {
-            requestMethod = "POST"
-            connectTimeout = 10_000
-            readTimeout = 45_000
-            instanceFollowRedirects = false
-            doOutput = true
-            setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            setRequestProperty("Accept", "application/json")
-            if (ephemeralGatewayToken.isNotBlank()) setRequestProperty("Authorization", "Bearer $ephemeralGatewayToken")
+            connection.requestMethod = "POST"
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 45_000
+            connection.instanceFollowRedirects = false
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            connection.setRequestProperty("Accept", "application/json")
+            if (ephemeralGatewayToken.isNotBlank()) connection.setRequestProperty("Authorization", "Bearer $ephemeralGatewayToken")
             connection.outputStream.use { it.write(payloadBytes) }
             val status = connection.responseCode
             require(status == 200) { "بوابة AI رجّعت خطأ HTTP $status، تحقق من الرابط أو الإعدادات" }
