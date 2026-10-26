@@ -31,7 +31,11 @@ data class NativeProbeResult(
     val promptEchoDetected: Boolean = false,
     // A clean fake-port response is useful for contract tests, but it is not
     // evidence that the production llama.cpp/JNI backend actually ran.
-    val nativeBackendConfirmed: Boolean
+    val nativeBackendConfirmed: Boolean,
+    /** Content identity of the GGUF whose native load succeeded; null for fake ports. */
+    val nativeModelSha256: String? = null,
+    /** File size of that same GGUF, not native memory consumption. */
+    val nativeModelBytes: Long? = null
 ) {
     val responseChecksPassed: Boolean
         get() = calibrationPhrasePresent && citationSyntaxValid && !promptEchoDetected
@@ -41,6 +45,10 @@ data class NativeProbeResult(
 }
 
 object NativeInferenceProbe {
+    internal fun validNativeModelIdentity(sha256: String?, bytes: Long?): Boolean =
+        sha256 != null && Regex("^[0-9a-f]{64}$").matches(sha256) &&
+            bytes != null && bytes in LocalModelImport.MIN_BYTES..LocalModelImport.MAX_BYTES
+
     // Fresh per-run code rejects stale/hard-coded responses. Not JNI attestation.
     private fun freshChallenge(): String {
         val bytes = ByteArray(6)
@@ -85,6 +93,10 @@ object NativeInferenceProbe {
         val elapsed = ((System.nanoTime() - start) / 1_000_000L).coerceAtLeast(0L)
         val memoryAfter = sampleMemory()
         require(answer.isNotBlank()) { "The native model returned an empty diagnostic answer" }
+        val nativePort = port as? LlamaAndroidPort
+        val nativeSha = nativePort?.loadedModelSha256
+        val nativeBytes = nativePort?.loadedModelBytes
+        val nativeIdentityValid = validNativeModelIdentity(nativeSha, nativeBytes)
         return NativeProbeResult(
             modelName = name,
             elapsedMs = elapsed,
@@ -102,7 +114,9 @@ object NativeInferenceProbe {
                 answer.contains(evidence.text, ignoreCase = true) ||
                 answer.contains("This is a synthetic calibration passage", ignoreCase = true) ||
                 answer.contains("Only report this code and cite the passage", ignoreCase = true),
-            nativeBackendConfirmed = port is LlamaAndroidPort
+            nativeBackendConfirmed = nativePort != null && nativeIdentityValid,
+            nativeModelSha256 = nativeSha?.takeIf { nativeIdentityValid },
+            nativeModelBytes = nativeBytes?.takeIf { nativeIdentityValid }
         )
     }
 }
