@@ -102,3 +102,11 @@ The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` on
 - Device-test bundle: [12691305315](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873/artifacts/12691305315).
 - App SHA-256: `f5d57bcea4ea860fa592ede9b2c5fee3d79d5f0fc838666d586098f568229f2f` (33,553,165 bytes); AndroidTest SHA-256: `fc3aecddec322aaa4a8e61e331198e85e9ed689b2b72ec9111aadba641a3cf3c` (373,777 bytes). Both independently match the bundle's `SHA256SUMS`.
 - The 143 JVM tests and the AndroidTest APK compilation passed. The instrumentation still needs to run on a physical device with a user-supplied local GGUF; the new page-1 exclusion assertion has **not** been executed against native inference.
+
+
+## 2026-10-27 — PDF page-count guard (source contract)
+
+- The same 100,000-page maximum now guards import and re-indexing, before permanent storage or PDFBox page work.
+- The public navigation preview must be ascending and unique.
+- Source contract is in `scripts/test-pdf-page-limit-contract.py`; its first CI attempt exposed a test-harness slice bug (not an application failure). That harness was fixed in `9bde03a6a30ad464911469aade6c94f7ae065b9c`.
+- Latest CI run `40415248660` remains in progress at this checkpoint. Device import/indexing, actual GGUF inference and network-denial behavior remain NOT TESTED.

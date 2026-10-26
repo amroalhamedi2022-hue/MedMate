@@ -992,3 +992,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Functional commits:** audit guard `d0181cccec572ef71c0566f04358d36aaff3e378`; tests `e9718622a2ef02847b05b2c0498ee327b9bc88e5`; final invariant hardening `d59d3eb3d56d84b9f259b857ee3a437927fcff40`.
 - **CI/APK for this source head:** NOT VERIFIED in the available workflow-status lookup. The earlier successful run 40403719873 is a baseline at `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f` and does not include these PDF coverage changes.
 - **NOT TESTED:** real GGUF/JNI inference, PDFBox page-2 native round trip, live HTTPS consent/denial, Xiaomi Pad 5, clinical review, RAM/thermal, and final signing. No model, PDF, credential or signing key was added to the repository.
+
+
+## 2026-10-27 — PDF import/index page-count boundary
+
+- Added one shared `PdfCoverageAudit.requireSafePageCount` contract (1..100,000 pages), used by both PDF import and text re-indexing. Import rejects unsupported page counts before the file is moved into permanent app storage; re-indexing rejects legacy/tampered metadata before PDFBox opens the document.
+- The public coverage report now requires its bounded navigation preview to be distinct, in-range and ascending in document order.
+- Added two JVM tests (inclusive maximum / invalid counts, and unsorted preview rejection) plus `scripts/test-pdf-page-limit-contract.py` to verify both production call sites and ordering.
+- Commit `ecaff9fb57431206539097a3a2cb732d6d1ccbd9`; source-guard range fix `9bde03a6a30ad464911469aade6c94f7ae065b9c`.
+- Initial CI run `40415014034` failed because the new static guard used a nonexistent method name for its source slice. The guard was corrected; latest run `40415248660` is in progress at documentation time. The initial failure is not counted as a product-test failure.
+- **Real device/model:** NOT TESTED. This change does not substitute for the actual GGUF/JNI/PDF citation/cloud-consent acceptance run on Xiaomi Pad 5.
