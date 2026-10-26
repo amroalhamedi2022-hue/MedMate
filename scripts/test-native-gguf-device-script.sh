@@ -16,6 +16,8 @@ grep -Fq 'host_sha="$(sha256sum "$GGUF_FILE" | awk' "$script"
 grep -Fq 'toybox sha256sum "$device_file"' "$script"
 grep -Fq 'toybox stat -c %s "$device_file"' "$script"
 grep -Fq 'device-side GGUF digest/size differs' "$script"
+grep -Fq "Host GGUF SHA-256: %s\\nHost GGUF bytes: %s\\n" "$script"
+grep -Fq "tr -d '\\r'" "$script"
 hash_line="$(grep -nF 'device_sha=' "$script" | cut -d: -f1)"
 instrument_line="$(grep -nF 'shell am instrument' "$script" | cut -d: -f1)"
 [[ -n "$hash_line" && -n "$instrument_line" ]] && (( hash_line < instrument_line )) || {
