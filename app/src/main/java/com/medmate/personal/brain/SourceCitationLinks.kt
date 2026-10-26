@@ -15,7 +15,13 @@ object SourceCitationLinks {
     fun resolve(answer: String, evidence: List<Evidence>): List<SourceCitationLink> {
         if (evidence.isEmpty()) return emptyList()
         val chapter = evidence.first().chapterId
-        if (chapter.isBlank() || evidence.any { it.chapterId != chapter || it.pageIndex < 0 }) {
+        // A marker's position is meaningful only when every evidence row has
+        // a stable, nonblank identity and nonblank source text. Duplicate IDs
+        // make the underlying page/chunk ambiguous, so fail closed instead of
+        // making a potentially misleading citation tappable.
+        if (chapter.isBlank() ||
+            evidence.any { it.chapterId != chapter || it.pageIndex < 0 || it.id.isBlank() || it.text.isBlank() } ||
+            evidence.map { it.id }.toSet().size != evidence.size) {
             return emptyList()
         }
         // Do not link a valid-looking [S1] when the same answer also contains
