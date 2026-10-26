@@ -35,11 +35,12 @@ jobs:
           "$SDKMGR" --install "platforms;android-36" "build-tools;35.0.0"
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-      - name: Validate GGUF device-test cleanup contract
+      - name: Validate GGUF device-test and local/cloud safety contracts
         run: |
           bash -n scripts/run-native-gguf-device-test.sh
           bash scripts/test-native-gguf-device-script.sh
           python3 scripts/test-native-gguf-pdf-acceptance-contract.py
+          python3 scripts/test-model-load-ui-contract.py
       - uses: gradle/actions/setup-gradle@v4
       - name: Validate SQLite schema and migration contracts
         run: |
