@@ -3,6 +3,16 @@ set -euo pipefail
 : "${GGUF_FILE:?Set GGUF_FILE to a local .gguf file; this script never downloads or uploads weights}"
 [[ -f "$GGUF_FILE" ]] || { echo "GGUF_FILE is not a regular file" >&2; exit 2; }
 case "${GGUF_FILE,,}" in *.gguf) ;; *) echo "GGUF_FILE must end in .gguf" >&2; exit 2 ;; esac
+# Reject obvious wrong/partial inputs before invoking ADB, installing APKs, or pushing bytes.
+# GGUF has a 4-byte ASCII magic followed by a 20-byte minimum header. This is only
+# a format preflight; it does NOT prove the model is complete, compatible or safe.
+host_bytes_preflight="$(wc -c < "$GGUF_FILE" | tr -d '[:space:]')"
+host_magic_preflight="$(od -An -tx1 -N4 "$GGUF_FILE" | tr -d '[:space:]')"
+if [[ ! "$host_bytes_preflight" =~ ^[0-9]+$ || "$host_bytes_preflight" -lt 24 || "$host_magic_preflight" != "47475546" ]]; then
+  echo "FAIL: GGUF magic/header preflight failed (requires 47475546 magic and at least 24 bytes); refusing device interaction" >&2
+  exit 4
+fi
+printf 'PASS: GGUF magic and minimum header size checked; full model validity still requires native inference.\n'
 command -v adb >/dev/null || { echo "adb is required" >&2; exit 2; }
 if [[ -n "${ANDROID_SERIAL:-}" ]]; then ADB=(adb -s "$ANDROID_SERIAL"); else
   count="$(adb devices | awk 'NR>1 && $2=="device" {n++} END {print n+0}')"

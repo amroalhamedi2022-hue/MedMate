@@ -129,7 +129,9 @@ run_case() {
   local case_dir="$tmp/$name"
   mkdir -p "$case_dir/device-root"
   : > "$case_dir/adb.log"
-  printf 'synthetic GGUF header; not a model\n' > "$case_dir/probe.gguf"
+  # 24-byte synthetic GGUF header only; deliberately NOT a valid model.
+  printf 'GGUF\003\000\000\000' > "$case_dir/probe.gguf"
+  head -c 16 /dev/zero >> "$case_dir/probe.gguf"
   local status=0
   (
     cd "$tmp"
@@ -181,6 +183,32 @@ run_case() {
   fi
 }
 
+
+run_invalid_header_case() {
+  local name="$1" payload="$2"
+  local case_dir="$tmp/$name"
+  mkdir -p "$case_dir/device-root"
+  : > "$case_dir/adb.log"
+  printf '%s' "$payload" > "$case_dir/probe.gguf"
+  local status=0
+  (
+    cd "$tmp"
+    PATH="$tmp/bin:$PATH" \
+      FAKE_DEVICE_ROOT="$case_dir/device-root" \
+      FAKE_ADB_LOG="$case_dir/adb.log" \
+      FAKE_GRADLE_LOG="$case_dir/gradle.log" \
+      GGUF_FILE="$case_dir/probe.gguf" \
+      bash scripts/run-native-gguf-device-test.sh
+  ) > "$case_dir/output.log" 2>&1 || status=$?
+  [[ "$status" == 4 ]] || { cat "$case_dir/output.log"; echo "FAIL: invalid GGUF header must exit 4" >&2; return 1; }
+  grep -Fq 'GGUF magic/header preflight failed' "$case_dir/output.log"
+  [[ ! -s "$case_dir/adb.log" ]] || { echo "FAIL: invalid GGUF reached ADB" >&2; return 1; }
+  [[ ! -e "$case_dir/gradle.log" ]] || { echo "FAIL: invalid GGUF triggered Gradle" >&2; return 1; }
+  ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+}
+run_invalid_header_case bad-magic 'not a GGUF model'
+run_invalid_header_case short-header 'GGUF'
+
 run_case matching-digest pass 0 0 pass
 run_case mismatched-digest mismatch 1 0 pass
 run_case interrupted-partial-push fail 0 1 pass
@@ -194,7 +222,9 @@ mkdir -p "$prebuilt/device-root"
 : > "$prebuilt/adb.log"
 printf 'prebuilt app APK; synthetic only\n' > "$prebuilt/app-debug.apk"
 printf 'prebuilt AndroidTest APK; synthetic only\n' > "$prebuilt/app-debug-androidTest.apk"
-printf 'synthetic GGUF header; not a model\n' > "$prebuilt/probe.gguf"
+# Synthetic 24-byte header only; never used to claim model inference.
+printf 'GGUF\003\000\000\000' > "$prebuilt/probe.gguf"
+head -c 16 /dev/zero >> "$prebuilt/probe.gguf"
 status=0
 (
   cd "$tmp"
@@ -254,4 +284,4 @@ instrument_line="$(grep -nF 'shell am instrument' "$script" | cut -d: -f1)"
 [[ -n "$cleanup_line" && -n "$trap_line" && -n "$push_line" && -n "$hash_line" && -n "$instrument_line" ]]
 (( cleanup_line < push_line && trap_line < push_line && push_line < hash_line && hash_line < instrument_line ))
 
-echo "PASS: source-built and prebuilt APK paths; low-storage preflight blocks model push; matching GGUF digest reaches instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."
+echo "PASS: source-built and prebuilt APK paths; bad/short GGUF headers fail before ADB or Gradle; low-storage preflight blocks model push; matching synthetic header/digest reaches fake instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."

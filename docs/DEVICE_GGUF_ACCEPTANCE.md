@@ -124,3 +124,8 @@ The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` on
 - Device bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697601058
 - Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697675874
 - Physical Xiaomi Pad 5 execution, real GGUF/llama.cpp inference, real two-page PDF citation validation, cloud-consent network test, and medical review remain NOT TESTED. The artifact contains APKs/checksums only; it does not contain a GGUF model, personal PDF, or API key.
+
+
+## 2026-10-27 — GGUF header preflight (source/CI gate)
+
+Before any ADB interaction, APK installation or model transfer, `run-native-gguf-device-test.sh` now requires the local input to begin with the GGUF magic bytes (`47 47 55 46`, ASCII `GGUF`) and contain at least the 24-byte minimum header. A wrong-magic or truncated file exits with status 4 before ADB/Gradle. This is deliberately only a cheap format preflight: it does **not** establish that the file is a complete/compatible model, that llama.cpp can load it, or that the model is clinically valid. Genuine model acceptance still requires a user-supplied local GGUF and real ARM64 Android instrumentation. Synthetic headers in script tests are explicitly not models.

@@ -1010,3 +1010,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS — artifact integrity:** Debug SHA-256 `1be41039e845b3ddf620c93a304f50e09a0d983a54d4af3b2e308e1b9bbb711a`; AndroidTest SHA-256 `1d178f4091f6e7e6111026b41afd773d0e237d992e643450e17f76bf7fb8f725`; independently recalculated from the downloaded device-test bundle.
 - **NOT TESTED — real device/model:** Xiaomi Pad 5, real GGUF/llama.cpp inference, real PDF citation [S1], network-level cloud consent, performance/thermal behavior, and independent medical review. Fake ADB and source contracts are not evidence of real model inference.
 - Run: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168 — Device bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697601058
+
+
+## 2026-10-27 — GGUF input header preflight (CI pending)
+
+- **Change:** reject wrong-magic and shorter-than-24-byte `.gguf` inputs before invoking ADB, installing APKs, starting Gradle, or transferring bytes.
+- **Tests:** fake-ADB script contract adds wrong-magic and truncated-header cases and verifies the ADB log remains empty; existing low-storage, host/device digest mismatch, partial push cleanup, instrumentation failure, and prebuilt APK hash gates remain enabled.
+- **Purposeful build question:** does the new early-rejection guard pass its shell contract tests while the Android debug/instrumentation artifacts still assemble cleanly? A targeted CI run is justified to execute the host-side safety contract and keep the exact APK pair available for a later real-device run.
+- **CI/APK:** PENDING for this change. Any artifact from an earlier source checkpoint is not evidence for this guard.
+- **NOT TESTED:** actual GGUF loading/inference, PDF page-2 citation round-trip, cloud consent/denial over a live network, Xiaomi Pad 5 performance, clinical review. The header check is not model validation; synthetic fixtures are not GGUF models.
