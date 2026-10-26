@@ -10,14 +10,26 @@ if [[ -n "${ANDROID_SERIAL:-}" ]]; then ADB=(adb -s "$ANDROID_SERIAL"); else
   ADB=(adb)
 fi
 "${ADB[@]}" get-state >/dev/null
-if [[ -x ./gradlew ]]; then GRADLE=(./gradlew); elif command -v gradle >/dev/null; then GRADLE=(gradle); else echo "Gradle wrapper or gradle required" >&2; exit 2; fi
-# Build and install before pushing the large model; package installation can reset external app storage.
-"${GRADLE[@]}" --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
-APK="app/build/outputs/apk/debug/app-debug.apk"
-TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
-[[ -f "$APK" && -f "$TEST_APK" ]] || { echo "Debug APKs were not produced" >&2; exit 3; }
+# Prefer an exact CI-built app + instrumentation APK pair when supplied. This lets
+# device acceptance run without rebuilding; otherwise build both from this checkout.
+if [[ -n "${APP_APK:-}" || -n "${TEST_APK:-}" ]]; then
+  [[ -n "${APP_APK:-}" && -n "${TEST_APK:-}" ]] || {
+    echo "Set both APP_APK and TEST_APK, or neither" >&2; exit 2;
+  }
+  APK="$APP_APK"
+  TEST_APK_PATH="$TEST_APK"
+else
+  if [[ -x ./gradlew ]]; then GRADLE=(./gradlew); elif command -v gradle >/dev/null; then GRADLE=(gradle); else echo "Gradle wrapper or gradle required" >&2; exit 2; fi
+  "${GRADLE[@]}" --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+  APK="app/build/outputs/apk/debug/app-debug.apk"
+  TEST_APK_PATH="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+fi
+[[ -f "$APK" && "$APK" == *.apk && -f "$TEST_APK_PATH" && "$TEST_APK_PATH" == *.apk ]] || {
+  echo "Both app and AndroidTest APKs must be existing .apk files" >&2; exit 3;
+}
+# Install before pushing the large model; package installation can reset external app storage.
 "${ADB[@]}" install -r "$APK"
-"${ADB[@]}" install -r "$TEST_APK"
+"${ADB[@]}" install -r "$TEST_APK_PATH"
 
 device_dir="/sdcard/Android/data/com.medmate.personal/files/native-test"
 device_file="$device_dir/medmate-acceptance.gguf"

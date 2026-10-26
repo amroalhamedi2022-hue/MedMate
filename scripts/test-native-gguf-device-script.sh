@@ -18,6 +18,7 @@ chmod +x "$tmp/scripts/run-native-gguf-device-test.sh"
 cat > "$tmp/gradlew" <<'GRADLE'
 #!/usr/bin/env bash
 set -euo pipefail
+printf 'invoked\n' >> "${FAKE_GRADLE_LOG:?}"
 mkdir -p app/build/outputs/apk/debug app/build/outputs/apk/androidTest/debug
 printf 'synthetic app apk for script contract only\n' > app/build/outputs/apk/debug/app-debug.apk
 printf 'synthetic androidTest apk for script contract only\n' > app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
@@ -117,6 +118,7 @@ run_case() {
     PATH="$tmp/bin:$PATH" \
       FAKE_DEVICE_ROOT="$case_dir/device-root" \
       FAKE_ADB_LOG="$case_dir/adb.log" \
+      FAKE_GRADLE_LOG="$case_dir/gradle.log" \
       FAKE_DEVICE_CORRUPT="$corrupt" \
       FAKE_PUSH_FAIL="$push_fail" \
       GGUF_FILE="$case_dir/probe.gguf" \
@@ -144,6 +146,32 @@ run_case matching-digest pass 0 0
 run_case mismatched-digest mismatch 1 0
 run_case interrupted-partial-push fail 0 1
 
+# A prebuilt CI bundle must install the exact supplied APK pair and skip Gradle.
+prebuilt="$tmp/prebuilt-apks"
+mkdir -p "$prebuilt/device-root"
+: > "$prebuilt/adb.log"
+printf 'prebuilt app APK; synthetic only\n' > "$prebuilt/app-debug.apk"
+printf 'prebuilt AndroidTest APK; synthetic only\n' > "$prebuilt/app-debug-androidTest.apk"
+printf 'synthetic GGUF header; not a model\n' > "$prebuilt/probe.gguf"
+status=0
+(
+  cd "$tmp"
+  PATH="$tmp/bin:$PATH" \
+    FAKE_DEVICE_ROOT="$prebuilt/device-root" \
+    FAKE_ADB_LOG="$prebuilt/adb.log" \
+    FAKE_GRADLE_LOG="$prebuilt/gradle.log" \
+    GGUF_FILE="$prebuilt/probe.gguf" \
+    APP_APK="$prebuilt/app-debug.apk" \
+    TEST_APK="$prebuilt/app-debug-androidTest.apk" \
+    bash scripts/run-native-gguf-device-test.sh
+) > "$prebuilt/output.log" 2>&1 || status=$?
+[[ "$status" == 0 ]] || { cat "$prebuilt/output.log"; echo "FAIL: prebuilt APK case exited $status" >&2; exit 1; }
+[[ ! -e "$prebuilt/gradle.log" ]] || { echo "FAIL: prebuilt APK case unexpectedly invoked Gradle" >&2; exit 1; }
+grep -Fq "install -r $prebuilt/app-debug.apk" "$prebuilt/adb.log"
+grep -Fq "install -r $prebuilt/app-debug-androidTest.apk" "$prebuilt/adb.log"
+grep -Fq 'INSTRUMENTED' "$prebuilt/adb.log"
+! find "$prebuilt/device-root" -type f -print -quit | grep -q .
+
 # Retain source-level privacy and order guards in addition to behavioral mocks.
 script="$source_script"
 grep -Fq 'never downloads or uploads weights' "$script"
@@ -159,4 +187,4 @@ instrument_line="$(grep -nF 'shell am instrument' "$script" | cut -d: -f1)"
 [[ -n "$cleanup_line" && -n "$trap_line" && -n "$push_line" && -n "$hash_line" && -n "$instrument_line" ]]
 (( cleanup_line < push_line && trap_line < push_line && push_line < hash_line && hash_line < instrument_line ))
 
-echo "PASS: matching GGUF digest reaches instrumentation; digest mismatch and partial push fail closed and clean up; no model download."
+echo "PASS: source-built and prebuilt APK paths; matching GGUF digest reaches instrumentation; mismatch and partial push fail closed and clean up; no model download."

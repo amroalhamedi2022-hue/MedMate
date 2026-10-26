@@ -52,6 +52,15 @@ jobs:
           APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f | head -1)"
           test -n "$APK"
           sha256sum "$APK" | tee app/build/outputs/apk/debug/APK_SHA256.txt
+      - name: Package exact APK pair for physical-device GGUF acceptance
+        if: success()
+        shell: bash
+        run: |
+          bundle="app/build/outputs/device-test-bundle"
+          mkdir -p "$bundle"
+          cp app/build/outputs/apk/debug/app-debug.apk "$bundle/app-debug.apk"
+          cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk "$bundle/app-debug-androidTest.apk"
+          (cd "$bundle" && sha256sum app-debug.apk app-debug-androidTest.apk > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -69,5 +78,12 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/debug/APK_SHA256.txt
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: MedMate-device-test-bundle
+          path: app/build/outputs/device-test-bundle/*
           if-no-files-found: error
           retention-days: 14
