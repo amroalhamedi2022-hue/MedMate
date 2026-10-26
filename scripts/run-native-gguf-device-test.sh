@@ -21,9 +21,13 @@ TEST_APK="app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
 
 device_dir="/sdcard/Android/data/com.medmate.personal/files/native-test"
 device_file="$device_dir/medmate-acceptance.gguf"
+cleanup(){ "${ADB[@]}" shell rm -f "$device_file" >/dev/null 2>&1 || true; }
+# Install the cleanup trap BEFORE mkdir/push: adb push can fail after creating a
+# partial model file. EXIT also runs after INT/TERM handlers exit non-zero.
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 "${ADB[@]}" shell mkdir -p "$device_dir"
 "${ADB[@]}" push "$GGUF_FILE" "$device_file"
-cleanup(){ "${ADB[@]}" shell rm -f "$device_file" >/dev/null 2>&1 || true; }
-trap cleanup EXIT
 # Invoke instrumentation directly so the install step cannot erase the just-pushed file.
 "${ADB[@]}" shell am instrument -w -e ggufPath "$device_file" com.medmate.personal.test/androidx.test.runner.AndroidJUnitRunner
