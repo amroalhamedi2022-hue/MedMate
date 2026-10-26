@@ -1,3 +1,10 @@
+## 2026-10-26 — Local-to-cloud fallback regression
+
+- Added a source-contract regression to `scripts/test-model-load-ui-contract.py`: local explanation errors and local draft-generation errors must not invoke `CloudBrainGateway`; the optional cloud actions remain separate and must retain `CloudTransferConsent` plus `CloudEvidenceSeal`.
+- **PASS — direct source-contract check:** inspected the current `BrainPanel.kt` call regions; neither local error path contains a cloud gateway call, and both explicit cloud actions and the evidence-bound consent types remain present.
+- **CI:** PENDING for commit `53292841d2578df1a893d626b10fbc08597b415c`. This source-string audit does not replace execution of the committed Python guard, Kotlin/JUnit, or Android build.
+- **NOT TESTED:** real GGUF/JNI inference, PDF page-2 round-trip on Xiaomi Pad 5, live HTTPS allow/deny, clinical correctness, RAM/thermal and final signing. No personal model, PDF, token or key uploaded.
+
 ## 2026-10-26 — Native GGUF + two-page PDF acceptance contract hardened
 
 - Added 11 static wiring assertions around the device-only test: production `LlamaAndroidPort`, matching loaded-model SHA-256/byte count, native diagnostic PASS, fresh page-2 identifier, exactly `[S1]`, rejection of invented `[S2]`, page-index 1 in the prompt, no full excerpt echo, model identity cleared after unload, and cleanup of test-only imported model.
