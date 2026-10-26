@@ -725,3 +725,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Added a shell contract regression and CI syntax check; this validates script ordering without requiring ADB, downloading weights, or pretending to run a real model.
 - **Purposeful CI question:** does the private model test harness fail closed and retain cleanup protection when pushing a large user-supplied GGUF fails midway? Source inspection alone is insufficient to prevent future ordering regressions; CI will run a static shell regression.
 - Physical-device GGUF inference remains **NOT TESTED** until a user-supplied model and Xiaomi Pad 5 are available. No model or personal PDF is uploaded.
+
+
+## GGUF test-harness cleanup verification — 2026-10-26
+- The EXIT cleanup trap is now installed **before** creating the temporary device directory or pushing the user-supplied model. INT/TERM handlers exit through the same cleanup path, so a partially written GGUF is best-effort removed if `adb push` fails or is interrupted.
+- The shell syntax/ordering regression passed in [Android debug CI run 40276893414](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40276893414). The run also passed SQLite migration contracts, Android compilation, lint and APK assembly; JUnit report confirms **137 tests, 0 failures, 0 ignored**.
+- Debug APK artifact: [12630408235](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40276893414/artifacts/12630408235), 33,553,153 bytes. SHA-256 independently recomputed after downloading/extracting the artifact: `05cdd6a854a64ee5fc83183c330cc0830092c62742714acd5e013f615fd57aa4`, matching the CI manifest.
+- APK inspection confirms ARM64 llama.cpp libraries are packaged (`libllama.so`, `libllama_jni.so`, `libggml*.so`) and no `.gguf` model or PDF is bundled. The artifact remains a **debug/test build**, not a final release.
+- **NOT TESTED:** physical Xiaomi Pad 5 inference with a real user-supplied GGUF, clinical correctness, PDF citation grounding, cloud consent over HTTPS, and device memory/thermal behaviour. CI did not download or upload model weights.
