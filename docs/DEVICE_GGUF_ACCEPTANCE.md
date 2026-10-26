@@ -109,4 +109,6 @@ The synthetic device fixture now includes a fresh `PAGE1-EXCLUDE-<random-id>` on
 - The same 100,000-page maximum now guards import and re-indexing, before permanent storage or PDFBox page work.
 - The public navigation preview must be ascending and unique.
 - Source contract is in `scripts/test-pdf-page-limit-contract.py`; its first CI attempt exposed a test-harness slice bug (not an application failure). That harness was fixed in `9bde03a6a30ad464911469aade6c94f7ae065b9c`.
-- Latest CI run `40415248660` remains in progress at this checkpoint. Device import/indexing, actual GGUF inference and network-denial behavior remain NOT TESTED.
+- CI run `40415248660` completed successfully on 2026-10-26. JUnit: 147 PASS / 0 FAIL / 0 ignored; Lint and both APK assemblies PASS. Device-test bundle artifact `12695946600` contains Debug and AndroidTest APKs plus SHA256SUMS. Debug SHA-256 `e6c9eca71342bb40cb279c3d0e88374b306b15569405ae315e8ab80b7e5e82e6`; AndroidTest SHA-256 `45021669120c53c1be3883fdc63526f9d45c5e402aa2373be448ef40cd1fb297`.
+
+- **Acceptance boundary remains open:** the build and JVM tests do not prove a physical PDF import on Xiaomi Pad 5, real GGUF/JNI inference, page-2 citation correctness, or actual network denial when cloud consent is refused. All remain NOT TESTED.
