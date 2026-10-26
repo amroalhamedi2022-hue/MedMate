@@ -9,6 +9,8 @@ On Xiaomi Pad 5 or another ARM64 Android device, download the GGUF locally and e
 ```bash
 APP_APK=/absolute/path/app-debug.apk \
 TEST_APK=/absolute/path/app-debug-androidTest.apk \
+APP_APK_SHA256="$(awk '$2=="app-debug.apk"{print $1}' SHA256SUMS)" \
+TEST_APK_SHA256="$(awk '$2=="app-debug-androidTest.apk"{print $1}' SHA256SUMS)" \
 GGUF_FILE=/absolute/path/to/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf \
 bash scripts/run-native-gguf-device-test.sh
 ```
@@ -40,3 +42,8 @@ The instrumented test now asserts that loadedModelName, loadedModelSha256, and l
 - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `434289f1baffbbaaaaebed3af6046e1982b948a70f3219e51e04d7f572015aac`.
 - Both hashes were independently recalculated from the downloaded bundle and match `SHA256SUMS`. The bundle contains no model weights, private PDFs or credentials.
 - The concurrency regression is a JVM test. Physical-device installation and genuine GGUF/llama.cpp inference remain **NOT TESTED** until a local model is supplied and the instrumentation script runs on an ARM64 device.
+
+
+## Prebuilt APK integrity gate (2026-10-26)
+
+When `APP_APK` and `TEST_APK` are supplied, the runner now requires `APP_APK_SHA256` and `TEST_APK_SHA256` and verifies both files before installing either APK. Missing or malformed hashes fail closed; a mismatch exits with status 4 before install, model push, or instrumentation. The script-contract regression exercises both the valid pair and a deliberately incorrect digest. The source-build path remains available without prebuilt hash variables. This is an artifact-integrity guard, not proof of real GGUF inference; device/model acceptance stays **NOT TESTED** until instrumentation runs on a real ARM64 device with a locally supplied model.

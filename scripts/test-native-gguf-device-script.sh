@@ -163,6 +163,8 @@ status=0
     GGUF_FILE="$prebuilt/probe.gguf" \
     APP_APK="$prebuilt/app-debug.apk" \
     TEST_APK="$prebuilt/app-debug-androidTest.apk" \
+    APP_APK_SHA256="$(sha256sum "$prebuilt/app-debug.apk" | awk '{print $1}')" \
+    TEST_APK_SHA256="$(sha256sum "$prebuilt/app-debug-androidTest.apk" | awk '{print $1}')" \
     bash scripts/run-native-gguf-device-test.sh
 ) > "$prebuilt/output.log" 2>&1 || status=$?
 [[ "$status" == 0 ]] || { cat "$prebuilt/output.log"; echo "FAIL: prebuilt APK case exited $status" >&2; exit 1; }
@@ -172,7 +174,30 @@ grep -Fq "install -r $prebuilt/app-debug-androidTest.apk" "$prebuilt/adb.log"
 grep -Fq 'INSTRUMENTED' "$prebuilt/adb.log"
 ! find "$prebuilt/device-root" -type f -print -quit | grep -q .
 
-# Retain source-level privacy and order guards in addition to behavioral mocks.
+! find "$prebuilt/device-root" -type f -print -quit | grep -q .
+
+# A mismatched prebuilt APK must fail before install/push/instrumentation.
+: > "$prebuilt/adb.log"
+status=0
+(
+  cd "$tmp"
+  PATH="$tmp/bin:$PATH" \
+    FAKE_DEVICE_ROOT="$prebuilt/device-root" \
+    FAKE_ADB_LOG="$prebuilt/adb.log" \
+    FAKE_GRADLE_LOG="$prebuilt/gradle.log" \
+    GGUF_FILE="$prebuilt/probe.gguf" \
+    APP_APK="$prebuilt/app-debug.apk" \
+    TEST_APK="$prebuilt/app-debug-androidTest.apk" \
+    APP_APK_SHA256="$(printf '0%.0s' {1..64})" \
+    TEST_APK_SHA256="$(sha256sum "$prebuilt/app-debug-androidTest.apk" | awk '{print $1}')" \
+    bash scripts/run-native-gguf-device-test.sh
+) > "$prebuilt/mismatch.log" 2>&1 || status=$?
+[[ "$status" == 4 ]] || { cat "$prebuilt/mismatch.log"; echo "FAIL: wrong prebuilt APK digest should exit 4" >&2; exit 1; }
+grep -Fq 'SHA-256 mismatch' "$prebuilt/mismatch.log"
+! grep -Fq 'install -r' "$prebuilt/adb.log"
+! grep -Fq 'push ' "$prebuilt/adb.log"
+! grep -Fq 'INSTRUMENTED' "$prebuilt/adb.log"
+
 script="$source_script"
 grep -Fq 'never downloads or uploads weights' "$script"
 if grep -Eq '(^|[[:space:]])(curl|wget)[[:space:]]' "$script"; then
@@ -187,4 +212,4 @@ instrument_line="$(grep -nF 'shell am instrument' "$script" | cut -d: -f1)"
 [[ -n "$cleanup_line" && -n "$trap_line" && -n "$push_line" && -n "$hash_line" && -n "$instrument_line" ]]
 (( cleanup_line < push_line && trap_line < push_line && push_line < hash_line && hash_line < instrument_line ))
 
-echo "PASS: source-built and prebuilt APK paths; matching GGUF digest reaches instrumentation; mismatch and partial push fail closed and clean up; no model download."
+echo "PASS: source-built and prebuilt APK paths; matching GGUF digest reaches instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."

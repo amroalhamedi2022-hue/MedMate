@@ -12,12 +12,14 @@ fi
 "${ADB[@]}" get-state >/dev/null
 # Prefer an exact CI-built app + instrumentation APK pair when supplied. This lets
 # device acceptance run without rebuilding; otherwise build both from this checkout.
+PREBUILT_APK_PAIR=0
 if [[ -n "${APP_APK:-}" || -n "${TEST_APK:-}" ]]; then
   [[ -n "${APP_APK:-}" && -n "${TEST_APK:-}" ]] || {
     echo "Set both APP_APK and TEST_APK, or neither" >&2; exit 2;
   }
   APK="$APP_APK"
   TEST_APK_PATH="$TEST_APK"
+  PREBUILT_APK_PAIR=1
 else
   if [[ -x ./gradlew ]]; then GRADLE=(./gradlew); elif command -v gradle >/dev/null; then GRADLE=(gradle); else echo "Gradle wrapper or gradle required" >&2; exit 2; fi
   "${GRADLE[@]}" --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
@@ -27,6 +29,29 @@ fi
 [[ -f "$APK" && "$APK" == *.apk && -f "$TEST_APK_PATH" && "$TEST_APK_PATH" == *.apk ]] || {
   echo "Both app and AndroidTest APKs must be existing .apk files" >&2; exit 3;
 }
+# Prebuilt CI artifacts must be bound to the exact SHA-256 values recorded in
+# the downloaded bundle. This check happens before installing either package.
+if [[ "$PREBUILT_APK_PAIR" == 1 ]]; then
+  if [[ -z "${APP_APK_SHA256:-}" || -z "${TEST_APK_SHA256:-}" ]]; then
+    echo "Set APP_APK_SHA256 and TEST_APK_SHA256 when supplying prebuilt APKs" >&2
+    exit 2
+  fi
+  verify_apk_sha() {
+    local file="$1" expected="$2" label="$3" actual
+    [[ "$expected" =~ ^[0-9a-fA-F]{64}$ ]] || {
+      echo "Expected $label SHA-256 must be 64 hexadecimal characters" >&2; exit 2;
+    }
+    actual="$(sha256sum "$file" | awk '{print $1}')"
+    if [[ "${expected,,}" != "$actual" ]]; then
+      echo "FAIL: $label SHA-256 mismatch; refusing to install prebuilt APK" >&2
+      echo "Expected: ${expected,,}; actual: $actual" >&2
+      exit 4
+    fi
+    printf 'PASS: %s SHA-256 verified: %s\n' "$label" "$actual"
+  }
+  verify_apk_sha "$APK" "$APP_APK_SHA256" "app-debug.apk"
+  verify_apk_sha "$TEST_APK_PATH" "$TEST_APK_SHA256" "app-debug-androidTest.apk"
+fi
 # Install before pushing the large model; package installation can reset external app storage.
 "${ADB[@]}" install -r "$APK"
 "${ADB[@]}" install -r "$TEST_APK_PATH"
