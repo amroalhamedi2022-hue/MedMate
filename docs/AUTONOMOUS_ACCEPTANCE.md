@@ -959,3 +959,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Purposeful build question:** does the strengthened instrumentation compile against the current PDFBox/StudyBrain/JNI APIs, and do the static guards pass? Source inspection alone cannot establish AndroidTest compilation.
 - **CI/APK:** PENDING at this source checkpoint. No older APK is counted as evidence for this change.
 - **NOT TESTED:** physical Xiaomi Pad 5 execution, actual GGUF/JNI inference, PDFBox-to-page-2 native round trip, live HTTPS consent/denial, clinical accuracy, RAM/thermal and final signing. Fake ports and compiled instrumentation are not real inference evidence. No GGUF, personal PDF, credentials or signing key uploaded.
+
+## 2026-10-26 — HTTPS destination and redirect boundary regressions (CI pending)
+
+- Added a JVM/Robolectric regression that refuses cleartext HTTP, URL user-info credentials, query-string tokens, and non-chat-completions paths before any connection can be opened.
+- The successful fake-transport case now explicitly asserts that redirect following is disabled, preventing a consented PDF prompt or bearer token from being forwarded by an automatic redirect.
+- **PASS source:** test and production policy wiring inspected. **CI for the new source head: PENDING**; do not count the previous 142-test report as evidence for this test.
+- **NOT TESTED:** real TLS/network capture, physical Pad 5 consent/denial, real GGUF inference, PDF page-2 citation round-trip, clinical accuracy, RAM/thermal and final signing. Fake transport is not live HTTPS proof.
