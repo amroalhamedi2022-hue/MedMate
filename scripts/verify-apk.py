@@ -78,6 +78,9 @@ for forbidden in (
 
 if not re.search(r'android:usesCleartextTraffic\s*=\s*"false"', MANIFEST):
     raise SystemExit("Manifest must explicitly disable cleartext traffic")
+# Unlike badging/permissions, xmltree takes APK and the manifest asset
+# as positional arguments before returning output. Do not route this through
+# run(), which appends APK for the simpler commands.
 manifest_tree = subprocess.check_output(
     [str(aapt), "dump", "xmltree", str(apk), "AndroidManifest.xml"],
     text=True,
