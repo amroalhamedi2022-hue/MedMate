@@ -38,6 +38,13 @@ class SourceCitationLinksTest {
         assertTrue(SourceCitationLinks.resolve(answer, emptyList()).isEmpty())
     }
 
+    @Test fun rejectsAmbiguousOrEmptyEvidenceBeforeMakingNavigation() {
+        val answer = "A fracture is a break in bone [S1]."
+        assertTrue(SourceCitationLinks.resolve(answer, listOf(first, second.copy(id = first.id))).isEmpty())
+        assertTrue(SourceCitationLinks.resolve(answer, listOf(first.copy(id = " "))).isEmpty())
+        assertTrue(SourceCitationLinks.resolve(answer, listOf(first.copy(text = " "))).isEmpty())
+    }
+
     @Test fun abstentionAndCitationOnlyAnswersCannotProduceNavigation() {
         assertTrue(SourceCitationLinks.resolve("المعلومة مش كافية بالنص الموجود", listOf(first)).isEmpty())
         assertTrue(SourceCitationLinks.resolve("[S1]", listOf(first)).isEmpty())
