@@ -26,7 +26,7 @@ class NativeGgufDeviceAcceptanceTest {
     fun realGgufLoadsAndPassesFreshSyntheticCalibration() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        val path = instrumentation.arguments.getString("ggufPath")
+        val path = InstrumentationRegistry.getArguments().getString("ggufPath")
             ?: error("NOT TESTED: supply ggufPath with scripts/run-native-gguf-device-test.sh")
         val source = File(path).canonicalFile
         val allowedDir = requireNotNull(context.getExternalFilesDir("native-test")).canonicalFile
