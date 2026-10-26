@@ -829,3 +829,14 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Test change commit:** `3274f2367ba6ce37596526e409c82f02cb43c2ac` (branch `automation/medmate-v091-source-tree-20261023`).
 - **CI for this correction: NOT VERIFIED** at documentation time. Do not treat APKs from runs 40310142232, 40311869497 or 40312720170 as passing the final manifest verifier; each failed at that gate. A successful run must complete the real AAPT inspection and publish a fresh APK pair/checksum manifest.
 - **NOT TESTED:** real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded medical accuracy, live HTTPS consent/denial, device RAM/thermal and final signed release. No model, private PDF or credential was added.
+
+## 2026-10-26 — APK verifier closure and independently checked device-test pair
+
+- **PASS Android CI:** [run 40316476587](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40316476587) on source SHA `77c80b1321d8502bb84abc93f5670ab71a2e10dd`. The compiled AAPT manifest verifier passed after checking package/version/SDK, optional-cloud INTERNET permission consistency, explicit `usesCleartextTraffic=false`, and absence of broad-storage permissions. Unit tests, lint, SQLite migration contracts, APK verification, AndroidTest assembly and artifact packaging all completed successfully.
+- **PASS JUnit report inspection:** downloaded validation report artifact `12647371960`; the HTML summary reports **140 tests, 0 failures, 0 ignored, 100% successful**.
+- **PASS independent artifact verification:** downloaded device-test artifact `12646694745`; independently recomputed SHA-256 values match its `SHA256SUMS`:
+  - `app-debug.apk`: 33,553,165 bytes; SHA-256 `8630c6268704817b2aa7ba724fefa59f8e9d3399d03f6eec5635a7a90be4837f`.
+  - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `d92ffe3e826fca8181b5256c1068a79faf65eb5d74e7c0fefb8949a095c10a02`.
+- **PASS package safety inspection:** ARM64 `libllama.so` and `libllama_jni.so` are present; no `.gguf` or `.pdf` payload is bundled. This confirms native libraries are packaged, **not** that a real model has loaded or inferred.
+- **Device kit prepared locally:** exact CI APK pair, checksums and run instructions are available for a physical-device test. ADB/physical device was unavailable in this run, so Xiaomi Pad 5 installation and real GGUF/JNI inference remain **NOT TESTED**.
+- **Still NOT TESTED:** PDF-grounded clinical accuracy, actual HTTPS/cloud consent and denial on-device, RAM/thermal performance, signed-upgrade continuity and final release signing. Draft PR #1 only; no main write/merge, personal PDF/model/key upload, paid API or Library/Handoff access.
