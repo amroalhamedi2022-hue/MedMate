@@ -853,3 +853,9 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 
 - Source/test commit: `116b1ac78e6e44b83a510c31dd4e56d494ede0e2`; acceptance-record commit before this note: `44f406b505bdc294707c97fb0f547ae640b84705`.
 - The GitHub connector returned no PR-triggered workflow run/status for the new test commit at the time of this record. Therefore compilation/JUnit results for the new concurrency test and a fresh APK pair are **NOT VERIFIED**, not PASS. The previously verified APK pair predates this test.
+
+
+### Outbound gateway race — source wiring review, 2026-10-26
+
+- **PASS static review:** the new test drives the production `CloudBrainGateway.explain` path with 16 concurrent callers and a fake in-memory `HttpURLConnection`; asserts one success and one connection; production consent uses synchronized one-shot consumption before socket creation, disables redirects and disconnects in `finally`.
+- **NOT VERIFIED:** Kotlin compilation, JUnit execution, Android CI and a fresh APK pair for this test. This source review is not a substitute for the pending build. Live HTTPS, real GGUF/JNI on Pad 5 and clinical accuracy remain **NOT TESTED**.
