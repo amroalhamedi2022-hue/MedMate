@@ -65,6 +65,6 @@ class NativeGgufDeviceAcceptanceTest {
     private fun sampleMemory(context: Context): NativeProbeMemory {
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val info = ActivityManager.MemoryInfo().also(manager::getMemoryInfo)
-        return NativeProbeMemory(Debug.getPss(), info.availMem, info.lowMemory)
+        return NativeProbeMemory(Debug.getPss().coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), info.availMem, info.lowMemory)
     }
 }
