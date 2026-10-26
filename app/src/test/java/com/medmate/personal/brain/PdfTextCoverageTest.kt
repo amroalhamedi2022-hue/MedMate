@@ -103,4 +103,25 @@ class PdfTextCoverageTest {
         assertEquals(19_999, report.missingPages)
         assertFalse(report.toString().contains("clinical source material"))
     }
+
+    @Test fun pathologicalPageCountIsRejectedBeforePerPageAllocation() {
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfCoverageAudit.inspect(chapter, PdfCoverageAudit.MAX_AUDIT_PAGES + 1, emptyList())
+        }
+    }
+
+    @Test fun publicCoverageReportCannotRepresentImpossibleCountsOrPageAnchors() {
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfTextCoverage(0, 0, 0, 0, 0, 0, 0, emptyList())
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfTextCoverage(2, 2, 1, 0, 0, 0, 0, emptyList())
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfTextCoverage(2, 1, 1, 0, 0, 0, 1, listOf(0, 0))
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            PdfTextCoverage(2, 1, 1, 0, 0, 0, 1, listOf(2))
+        }
+    }
 }
