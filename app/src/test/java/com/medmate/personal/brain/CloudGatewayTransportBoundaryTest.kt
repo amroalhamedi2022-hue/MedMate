@@ -267,4 +267,41 @@ class CloudGatewayTransportBoundaryTest {
             1, results.count { it })
         assertFalse(consent.permits(endpoint, model, request, seal))
     }
+
+
+    @Test fun concurrentGatewayCallsConsumeOneConsentAndOpenAtMostOneConnection() {
+        val opened = java.util.Collections.synchronizedList(mutableListOf<FakeHttpsConnection>())
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url).also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val ready = java.util.concurrent.CountDownLatch(16)
+        val start = java.util.concurrent.CountDownLatch(1)
+        val outcomes = java.util.Collections.synchronizedList(mutableListOf<Boolean>())
+        val workers = (0 until 16).map {
+            Thread {
+                ready.countDown()
+                if (start.await(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    outcomes.add(runCatching {
+                        runBlocking {
+                            gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
+                        }
+                    }.isSuccess)
+                }
+            }.apply { start() }
+        }
+        assertTrue("gateway workers did not reach the barrier", ready.await(5, java.util.concurrent.TimeUnit.SECONDS))
+        start.countDown()
+        workers.forEach { worker ->
+            worker.join(10_000)
+            assertFalse("gateway worker stalled", worker.isAlive)
+        }
+        assertEquals(16, outcomes.size)
+        assertEquals("one reviewed consent must authorize at most one successful outbound call", 1, outcomes.count { it })
+        assertEquals(15, outcomes.count { !it })
+        assertEquals("concurrent replays must not create extra connections", 1, opened.size)
+        assertTrue(opened.single().disconnected)
+        assertFalse(consent.permits(endpoint, model, request, seal))
+    }
 }
