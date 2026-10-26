@@ -9,6 +9,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 test = (root / "app/src/androidTest/java/com/medmate/personal/brain/NativeGgufDeviceAcceptanceTest.kt").read_text(encoding="utf-8")
 device_script = (root / "scripts/run-native-gguf-device-test.sh").read_text(encoding="utf-8")
+script_test = (root / "scripts/test-native-gguf-device-script.sh").read_text(encoding="utf-8")
 required = {
     "real native port": "LlamaAndroidPort()",
     "production PDFBox extractor": "PdfTextExtractor(context, pdfFile)",
@@ -44,5 +45,8 @@ assert "ggufPath" in test and "LlamaAndroidPort()" in test
 assert "ggufPath" in device_script, "device runner must pass the user-supplied model path"
 assert "sha256" in device_script.lower(), "device runner must verify the supplied model"
 assert "trap " in device_script, "device runner must clean up the temporary model on exit"
+assert "FAILURES!!!" in device_script and "OK \\([1-9][0-9]* tests?\\)" in device_script, "runner must reject reported instrumentation failures and require a JUnit success summary"
+assert "NativeGgufDeviceAcceptanceTest" in device_script, "runner must verify the expected native acceptance class was reported"
+assert "FAKE_INSTRUMENT_MODE" in script_test and "instrumentation-reported-failure" in script_test and "instrumentation-missing-summary" in script_test, "shell regression must exercise failure and incomplete AndroidJUnitRunner output"
 print("PASS: synthetic PDF → production PDFBox extraction → retrieval → real GGUF JNI → citation/page-link checks are wired.")
 print("NOT TESTED: this static guard does not execute Android instrumentation or a real GGUF model.")

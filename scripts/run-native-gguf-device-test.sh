@@ -79,4 +79,27 @@ if [[ "$device_sha" != "$host_sha" || "$device_bytes" != "$host_bytes" ]]; then
 fi
 printf 'PASS: device GGUF SHA-256 and byte count match the local source (%s bytes).\n' "$device_bytes"
 # Invoke instrumentation directly so the install step cannot erase the just-pushed file.
-"${ADB[@]}" shell am instrument -w -e ggufPath "$device_file" com.medmate.personal.test/androidx.test.runner.AndroidJUnitRunner
+# adb can return a successful shell status even when AndroidJUnitRunner reports
+# failed tests. Acceptance must be based on the instrumentation result, not adb alone.
+set +e
+instrumentation_output="$("${ADB[@]}" shell am instrument -w -e ggufPath "$device_file" com.medmate.personal.test/androidx.test.runner.AndroidJUnitRunner 2>&1)"
+instrumentation_status=$?
+set -e
+printf '%s\n' "$instrumentation_output"
+if [[ "$instrumentation_status" -ne 0 ]]; then
+  echo "FAIL: Android instrumentation command exited with status $instrumentation_status" >&2
+  exit 5
+fi
+if grep -Eq 'FAILURES!!!|INSTRUMENTATION_FAILED|INSTRUMENTATION_ABORTED' <<<"$instrumentation_output"; then
+  echo "FAIL: Android instrumentation reported a test failure; refusing acceptance." >&2
+  exit 5
+fi
+if ! grep -Fq 'NativeGgufDeviceAcceptanceTest' <<<"$instrumentation_output"; then
+  echo "FAIL: expected NativeGgufDeviceAcceptanceTest was not reported by instrumentation." >&2
+  exit 5
+fi
+if ! grep -Eq 'OK \([1-9][0-9]* tests?\)' <<<"$instrumentation_output"; then
+  echo "FAIL: Android instrumentation output is missing a successful JUnit summary." >&2
+  exit 5
+fi
+printf 'PASS: Android instrumentation reported a successful native GGUF/PDF acceptance test.\n'

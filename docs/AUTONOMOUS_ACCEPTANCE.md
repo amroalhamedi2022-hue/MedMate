@@ -1,3 +1,10 @@
+## 2026-10-26 — Fail-closed Android instrumentation result gate
+
+- Hardened `scripts/run-native-gguf-device-test.sh`: ADB's shell exit code is no longer treated as proof that instrumentation passed. The runner captures and prints AndroidJUnitRunner output, requires the expected `NativeGgufDeviceAcceptanceTest` class and a nonzero JUnit `OK (N test[s])` summary, and rejects `FAILURES!!!`, `INSTRUMENTATION_FAILED` and `INSTRUMENTATION_ABORTED` even if ADB itself exits zero.
+- Expanded the fake-ADB regression with a reported JUnit failure and incomplete output case. Both must exit 5 and trigger EXIT cleanup of the temporary GGUF. These are harness tests only; they do not run llama.cpp or validate a real model.
+- **Purposeful CI question:** does the real Bash runner fail closed on failure-shaped output, preserve cleanup, and still compile/test the Android app and instrumentation APK? Source inspection cannot prove the shell behavior; the wired CI run is required.
+- **CI: PENDING** for this functional commit. **NOT TESTED:** real Xiaomi Pad 5, GGUF inference, PDF citation accuracy, HTTPS consent/denial, clinical review, RAM/thermal and final signing.
+
 ## 2026-10-26 — Local/cloud safety regression wired into CI
 
 - Updated `.github/workflows/android-debug.yml` so the build runs `python3 scripts/test-model-load-ui-contract.py` alongside the native GGUF/PDF contract checks.

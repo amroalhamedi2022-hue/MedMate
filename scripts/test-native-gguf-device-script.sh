@@ -86,7 +86,21 @@ case "${1:-}" in
       am)
         if [[ "${2:-}" == instrument ]]; then
           printf 'INSTRUMENTED\n' >> "$FAKE_ADB_LOG"
-          printf 'INSTRUMENTATION_STATUS_CODE: 0\n'
+          case "${FAKE_INSTRUMENT_MODE:-pass}" in
+            pass)
+              printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\n'
+              printf 'INSTRUMENTATION_STATUS: test=realGgufPdfCitationRoundTrip\n'
+              printf 'INSTRUMENTATION_STATUS_CODE: 1\n'
+              printf 'INSTRUMENTATION_RESULT: stream=\nTime: 0.01\nOK (1 test)\nINSTRUMENTATION_CODE: -1\n'
+              ;;
+            fail)
+              printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\nFAILURES!!!\nTests run: 1, Failures: 1\nINSTRUMENTATION_CODE: -1\n'
+              ;;
+            incomplete)
+              printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\nINSTRUMENTATION_CODE: -1\n'
+              ;;
+            *) echo "unsupported fake instrumentation mode" >&2; exit 94 ;;
+          esac
         else
           echo "unsupported adb shell am command" >&2
           exit 91
@@ -107,7 +121,7 @@ ADB
 chmod +x "$tmp/bin/adb"
 
 run_case() {
-  local name="$1" expected="$2" corrupt="$3" push_fail="$4"
+  local name="$1" expected="$2" corrupt="$3" push_fail="$4" instrument_mode="${5:-pass}"
   local case_dir="$tmp/$name"
   mkdir -p "$case_dir/device-root"
   : > "$case_dir/adb.log"
@@ -121,6 +135,7 @@ run_case() {
       FAKE_GRADLE_LOG="$case_dir/gradle.log" \
       FAKE_DEVICE_CORRUPT="$corrupt" \
       FAKE_PUSH_FAIL="$push_fail" \
+      FAKE_INSTRUMENT_MODE="$instrument_mode" \
       GGUF_FILE="$case_dir/probe.gguf" \
       bash scripts/run-native-gguf-device-test.sh
   ) > "$case_dir/output.log" 2>&1 || status=$?
@@ -128,12 +143,24 @@ run_case() {
   if [[ "$expected" == pass ]]; then
     [[ "$status" == 0 ]] || { cat "$case_dir/output.log"; echo "FAIL: matching digest case exited $status" >&2; return 1; }
     grep -Fq 'PASS: device GGUF SHA-256 and byte count match' "$case_dir/output.log"
+    grep -Fq 'PASS: Android instrumentation reported a successful native GGUF/PDF acceptance test.' "$case_dir/output.log"
+    grep -Fq 'OK (1 test)' "$case_dir/output.log"
     grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
     ! find "$case_dir/device-root" -type f -print -quit | grep -q .
   elif [[ "$expected" == mismatch ]]; then
     [[ "$status" == 4 ]] || { cat "$case_dir/output.log"; echo "FAIL: mismatch case exited $status, expected 4" >&2; return 1; }
     grep -Fq 'refusing native inference' "$case_dir/output.log"
     ! grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+    ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+  elif [[ "$expected" == instrument-failure ]]; then
+    [[ "$status" == 5 ]] || { cat "$case_dir/output.log"; echo "FAIL: reported JUnit failure exited $status, expected 5" >&2; return 1; }
+    grep -Fq 'instrumentation reported a test failure' "$case_dir/output.log"
+    grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+    ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+  elif [[ "$expected" == instrument-incomplete ]]; then
+    [[ "$status" == 5 ]] || { cat "$case_dir/output.log"; echo "FAIL: incomplete instrumentation output exited $status, expected 5" >&2; return 1; }
+    grep -Fq 'missing a successful JUnit summary' "$case_dir/output.log"
+    grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
     ! find "$case_dir/device-root" -type f -print -quit | grep -q .
   else
     [[ "$status" != 0 ]] || { echo "FAIL: partial push should fail" >&2; return 1; }
@@ -142,9 +169,11 @@ run_case() {
   fi
 }
 
-run_case matching-digest pass 0 0
-run_case mismatched-digest mismatch 1 0
-run_case interrupted-partial-push fail 0 1
+run_case matching-digest pass 0 0 pass
+run_case mismatched-digest mismatch 1 0 pass
+run_case interrupted-partial-push fail 0 1 pass
+run_case instrumentation-reported-failure instrument-failure 0 0 fail
+run_case instrumentation-missing-summary instrument-incomplete 0 0 incomplete
 
 # A prebuilt CI bundle must install the exact supplied APK pair and skip Gradle.
 prebuilt="$tmp/prebuilt-apks"
