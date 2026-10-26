@@ -951,3 +951,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - `app-debug-androidTest.apk`: 373,377 bytes; SHA-256 `f8edcd49e6c994bcf129cd7d95e6abfeac435f697793d4f20d65b3bc31145855`.
 - **Important boundary:** the fake-ADB tests prove the host runner fails closed on digest/instrumentation failures and cleans up synthetic files. They do not run llama.cpp or prove a real model works. No GGUF, personal PDF, credential or signing key is included in the artifact.
 - **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 citation round-trip on-device, live HTTPS consent/denial, clinical review, RAM/thermal profiling and final signing.
+
+## 2026-10-26 — Page-scoped PDF leakage sentinel (CI pending)
+
+- **Production/device-test change:** the synthetic two-page PDF now places a unique `PAGE1-EXCLUDE-<random-id>` sentinel only on page 1 while the requested question retrieves page 2. The real `LlamaAndroidPort` instrumentation asserts the sentinel exists in extracted page 1 but is absent from both the prepared native prompt and the presented evidence; the fresh calibration identifier remains exclusive to page 2 and the citation must resolve to human-facing page 2.
+- **Guard:** `scripts/test-native-gguf-pdf-acceptance-contract.py` now requires the fixture and both negative assertions, so a future test edit cannot silently remove the page-isolation check.
+- **Purposeful build question:** does the strengthened instrumentation compile against the current PDFBox/StudyBrain/JNI APIs, and do the static guards pass? Source inspection alone cannot establish AndroidTest compilation.
+- **CI/APK:** PENDING at this source checkpoint. No older APK is counted as evidence for this change.
+- **NOT TESTED:** physical Xiaomi Pad 5 execution, actual GGUF/JNI inference, PDFBox-to-page-2 native round trip, live HTTPS consent/denial, clinical accuracy, RAM/thermal and final signing. Fake ports and compiled instrumentation are not real inference evidence. No GGUF, personal PDF, credentials or signing key uploaded.
