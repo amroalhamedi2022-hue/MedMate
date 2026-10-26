@@ -966,3 +966,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - The successful fake-transport case now explicitly asserts that redirect following is disabled, preventing a consented PDF prompt or bearer token from being forwarded by an automatic redirect.
 - **PASS source:** test and production policy wiring inspected. **CI for the new source head: PENDING**; do not count the previous 142-test report as evidence for this test.
 - **NOT TESTED:** real TLS/network capture, physical Pad 5 consent/denial, real GGUF inference, PDF page-2 citation round-trip, clinical accuracy, RAM/thermal and final signing. Fake transport is not live HTTPS proof.
+
+### Exact checkpoint record — 2026-10-26
+
+- Functional source commit: `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f` (HTTPS-only destination/redirect regression; follows the page-1 exclusion-sentinel instrumentation and static guard).
+- Direct source-contract audit: **PASS** for the page-1 sentinel fixture and its exclusion from both prompt and evidence, guard wiring, HTTPS-only endpoint policy and redirects disabled.
+- GitHub Actions run/check and APK artifact for this functional SHA: **NOT VERIFIED** by the available run/status lookup. The earlier 142-test/ APK report is a baseline only and does not cover these changes.
+- Real GGUF/JNI inference, PDFBox page-2 round trip, live HTTPS consent/denial, Pad 5, clinical review, RAM/thermal and final signing: **NOT TESTED**.
