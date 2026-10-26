@@ -5,7 +5,7 @@ Use the official [Qwen2.5-1.5B-Instruct-GGUF model repository](https://huggingfa
 On Xiaomi Pad 5 or another ARM64 Android device, download the GGUF locally, enable USB debugging, connect exactly one device, and run:
 
 ```bash
-GGUF_FILE=/absolute/path/to/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf ./scripts/run-native-gguf-device-test.sh
+GGUF_FILE=/absolute/path/to/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf bash scripts/run-native-gguf-device-test.sh
 ```
 
 Set `ANDROID_SERIAL` if needed. The script pushes the file only to app-specific external storage, runs `:app:connectedDebugAndroidTest`, and removes the temporary device copy. The instrumented test checks free RAM, imports through the production content-addressed importer, invokes the real `LlamaAndroidPort`/llama.cpp JNI path, and runs a fresh random calibration challenge with a `[S1]` citation and no full source/prompt echo. It logs the GGUF SHA-256, size, elapsed time, app PSS snapshots and available system RAM without logging the answer. Newly imported test-only model files are removed after unload; pre-existing imported models are preserved.
