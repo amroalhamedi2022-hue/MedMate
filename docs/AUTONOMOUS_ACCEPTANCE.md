@@ -813,3 +813,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Corrected the invocation to the supported `aapt dump xmltree <apk>` form; the verifier searches the compiled manifest tree for the explicit cleartext-disabled attribute.
 - **CI for the command correction: NOT VERIFIED at commit time.** No APK from the failed run is accepted as verified.
 - **NOT TESTED:** live HTTPS consent/denial, genuine GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded answer quality, clinical correctness, and device memory/thermal.
+
+
+### Compiled-manifest inspection command correction — 2026-10-26
+
+- The follow-up [run 40312720170](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40312720170) again reached the final APK verifier and failed because `aapt dump xmltree` requires the APK path before the optional XML file argument; omitting the file caused a nonzero exit. Unit tests, lint, AndroidTest compilation and APK assembly all passed before this final gate.
+- Corrected the invocation to `aapt dump xmltree <apk> AndroidManifest.xml`, matching the documented positional syntax. The fake-aapt regression continues to exercise both cleartext-allowed rejection and cleartext-disabled acceptance.
+- **CI for this syntax correction: NOT VERIFIED at commit time.** No APK from the failed run is accepted as verified.
+- **NOT TESTED:** real GGUF inference, live HTTPS allow/deny, PDF-grounded medical quality, Xiaomi Pad 5 performance, and device RAM/thermal.
