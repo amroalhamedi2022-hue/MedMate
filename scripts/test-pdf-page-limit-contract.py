@@ -21,6 +21,6 @@ guard_index = import_region.index("PdfCoverageAudit.requireSafePageCount(pageCou
 move_index = import_region.index('val target = File(documentDir, "$sha.pdf")')
 assert page_count < guard_index < move_index, "page-count limit must run before the imported PDF is moved into permanent storage"
 
-index_region = store[store.index("suspend fun indexText"):store.index("suspend fun deleteChapter")]
+index_region = store[store.index("suspend fun indexText"): ]
 assert index_region.index("PdfCoverageAudit.requireSafePageCount(chapter.pageCount)") < index_region.index("PdfTextExtractor(app, fileFor(chapter))"), "indexing must reject unsupported page counts before PDFBox opens the document"
 print("PASS PDF page-limit contract: import and indexing share the 100,000-page guard; navigation preview is ascending.")
