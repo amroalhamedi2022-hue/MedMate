@@ -1002,3 +1002,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Commit `ecaff9fb57431206539097a3a2cb732d6d1ccbd9`; source-guard range fix `9bde03a6a30ad464911469aade6c94f7ae065b9c`.
 - Initial CI run `40415014034` exposed a test-harness slice bug (the guard referenced a nonexistent method name); the guard was corrected in `9bde03a6a30ad464911469aade6c94f7ae065b9c`. CI run `40415248660` completed successfully on 2026-10-26: `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebugAndroidTest`, and `:app:assembleDebug` all PASS. The JUnit HTML report records **147 tests, 0 failures, 0 ignored**. The new page-limit source guard also PASS. The initial harness failure is not counted as an application-test failure.
 - **Verified artifacts:** Device-test bundle `12695946600`; debug APK artifact `12695976587`; validation reports `12695556546`. Debug APK SHA-256 `e6c9eca71342bb40cb279c3d0e88374b306b15569405ae315e8ab80b7e5e82e6` (33,553,165 bytes). AndroidTest APK SHA-256 `45021669120c53c1be3883fdc63526f9d45c5e402aa2373be448ef40cd1fb297` (373,777 bytes). Independently recalculated hashes matched both artifact manifests.
+
+
+## 2026-10-27 — Device runner safety milestone
+
+- **PASS — source/CI:** GGUF runner checks target free storage before model push and fails closed with a 64 MiB reserve; Fake ADB low-space test proves no push or inference attempt occurs. Run 40418534168 passed 147 unit tests, lint, APK assembly, offline-permission/SDK checks and artifact packaging.
+- **PASS — artifact integrity:** Debug SHA-256 `1be41039e845b3ddf620c93a304f50e09a0d983a54d4af3b2e308e1b9bbb711a`; AndroidTest SHA-256 `1d178f4091f6e7e6111026b41afd773d0e237d992e643450e17f76bf7fb8f725`; independently recalculated from the downloaded device-test bundle.
+- **NOT TESTED — real device/model:** Xiaomi Pad 5, real GGUF/llama.cpp inference, real PDF citation [S1], network-level cloud consent, performance/thermal behavior, and independent medical review. Fake ADB and source contracts are not evidence of real model inference.
+- Run: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168 — Device bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697601058
