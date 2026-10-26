@@ -906,3 +906,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS — explicit cloud path:** cloud actions require the reviewed prepared excerpts, a one-time `CloudTransferConsent` sealed to the exact prompt/source identity, and a second check at the `CloudBrainGateway` outbound boundary. The transport disables redirects and disconnects in `finally`.
 - **PASS — CI boundary tests:** run 40366568877 confirms the 142-test suite, lint, APK pair, and device-runner contract. These tests use an in-memory transport and synthetic text; they are not live HTTPS/device proof.
 - **NOT TESTED:** actual network capture on Xiaomi Pad 5, real GGUF inference, the two-page PDFBox-to-native citation round-trip, clinical factual review, RAM/thermal measurements, and final signing. Do not mark local-brain acceptance complete until the physical-device runner emits a passing log with the real model SHA-256 and page-2 citation result.
+
+
+## 2026-10-26 — Exact PDF page-2 citation and cleanup gate (source checkpoint)
+- Strengthened `NativeGgufDeviceAcceptanceTest` so its **real llama.cpp/JNI** path must return the sole allowed `[S1]` marker, map it exactly to human-facing PDF page 2 (zero-based index 1), reject page-1 links, and remove the generated synthetic PDF from app cache after the round-trip.
+- Strengthened the static wiring guard to require these assertions. This is a meaningful test-hardening change because a broad “any S1 maps to page 2” check could otherwise miss extra or wrong-page links.
+- **CI for this new source SHA: PENDING**. Android instrumentation is a device-only test and is not considered executed by unit tests or APK assembly.
+- **NOT TESTED:** real GGUF/JNI inference, the synthetic PDF→PDFBox→native model round-trip, Xiaomi Pad 5, clinical accuracy, live HTTPS cloud-consent allow/deny, RAM/thermal behavior and final signing. No GGUF, personal PDF, key or medical data was uploaded.

@@ -91,6 +91,7 @@ class NativeGgufDeviceAcceptanceTest {
             (it.toInt() and 0xff).toString(16).padStart(2, '0')
         }.uppercase(java.util.Locale.ROOT)
         val pdfFile = File(context.cacheDir, "medmate-synthetic-pdf-" + code.lowercase(java.util.Locale.ROOT) + ".pdf")
+        var pdfCleanupSucceeded = false
         try {
             writeSyntheticPdf(context, pdfFile, code)
             val pages = PdfTextExtractor(context, pdfFile).use { reader ->
@@ -121,17 +122,24 @@ class NativeGgufDeviceAcceptanceTest {
             val elapsed = ((System.nanoTime() - started) / 1_000_000L).coerceAtLeast(0L)
             val after = sampleMemory(context)
             assertTrue("real native answer did not preserve the fresh PDF identifier", answer.contains(code, ignoreCase = true))
+            assertTrue("real native answer must explicitly cite the only supplied evidence", answer.contains("[S1]"))
+            assertFalse("page-1-only marker [S2] must not be invented for page-2 evidence", answer.contains("[S2]"))
             val citationCheck = CitationValidator.check(answer, prepared.presentedEvidence.size)
             assertTrue("real native answer failed citation validation: " + citationCheck.reason, citationCheck.accepted)
+            assertEquals("only the requested PDF page may enter the native prompt", listOf(1), prepared.presentedEvidence.map { it.pageIndex })
             val links = SourceCitationLinks.resolve(answer, prepared.presentedEvidence)
-            assertTrue("S1 must navigate to actual PDF page 2", links.any { it.marker == "S1" && it.pageNumber == 2 })
+            assertEquals("the page-2-only request must resolve exactly one source marker", listOf("S1"), links.map { it.marker })
+            assertEquals("S1 must navigate to human-facing PDF page 2", listOf(2), links.map { it.pageNumber })
+            assertEquals("zero-based source index must remain page index 1", listOf(1), links.map { it.pageIndex })
+            assertFalse("a page-1 citation must never be produced for this page-2-only answer", links.any { it.pageNumber == 1 })
             assertTrue("native answer must not echo the entire PDF excerpt", !answer.contains(extracted, ignoreCase = true))
             Log.i("MedMateNativeGGUF", "PASS syntheticPdfPages=2 citationPage=2 syntheticPdfBytes=" + pdfFile.length() +
                 " extractedChars=" + extracted.length + " elapsedMs=" + elapsed +
                 " pssBeforeKb=" + (before?.appPssKb ?: -1) + " pssAfterKb=" + (after?.appPssKb ?: -1))
         } finally {
-            pdfFile.delete()
+            pdfCleanupSucceeded = !pdfFile.exists() || pdfFile.delete()
         }
+        assertTrue("synthetic PDF cache fixture must be removed after the native round-trip", pdfCleanupSucceeded)
     }
 
     private fun writeSyntheticPdf(context: Context, file: File, code: String) {

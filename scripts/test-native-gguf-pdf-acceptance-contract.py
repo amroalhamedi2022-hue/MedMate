@@ -20,7 +20,10 @@ required = {
     "two-page synthetic fixture": "addSyntheticPage(document, \"Synthetic study page 2.",
     "second-page extraction": "reader.page(1)",
     "page-scoped retrieval": "onlyPage = 1",
-    "page-two citation mapping": 'links.any { it.marker == "S1" && it.pageNumber == 2 }',
+    "exact page-2-only marker assertion": 'assertEquals("the page-2-only request must resolve exactly one source marker", listOf("S1"), links.map { it.marker })',
+    "human-facing page 2 mapping": 'assertEquals("S1 must navigate to human-facing PDF page 2", listOf(2), links.map { it.pageNumber })',
+    "page-1 citation rejection": 'assertFalse("a page-1 citation must never be produced for this page-2-only answer", links.any { it.pageNumber == 1 })',
+    "synthetic PDF cleanup assertion": 'assertTrue("synthetic PDF cache fixture must be removed after the native round-trip", pdfCleanupSucceeded)',
     "native calibration probe": "NativeInferenceProbe.run(port)",
 }
 for label, needle in required.items():
