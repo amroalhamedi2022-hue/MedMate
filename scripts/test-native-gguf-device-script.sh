@@ -81,8 +81,8 @@ case "${1:-}" in
             wc -c < "$target" | tr -d '[:space:]'
             ;;
           df)
-            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\\n'
-            printf 'fakefs 1000000 0 %s 0%% /sdcard\\n' "${FAKE_FREE_KB:-2000000}"
+            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n'
+            printf 'fakefs 1000000 0 %s 0%% /sdcard\n' "${FAKE_FREE_KB:-2000000}"
             ;;
           *) echo "unsupported toybox command: $cmd" >&2; exit 90 ;;
         esac
@@ -140,7 +140,7 @@ run_case() {
       FAKE_DEVICE_CORRUPT="$corrupt" \
       FAKE_PUSH_FAIL="$push_fail" \
       FAKE_INSTRUMENT_MODE="$instrument_mode" \
-      FAKE_FREE_KB="$free_kb" \\
+      FAKE_FREE_KB="$free_kb" \
       GGUF_FILE="$case_dir/probe.gguf" \
       bash scripts/run-native-gguf-device-test.sh
   ) > "$case_dir/output.log" 2>&1 || status=$?
