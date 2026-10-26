@@ -63,9 +63,12 @@ object LocalModelImport {
             require(headerValidated) { "ترويسة GGUF ناقصة" }
             val digest = sha.digest().joinToString("") { "%02x".format(it) }
             val target = File(directory, "$digest.gguf")
-            if (target.exists()) {
-                require(target.isFile && target.length() == count && digestFile(target) == digest) {
-                    "يوجد ملف نموذج تالف، لن نكتب فوقه تلقائيًا"
+            if (target.exists() || java.nio.file.Files.isSymbolicLink(target.toPath())) {
+                // A hash-shaped symlink must never be reported as a reusable imported model.
+                // Reject even dangling links instead of silently replacing or following them.
+                require(!java.nio.file.Files.isSymbolicLink(target.toPath()) && target.isFile &&
+                    target.length() == count && digestFile(target) == digest) {
+                    "يوجد ملف نموذج تالف أو رابط رمزي، لن نكتب فوقه تلقائيًا"
                 }
                 return ImportedGguf(target, digest, count, true)
             }

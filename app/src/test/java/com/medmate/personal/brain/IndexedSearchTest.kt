@@ -35,6 +35,28 @@ class IndexedSearchTest {
         }
     }
 
+    @Test fun largeChapterFallbackStillHonorsSelectedPageAndPdfScope() {
+        // Cross the 350k-character cache ceiling to exercise the uncached fallback path.
+        val large = PageSource("large-book", 0, "fracture ".repeat(39_000))
+        val selected = PageSource("large-book", 1,
+            "Cardiomyopathy may cause reduced cardiac output and exercise intolerance.")
+        val foreign = PageSource("other-book", 0,
+            "Cardiomyopathy is discussed in a different PDF and is not evidence here.")
+        val all = listOf(large, selected, foreign)
+
+        val wrongPage = StudyBrain.search("large-book", all, "fracture", onlyPage = 1)
+        assertEquals(BrainSearchStatus.NO_MATCH, wrongPage.status)
+        assertTrue(wrongPage.evidence.isEmpty())
+        assertEquals(1, wrongPage.shownPages)
+
+        val rightPage = StudyBrain.search("large-book", all, "cardiomyopathy", onlyPage = 1)
+        assertEquals(BrainSearchStatus.FOUND, rightPage.status)
+        assertTrue(rightPage.evidence.isNotEmpty())
+        assertTrue(rightPage.evidence.all { it.chapterId == "large-book" && it.pageIndex == 1 })
+        val otherPage = StudyBrain.search("large-book", all, "cardiomyopathy", onlyPage = 0)
+        assertTrue(otherPage.evidence.isEmpty())
+    }
+
     @Test fun changingPdfContentInvalidatesCacheWithoutLeakingOtherChapter() {
         StudyBrain.search("orthopedics", pages, "fracture")
         val changed = pages.map { page ->

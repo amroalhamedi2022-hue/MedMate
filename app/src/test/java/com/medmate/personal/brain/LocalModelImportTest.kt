@@ -115,6 +115,20 @@ class LocalModelImportTest {
         Unit
     }
 
+    @Test fun hashNamedSymlinkCannotBeReusedAsImportedModel(): Unit = inTempDir { dir ->
+        val bytes = syntheticHeader()
+        val imported = LocalModelImport.import(ByteArrayInputStream(bytes), dir)
+        val detached = File(dir, "detached-target.gguf")
+        assertTrue(imported.file.renameTo(detached))
+        Files.createSymbolicLink(imported.file.toPath(), detached.toPath())
+
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.import(ByteArrayInputStream(bytes), dir)
+        }
+        assertFalse(dir.listFiles().orEmpty().any { it.name.endsWith(".part") })
+        Unit
+    }
+
     @Test fun repeatedZeroByteReadsAbortAndCleanTheTemporaryFile() = inTempDir { dir ->
         var reads = 0
         val stalled = object : InputStream() {
