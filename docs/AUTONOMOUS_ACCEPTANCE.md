@@ -821,3 +821,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Corrected the invocation to `aapt dump xmltree <apk> AndroidManifest.xml`, matching the documented positional syntax. The fake-aapt regression continues to exercise both cleartext-allowed rejection and cleartext-disabled acceptance.
 - **CI for this syntax correction: NOT VERIFIED at commit time.** No APK from the failed run is accepted as verified.
 - **NOT TESTED:** real GGUF inference, live HTTPS allow/deny, PDF-grounded medical quality, Xiaomi Pad 5 performance, and device RAM/thermal.
+
+## 2026-10-26 — Compiled-manifest verifier argument-order regression added
+
+- Latest known failed gate: [Android CI run 40312720170](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40312720170) reached the final APK verifier after unit tests, lint, AndroidTest compilation and APK assembly, then failed because the `aapt dump xmltree` invocation omitted the `AndroidManifest.xml` asset argument.
+- The production verifier now calls `aapt dump xmltree APK AndroidManifest.xml`. Added a behavioral fake-`aapt` regression in `scripts/test-verify-apk.py` that rejects a missing or misordered APK/manifest argument, so this specific integration failure cannot silently regress.
+- **Test change commit:** `3274f2367ba6ce37596526e409c82f02cb43c2ac` (branch `automation/medmate-v091-source-tree-20261023`).
+- **CI for this correction: NOT VERIFIED** at documentation time. Do not treat APKs from runs 40310142232, 40311869497 or 40312720170 as passing the final manifest verifier; each failed at that gate. A successful run must complete the real AAPT inspection and publish a fresh APK pair/checksum manifest.
+- **NOT TESTED:** real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded medical accuracy, live HTTPS consent/denial, device RAM/thermal and final signed release. No model, private PDF or credential was added.
