@@ -80,6 +80,10 @@ case "${1:-}" in
             remote="$5"; target="$(map_path "$remote")"
             wc -c < "$target" | tr -d '[:space:]'
             ;;
+          df)
+            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\\n'
+            printf 'fakefs 1000000 0 %s 0%% /sdcard\\n' "${FAKE_FREE_KB:-2000000}"
+            ;;
           *) echo "unsupported toybox command: $cmd" >&2; exit 90 ;;
         esac
         ;;
@@ -121,7 +125,7 @@ ADB
 chmod +x "$tmp/bin/adb"
 
 run_case() {
-  local name="$1" expected="$2" corrupt="$3" push_fail="$4" instrument_mode="${5:-pass}"
+  local name="$1" expected="$2" corrupt="$3" push_fail="$4" instrument_mode="${5:-pass}" free_kb="${6:-2000000}"
   local case_dir="$tmp/$name"
   mkdir -p "$case_dir/device-root"
   : > "$case_dir/adb.log"
@@ -136,6 +140,7 @@ run_case() {
       FAKE_DEVICE_CORRUPT="$corrupt" \
       FAKE_PUSH_FAIL="$push_fail" \
       FAKE_INSTRUMENT_MODE="$instrument_mode" \
+      FAKE_FREE_KB="$free_kb" \\
       GGUF_FILE="$case_dir/probe.gguf" \
       bash scripts/run-native-gguf-device-test.sh
   ) > "$case_dir/output.log" 2>&1 || status=$?
@@ -162,6 +167,13 @@ run_case() {
     grep -Fq 'missing a successful JUnit summary' "$case_dir/output.log"
     grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
     ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+  elif [[ "$expected" == storage ]]; then
+    [[ "$status" == 6 ]] || { cat "$case_dir/output.log"; echo "FAIL: low-storage case exited $status, expected 6" >&2; return 1; }
+    grep -Fq 'insufficient device free storage' "$case_dir/output.log"
+    grep -Fq 'shell toybox df' "$case_dir/adb.log"
+    ! grep -Fq 'push ' "$case_dir/adb.log"
+    ! grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+    ! find "$case_dir/device-root" -type f -print -quit | grep -q .
   else
     [[ "$status" != 0 ]] || { echo "FAIL: partial push should fail" >&2; return 1; }
     ! grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
@@ -174,6 +186,7 @@ run_case mismatched-digest mismatch 1 0 pass
 run_case interrupted-partial-push fail 0 1 pass
 run_case instrumentation-reported-failure instrument-failure 0 0 fail
 run_case instrumentation-missing-summary instrument-incomplete 0 0 incomplete
+run_case low-storage storage 0 0 pass 1000
 
 # A prebuilt CI bundle must install the exact supplied APK pair and skip Gradle.
 prebuilt="$tmp/prebuilt-apks"
@@ -241,4 +254,4 @@ instrument_line="$(grep -nF 'shell am instrument' "$script" | cut -d: -f1)"
 [[ -n "$cleanup_line" && -n "$trap_line" && -n "$push_line" && -n "$hash_line" && -n "$instrument_line" ]]
 (( cleanup_line < push_line && trap_line < push_line && push_line < hash_line && hash_line < instrument_line ))
 
-echo "PASS: source-built and prebuilt APK paths; matching GGUF digest reaches instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."
+echo "PASS: source-built and prebuilt APK paths; low-storage preflight blocks model push; matching GGUF digest reaches instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."
