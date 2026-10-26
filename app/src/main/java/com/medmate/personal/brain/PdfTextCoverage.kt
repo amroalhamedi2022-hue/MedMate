@@ -18,12 +18,18 @@ data class PdfTextCoverage(
     val firstUnusablePages: List<Int>
 ) {
     init {
-        require(totalPages > 0) { "PDF page count must be positive" }
-        require(indexedPages in 0..totalPages && readablePages >= 0 &&
-            emptyPages >= 0 && lowTextPages >= 0 && garbledPages >= 0 &&
-            missingPages in 0..totalPages) { "Invalid PDF coverage counts" }
-        require(indexedPages == readablePages + emptyPages + lowTextPages + garbledPages &&
-            missingPages == totalPages - indexedPages) { "Inconsistent PDF coverage counts" }
+        require(totalPages in 1..PdfCoverageAudit.MAX_AUDIT_PAGES) {
+            "PDF page count is outside the safe local audit range"
+        }
+        require(indexedPages in 0..totalPages && readablePages in 0..totalPages &&
+            emptyPages in 0..totalPages && lowTextPages in 0..totalPages &&
+            garbledPages in 0..totalPages && missingPages in 0..totalPages) {
+            "Invalid PDF coverage counts"
+        }
+        require(indexedPages.toLong() == readablePages.toLong() + emptyPages +
+            lowTextPages + garbledPages && missingPages == totalPages - indexedPages) {
+            "Inconsistent PDF coverage counts"
+        }
         require(firstUnusablePages.size <= 32 &&
             firstUnusablePages.all { it in 0 until totalPages } &&
             firstUnusablePages.distinct().size == firstUnusablePages.size) {
