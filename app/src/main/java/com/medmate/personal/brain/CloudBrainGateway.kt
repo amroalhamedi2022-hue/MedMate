@@ -93,7 +93,8 @@ class CloudBrainGateway(
         require(consent.consume(gatewayUrl, model, requestIdentity, evidenceSeal)) {
             "الموافقة السحابية استُخدمت أو تغيّر السؤال/المصدر؛ وافق مجددًا"
         }
-        val connection = connectionFactory(URL(safeUrl)).apply {
+        val connection = connectionFactory(URL(safeUrl))
+        try {
             requestMethod = "POST"
             connectTimeout = 10_000
             readTimeout = 45_000
@@ -102,8 +103,6 @@ class CloudBrainGateway(
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             setRequestProperty("Accept", "application/json")
             if (ephemeralGatewayToken.isNotBlank()) setRequestProperty("Authorization", "Bearer $ephemeralGatewayToken")
-        }
-        try {
             connection.outputStream.use { it.write(payloadBytes) }
             val status = connection.responseCode
             require(status == 200) { "بوابة AI رجّعت خطأ HTTP $status، تحقق من الرابط أو الإعدادات" }
