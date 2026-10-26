@@ -847,3 +847,9 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Added a 16-thread race against the **production `CloudBrainGateway.explain` boundary**, using only a synthetic excerpt and an in-memory `HttpURLConnection`; no live endpoint or patient data.
 - Acceptance: exactly one request may succeed/open a connection, the connection must be disconnected, the single-use grant must be exhausted, and no worker may stall. This complements the existing lower-level atomic `CloudTransferConsent.consume` test by exercising the full outbound call path.
 - **CI status:** pending at source checkpoint. Even after JVM/Android CI passes, live HTTPS consent/denial, real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, RAM/thermal behavior and final signing remain **NOT TESTED**. No model, private PDF, credential or paid API added; no main write/merge.
+
+
+### Outbound consent race regression — CI visibility
+
+- Source/test commit: `116b1ac78e6e44b83a510c31dd4e56d494ede0e2`; acceptance-record commit before this note: `44f406b505bdc294707c97fb0f547ae640b84705`.
+- The GitHub connector returned no PR-triggered workflow run/status for the new test commit at the time of this record. Therefore compilation/JUnit results for the new concurrency test and a fresh APK pair are **NOT VERIFIED**, not PASS. The previously verified APK pair predates this test.
