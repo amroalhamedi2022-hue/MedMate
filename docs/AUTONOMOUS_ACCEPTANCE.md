@@ -805,3 +805,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Regressions cover the declared optional-cloud permission, missing permission, broad-storage permission and cleartext-enabled APK. The cloud gateway still requires a validated HTTPS endpoint and a one-shot grant sealed to the exact request/evidence; INTERNET permission alone is not consent.
 - **CI for this correction: NOT VERIFIED at commit time.** The next build must pass verifier regressions, unit tests, lint, AndroidTest compilation and APK assembly.
 - **NOT TESTED:** live HTTPS allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, PDF-grounded answer quality, clinical correctness and device memory/thermal. No model, PDF or credentials added.
+
+
+### APK verifier command correction — 2026-10-26
+
+- The first permission-policy correction build [40311869497](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40311869497) **FAILED** at the final APK inspection because `aapt dump xmltree` was invoked with an unsupported `--file AndroidManifest.xml` argument. The verifier unit regressions, including optional-cloud INTERNET, broad-storage and cleartext cases, passed before that step.
+- Corrected the invocation to the supported `aapt dump xmltree <apk>` form; the verifier searches the compiled manifest tree for the explicit cleartext-disabled attribute.
+- **CI for the command correction: NOT VERIFIED at commit time.** No APK from the failed run is accepted as verified.
+- **NOT TESTED:** live HTTPS consent/denial, genuine GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded answer quality, clinical correctness, and device memory/thermal.

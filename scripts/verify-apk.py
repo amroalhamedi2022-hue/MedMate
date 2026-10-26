@@ -78,7 +78,7 @@ for forbidden in (
 
 if not re.search(r'android:usesCleartextTraffic\s*=\s*"false"', MANIFEST):
     raise SystemExit("Manifest must explicitly disable cleartext traffic")
-manifest_tree = run("dump", "xmltree", "--file", "AndroidManifest.xml")
+manifest_tree = run("dump", "xmltree")
 cleartext_line = next(
     (line for line in manifest_tree.splitlines() if "usesCleartextTraffic" in line),
     None
