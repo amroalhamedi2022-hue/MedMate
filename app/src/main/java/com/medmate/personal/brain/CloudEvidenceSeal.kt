@@ -25,9 +25,9 @@ object CloudEvidenceSeal {
         // Citation markers are positional ([S1] maps to evidence[0]). Duplicate or
         // blank IDs make provenance ambiguous even when the text itself is present.
         // Reject before consent can be claimed or any bytes can leave the device.
-        require(excerpts.all { it.id.isNotBlank() } &&
+        require(excerpts.all { hasCanonicalEvidenceId(it.id) } &&
             excerpts.map { it.id }.toSet().size == excerpts.size) {
-            "Cloud evidence has blank or duplicate source identities"
+            "Cloud evidence has invalid, blank, padded, or duplicate source identities"
         }
         require(excerpts.all { e ->
             e.chapterId == request.chapterSha256 && e.pageIndex >= 0 &&
@@ -53,4 +53,18 @@ object CloudEvidenceSeal {
         }
         return sha.digest().joinToString("") { "%02x".format(it) }
     }
+
+    /**
+     * Source IDs are identifiers, not display text. Invisible format marks,
+     * whitespace and control characters can make two citations look identical
+     * while resolving to different evidence records. Reject them before sealing.
+     */
+    private fun hasCanonicalEvidenceId(id: String): Boolean =
+        id.length in 1..160 &&
+            id.all { ch ->
+                !Character.isISOControl(ch) &&
+                    !Character.isWhitespace(ch) &&
+                    !Character.isSpaceChar(ch) &&
+                    Character.getType(ch) != Character.FORMAT.toInt()
+            }
 }
