@@ -105,6 +105,29 @@ class CloudEvidenceSealTest {
             runCatching { CloudEvidenceSeal.of(blankIdentity, request) }.isFailure)
     }
 
+    @Test fun reorderedOrRelabeledPromptSourcesCannotBeSealed() {
+        val fullChapterRequest = request.copy(pageOnly = false, sourcePage = -1)
+        val secondText = "The synthetic second excerpt describes a separate test-only page and its distinct evidence marker."
+        val second = Evidence("book:4:0", "sha-chapter", 4, secondText)
+        val multi = MedicalPromptBuilder.prepare(
+            GroundedRequest(fullChapterRequest.chapterSha256, fullChapterRequest.question,
+                listOf(source, second), maxEvidenceChars = 2400)
+        )
+        val firstBlock = "[S1] Page 4 (book:3:0):\n${source.text}"
+        val secondBlock = "[S2] Page 5 (book:4:0):\n$secondText"
+        val orderedBlocks = "$firstBlock\n\n$secondBlock"
+        assertTrue("fixture must contain two consecutive source blocks", multi.prompt.contains(orderedBlocks))
+
+        val reordered = multi.copy(prompt = multi.prompt.replace(orderedBlocks, "$secondBlock\n\n$firstBlock"))
+        assertTrue("reordered prompt blocks must not remap S1/S2 to different pages",
+            runCatching { CloudEvidenceSeal.of(reordered, fullChapterRequest) }.isFailure)
+
+        val relabeled = multi.copy(prompt = multi.prompt.replace(
+            "[S1] Page 4 (book:3:0):", "[S1] Page 5 (book:3:0):"))
+        assertTrue("a source marker with a changed page label must fail closed",
+            runCatching { CloudEvidenceSeal.of(relabeled, fullChapterRequest) }.isFailure)
+    }
+
     @Test fun unsealedLegacyGrantCannotSendPdfExcerpts() {
         val legacy = CloudTransferConsent.grant("https://example.org/v1/chat/completions", "model", request)
         val seal = CloudEvidenceSeal.of(prompt, request)

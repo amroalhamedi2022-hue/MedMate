@@ -216,6 +216,32 @@ object MedicalPromptBuilder {
         return prompt.substring(questionStart, sourceStart).trim() == sanitizeQuestion(query)
     }
 
+    /**
+     * Verify that the exact SOURCE EXCERPTS section sent to a model matches the
+     * reviewed evidence list, including order, citation numbers, page labels,
+     * and the full bounded excerpt text. Checking only prompt.contains(text)
+     * allows reordered prompt blocks to silently remap [S1] to the wrong PDF page.
+     */
+    internal fun promptMatchesPresentedEvidence(prompt: String, evidence: List<Evidence>): Boolean {
+        val sourceLabels = Regex("(?m)^[ \\t]*SOURCE EXCERPTS:[ \\t]*$").findAll(prompt).toList()
+        if (sourceLabels.size != 1) return false
+        val sourceBody = prompt.substring(sourceLabels.single().range.last + 1).trim()
+        if (evidence.isEmpty()) return sourceBody == "(no relevant excerpts)"
+
+        val usedPromptIds = mutableSetOf<String>()
+        val expected = StringBuilder()
+        evidence.forEachIndexed { index, item ->
+            val text = item.text.trim()
+            if (text.length < 40) return false
+            val promptId = uniquePromptId(item.id, usedPromptIds)
+            usedPromptIds.add(promptId)
+            if (index > 0) expected.append("\n\n")
+            expected.append("[S${index + 1}] Page ${item.pageNumber} (${promptId}):\n")
+                .append(text)
+        }
+        return sourceBody == expected.toString()
+    }
+
     fun prepare(r: GroundedRequest): PreparedPrompt {
         require(r.query.isNotBlank())
         // The question is user-supplied data. Flatten forged prompt headings and

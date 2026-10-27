@@ -331,6 +331,35 @@ class CloudGatewayTransportBoundaryTest {
         assertEquals(1, opened.size)
     }
 
+    @Test fun reorderedSourceBlocksAreRejectedBeforeOpeningAConnection() = runBlocking {
+        var sockets = 0
+        val gateway = CloudBrainGateway { url ->
+            sockets++
+            FakeHttpsConnection(url)
+        }
+        val fullRequest = request.copy(pageOnly = false, sourcePage = -1)
+        val secondText = "A separate synthetic second passage has its own test-only evidence and page anchor."
+        val first = Evidence("synthetic-chapter:2:0", "synthetic-chapter", 2, excerpt)
+        val second = Evidence("synthetic-chapter:3:0", "synthetic-chapter", 3, secondText)
+        val multi = MedicalPromptBuilder.prepare(
+            GroundedRequest(fullRequest.chapterSha256, fullRequest.question, listOf(first, second))
+        )
+        val seal = CloudEvidenceSeal.of(multi, fullRequest)
+        val consent = CloudTransferConsent.grant(endpoint, model, fullRequest, seal)
+        val firstBlock = "[S1] Page 3 (synthetic-chapter:2:0):\n$excerpt"
+        val secondBlock = "[S2] Page 4 (synthetic-chapter:3:0):\n$secondText"
+        val orderedBlocks = "$firstBlock\n\n$secondBlock"
+        assertTrue(multi.prompt.contains(orderedBlocks))
+        val reordered = multi.copy(prompt = multi.prompt.replace(orderedBlocks, "$secondBlock\n\n$firstBlock"))
+
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "SESSION-TOKEN", reordered, consent, fullRequest)
+        }.isFailure)
+        assertEquals("source-order mismatch must be rejected before any HTTP connection opens", 0, sockets)
+        assertTrue("rejected malformed payload must not consume the separate valid consent capability",
+            consent.permits(endpoint, model, fullRequest, seal))
+    }
+
     @Test fun oneShotConsentAllowsAtMostOneConcurrentConsumer() {
         val seal = CloudEvidenceSeal.of(prepared, request)
         val consent = CloudTransferConsent.grant(endpoint, model, request, seal)

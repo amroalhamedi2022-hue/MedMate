@@ -20,6 +20,9 @@ object CloudEvidenceSeal {
         require(MedicalPromptBuilder.promptMatchesQuestion(prepared.prompt, request.question)) {
             "Cloud prompt text does not match the approved question"
         }
+        require(MedicalPromptBuilder.promptMatchesPresentedEvidence(prepared.prompt, excerpts)) {
+            "Cloud prompt source order, citation labels, or excerpt text differs from the reviewed evidence"
+        }
         require(!request.pageOnly || request.sourcePage >= 0) { "Invalid selected PDF page" }
         require(excerpts.size in 1..20 && excerpts.sumOf { it.text.length.toLong() } <= 20_000L) {
             "Cloud excerpts exceed the reviewed source budget"
