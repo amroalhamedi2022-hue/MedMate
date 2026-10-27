@@ -20,8 +20,8 @@ object SourceCitationLinks {
         // make the underlying page/chunk ambiguous, so fail closed instead of
         // making a potentially misleading citation tappable.
         if (chapter.isBlank() ||
-            evidence.any { it.chapterId != chapter || it.pageIndex < 0 || it.id.isBlank() || it.text.isBlank() } ||
-            evidence.map { it.id }.toSet().size != evidence.size) {
+            evidence.any { it.chapterId != chapter || it.pageIndex < 0 || it.text.isBlank() } ||
+            !EvidenceIdentity.hasUniqueCanonicalIds(evidence)) {
             return emptyList()
         }
         // Do not link a valid-looking [S1] when the same answer also contains

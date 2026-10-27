@@ -98,6 +98,8 @@ class CloudEvidenceSealTest {
             "${source.id} ",
             "${source.id}\n",
             "${source.id}\u200B",
+            "book\uFF1A3\uFF1A0",
+            "b\u043eok:3:0",
             "x".repeat(161)
         )
         invalidIds.forEach { id ->

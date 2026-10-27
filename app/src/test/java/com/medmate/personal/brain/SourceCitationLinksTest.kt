@@ -45,6 +45,22 @@ class SourceCitationLinksTest {
         assertTrue(SourceCitationLinks.resolve(answer, listOf(first.copy(text = " "))).isEmpty())
     }
 
+    @Test fun rejectsNonCanonicalSourceIdsBeforeMakingNavigation() {
+        val answer = "A fracture is a break in bone [S1]."
+        val invalidIds = listOf(
+            " ${first.id}",
+            "${first.id}\n",
+            "${first.id}\u200B",
+            "bone\uFF1A0\uFF1A0",
+            "b\u043ene:0:0",
+            "x".repeat(161)
+        )
+        invalidIds.forEach { id ->
+            assertTrue("non-canonical source ID must fail closed",
+                SourceCitationLinks.resolve(answer, listOf(first.copy(id = id))).isEmpty())
+        }
+    }
+
     @Test fun abstentionAndCitationOnlyAnswersCannotProduceNavigation() {
         assertTrue(SourceCitationLinks.resolve("المعلومة مش كافية بالنص الموجود", listOf(first)).isEmpty())
         assertTrue(SourceCitationLinks.resolve("[S1]", listOf(first)).isEmpty())
