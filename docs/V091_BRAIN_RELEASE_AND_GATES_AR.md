@@ -74,3 +74,11 @@
 
 **لا تبدّل APK القديم بعد**: هذه النسخة Source فقط، والتحقق من الشهادة لا يعوّض
 التحقق من توقيع APK مبني فعليًا أو سلامة التحديث على الجهاز.
+
+
+## 2026-10-27 — Current v0.9.1 device-runner gate (CI PASS; device NOT TESTED)
+
+- The runner now rejects a device whose `ro.product.cpu.abilist64` does not contain `arm64-v8a`, before build/install/model transfer. The fake-ADB regression proves an `x86_64`-only target exits 7 with no Gradle invocation, APK installation, GGUF push or instrumentation.
+- **PASS — CI 40456263759**, source/test SHA `f681e164e5889221d51f549fd40bab5ba25c2168`: 156 tests, 0 failures/ignored; Android Debug and AndroidTest APK assembly and manifest/permission gates passed. APK SHA-256 values are recorded in `docs/DEVICE_GGUF_ACCEPTANCE.md`.
+- The APK contains the ARM64 llama.cpp/ggml native libraries, but no model weights. The harness has only been tested with synthetic GGUF headers/Fake ADB.
+- Remaining release gates: real GGUF inference and PDF page-two citation on Xiaomi Pad 5; live cloud consent/denial; frame-time/RAM/thermal/battery measurements; clinical review; and final signing/upgrade verification.

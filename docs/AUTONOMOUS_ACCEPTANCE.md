@@ -1108,3 +1108,17 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **NOT TESTED:** physical Xiaomi Pad 5, a user-supplied GGUF through real llama.cpp/JNI inference, citation accuracy on a real textbook, live HTTPS consent/denial, RAM/thermal, clinical review and final signing. The bundle contains no model weights, personal PDFs or credentials.
 - CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256
 - Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256/artifacts/12711812350
+
+
+## 2026-10-27 — ARM64 preflight for native GGUF acceptance (CI PASS; real device NOT TESTED)
+
+- Hardened `scripts/run-native-gguf-device-test.sh` to inspect `ro.product.cpu.abilist64` and require the exact `arm64-v8a` ABI before Gradle, APK installation, or GGUF transfer. Unsupported devices exit **7** without installing or pushing anything.
+- Added fake-ADB regression coverage for an `x86_64`-only device; the test proves rejection occurs before Gradle, either APK install, model push, or instrumentation. This is a harness test only, not real GGUF inference.
+- **PASS — CI Run 40456263759**, source/test SHA `f681e164e5889221d51f549fd40bab5ba25c2168`: **156 JVM/Robolectric tests passed, 0 failures, 0 ignored**; Lint, Debug APK + AndroidTest APK assembly, package ID/SDK/permission verification, and device-bundle packaging passed.
+- **PASS — independently re-hashed APK pair:** Debug APK **30,248,343 bytes**, SHA-256 `67ab92e265fbb64456aef3988164cc71320b5557b0ec09f0062771b35eb0f975`; AndroidTest APK **373,777 bytes**, SHA-256 `e233423db2da80deca4f88ad8a51e56e91be763414dc89903549c2d3349e647c`. Both match `SHA256SUMS` in Artifact **12712412873**.
+- APK inspection confirms packaged `arm64-v8a` `libllama.so`, `libllama_jni.so`, and `libggml*.so`; the APK and device-test bundle contain no `.gguf` model or PDF. Validation reports: Artifact **12712447566**.
+- Lint produced **16 non-blocking warnings**. The `TrustAllX509TrustManager` finding points into the resolved Bouncy Castle 1.86 dependency JAR, not a MedMate source file; retain it for dependency review rather than suppressing it.
+- **NOT TESTED:** Xiaomi Pad 5 installation, actual user-supplied GGUF/llama.cpp/JNI inference, model-backed PDF page-two answer, live HTTPS consent/denial, RAM/thermal/latency and independent medical review. Do not treat this CI pass or the synthetic harness as model acceptance.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712412873
+- Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712447566

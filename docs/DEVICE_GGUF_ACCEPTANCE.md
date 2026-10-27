@@ -1,11 +1,16 @@
 ## Source-version caveat for the latest verified pair
 
-The latest verified CI-built pair is from run **40453735256**, source/test SHA `716ea0019c7dfbb88767ed141bcac73068e11903`. It includes the PDFBox → grounded prompt → page-two citation-navigation integration regression and the current cloud-consent boundary. The exact device-test bundle is Artifact **12711812350**; validation reports are Artifact **12711542738**.
+The latest verified CI-built pair is from run **40456263759**, source/test SHA `f681e164e5889221d51f549fd40bab5ba25c2168`. This run adds an ARM64 ABI preflight to the native GGUF device runner and its fail-closed fake-ADB regression; the APK contains the production `arm64-v8a` llama.cpp libraries, but does not bundle model weights or PDFs. The exact device-test bundle is Artifact **12712412873**; validation reports are Artifact **12712447566**.
 
-- `app-debug.apk`: 30,248,343 bytes; SHA-256 `74eae731cd290612c611b8cb26a06e239a16b0b209e82668def58d9a870fd8fc`.
-- `app-debug-androidTest.apk`: 373,777 bytes; SHA-256 `8f09542f6dd6528f5e88c7e51347c75c59427a27fb8ad43a50c1ced803a20fb4`.
-- Both hashes were independently recomputed and match `SHA256SUMS`. CI passed 156 JVM/Robolectric tests (0 failures/ignored), Lint, APK and AndroidTest assembly, manifest/permission checks and the source-level model/cloud boundary contracts.
-- This is the current source-built pair, but it is **not evidence that native GGUF inference ran**. The AndroidTest APK is compiled; device-only instrumentation still requires a user-supplied model and an ARM64 Android device.
+- `app-debug.apk`: 30,248,343 bytes; SHA-256 `67ab92e265fbb64456aef3988164cc71320b5557b0ec09f0062771b35eb0f975`.
+- `app-debug-androidTest.apk`: 373,777 bytes; SHA-256 `e233423db2da80deca4f88ad8a51e56e91be763414dc89903549c2d3349e647c`.
+- Both hashes were independently recomputed and match `SHA256SUMS`. CI passed 156 JVM/Robolectric tests (0 failures/ignored), Lint, APK and AndroidTest assembly, manifest/permission checks and the new non-ARM64 fail-closed preflight test.
+- This pair is **not evidence that native GGUF inference ran**. Device-only instrumentation still requires a user-supplied model and a physical ARM64 Android device. No GGUF or personal PDF is included in the artifact.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712412873
+- Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712447566
+
+
 ## Latest two-page PDF citation test APK pair — 2026-10-26
 
 - CI run: [40366568877](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877), source/test SHA `baa6b7cff1939fe24d1448806514bde9071a667b`.
