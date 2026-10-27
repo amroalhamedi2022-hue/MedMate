@@ -224,13 +224,16 @@ class CloudGatewayTransportBoundaryTest {
         }
         // The prompt is within the character limit, but JSON escapes each NUL
         // as six ASCII bytes. This guards the actual serialized request size.
-        val largePrepared = prepared.copy(prompt = "\u0000".repeat(17_000) + "\n" + excerpt)
+        val largePrepared = prepared.copy(prompt = "\u0000".repeat(17_000) + "\n" + prepared.prompt)
+        assertTrue(largePrepared.prompt.length in 1..32_000)
+        assertTrue(MedicalPromptBuilder.promptMatchesQuestion(largePrepared.prompt, request.question))
         val seal = CloudEvidenceSeal.of(largePrepared, request)
         val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
         val failure = runCatching {
             gateway.explain(endpoint, model, "", largePrepared, consent, request)
         }.exceptionOrNull()
         assertTrue(failure is IllegalArgumentException)
+        assertTrue(failure.message.orEmpty().contains("تجاوز الحد الآمن"))
         assertEquals(0, sockets)
         assertTrue(consent.permits(endpoint, model, request, seal))
     }
