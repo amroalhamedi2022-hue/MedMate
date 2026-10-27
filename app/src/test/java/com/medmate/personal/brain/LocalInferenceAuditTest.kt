@@ -56,7 +56,7 @@ class LocalInferenceAuditTest {
             source.copy(id = "same-id"),
             source.copy(id = "same-id", pageIndex = 6, text = source.text + " Follow-up notes.")
         )
-        val invisibleId = listOf(source.copy(id = "book\\u200Bhidden"))
+        val invisibleId = listOf(source.copy(id = "book\u200Bhidden"))
         val blankText = listOf(source.copy(text = ""))
 
         for (sources in listOf(duplicateId, invisibleId, blankText)) {
@@ -72,7 +72,7 @@ class LocalInferenceAuditTest {
 
     @Test fun sourceFreeAbstentionDoesNotClaimUnsafePages() {
         val report = LocalInferenceAudit.fromNativeResponse(
-            "local.gguf", 5L, prompt(source.copy(id = "bad\\nid")),
+            "local.gguf", 5L, prompt(source.copy(id = "bad\nid")),
             "المعلومة مش كافية بالنص الموجود"
         )
         assertTrue(report.syntaxPass)
