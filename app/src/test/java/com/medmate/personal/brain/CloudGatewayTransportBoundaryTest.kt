@@ -271,6 +271,32 @@ class CloudGatewayTransportBoundaryTest {
         assertEquals("a rejected response must not permit a replay", 1, opened.size)
     }
 
+    @Test fun malformedUtf8ResponseIsRejectedWithoutSilentMedicalTextReplacement() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val prefix = "{\\"choices\\":[{\\"message\\":{\\"content\\":\\"source ".toByteArray(Charsets.UTF_8)
+        val suffix = " [S1]\\\"}}]}".toByteArray(Charsets.UTF_8)
+        // Invalid UTF-8 bytes inside otherwise JSON-shaped response text. A
+        // permissive decoder would silently replace them and keep parsing.
+        val malformed = prefix + byteArrayOf(0xC3.toByte(), 0x28.toByte()) + suffix
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, responseStream = ByteArrayInputStream(malformed)).also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val failure = runCatching {
+            gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
+        }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+        assertTrue(failure?.message.orEmpty().contains("UTF-8"))
+        assertEquals(1, opened.size)
+        assertTrue(opened.single().disconnected)
+        assertFalse("a malformed response consumes the one-shot grant", consent.permits(endpoint, model, request, seal))
+        assertTrue(runCatching {
+            gateway.explain(endpoint, model, "SESSION-TOKEN", prepared, consent, request)
+        }.isFailure)
+        assertEquals(1, opened.size)
+    }
+
     @Test fun vendorJsonMediaTypeRemainsCompatible() = runBlocking {
         val opened = mutableListOf<FakeHttpsConnection>()
         val gateway = CloudBrainGateway { url ->
