@@ -99,3 +99,9 @@ New source versionCode=9, but **do not attempt to reinstall/upgrade a Work-signe
 - `NativeCompletionPublicationTest` covers cancelled publication, successful one-shot publication and invalid output. These are JVM tests, not model inference.
 - **PASS:** Android CI [40596545073](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073), source/test SHA `41442ef3bf58361a011651d3ce39dff81603f75d`: 200 tests, 0 failures/ignored; Lint, Debug + AndroidTest APK assembly and device-bundle checks passed. Both APKs were independently re-hashed against `SHA256SUMS` in Artifact [12775889349](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073/artifacts/12775889349).
 - **NOT TESTED:** physical Pad 5, real GGUF/JNI inference, real PDF page-2 citation, live cloud consent/denial and RAM/thermal/latency. Debug is not final; no model or personal data was uploaded.
+
+
+## Implementation reality correction — native adapter status (2026-10-28)
+
+- The current production `LlamaAndroidPort` is wired to the pinned MIT-licensed `dev.ffmpegkit.llama` Android AAR and calls its native `Llama.loadModel`, `Llama.complete`, and `Llama.releaseModel` APIs with an imported local GGUF. This is a real native-backend integration path, not `FakeLlama`; the AndroidTest acceptance class references the production port directly and binds the loaded model SHA/byte count.
+- Do **not** mark the full P2 device gate complete yet. The latest run [40596545073](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073) compiled the real-model instrumentation and passed 200 JVM/Robolectric tests, but did not execute the instrumentation or load any GGUF. Upstream provenance/reproducibility audit, physical ARM64 model load, PDF page-2 round-trip, and Pad 5 RAM/thermal/latency remain open.
