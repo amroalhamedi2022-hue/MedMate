@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.os.Build
 import android.app.ActivityManager
 import android.content.Context
+import android.provider.OpenableColumns
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -99,15 +100,32 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 var lastReported = 0L
                 val imported = withContext(Dispatchers.IO) {
                     val coroutine = currentCoroutineContext()
+                    // SAF providers often know the file length. Use it for a pre-copy
+                    // disk-space check, but still enforce streaming checks when unknown
+                    // or when a provider reports a stale length.
+                    val expectedBytes = runCatching {
+                        appContext.contentResolver.query(
+                            uri, arrayOf(OpenableColumns.SIZE), null, null, null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst() && !cursor.isNull(0))
+                                cursor.getLong(0).takeIf { it > 0L }
+                            else null
+                        }
+                    }.getOrNull()
                     val stream = appContext.contentResolver.openInputStream(uri)
                         ?: error("تعذّر فتح ملف النموذج")
-                    LocalModelImport.import(stream, modelDirectory) { bytes ->
-                        coroutine.ensureActive()
-                        if (bytes - lastReported >= 4L * 1_048_576) {
-                            localImportBytes = bytes
-                            lastReported = bytes
-                        }
-                    }
+                    LocalModelImport.import(
+                        input = stream,
+                        directory = modelDirectory,
+                        onBytes = { bytes ->
+                            coroutine.ensureActive()
+                            if (bytes - lastReported >= 4L * 1_048_576) {
+                                localImportBytes = bytes
+                                lastReported = bytes
+                            }
+                        },
+                        expectedBytes = expectedBytes
+                    )
                 }
                 localImportBytes = imported.bytes
                 // Import and activation are separate operations. A successful

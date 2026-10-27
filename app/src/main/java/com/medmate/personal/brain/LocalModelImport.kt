@@ -28,18 +28,37 @@ object LocalModelImport {
     private val magic = byteArrayOf('G'.code.toByte(), 'G'.code.toByte(), 'U'.code.toByte(), 'F'.code.toByte())
 
     /** Uses atomic temp file and digest. Caller handles coroutine cancellation via onBytes. */
-    fun import(input: InputStream, directory: File, onBytes: (Long) -> Unit = {}): ImportedGguf {
+    fun import(
+        input: InputStream,
+        directory: File,
+        onBytes: (Long) -> Unit = {},
+        expectedBytes: Long? = null,
+        availableSpace: () -> Long = { directory.usableSpace }
+    ): ImportedGguf {
         require(directory.isDirectory || directory.mkdirs()) { "تعذّر إنشاء مجلد النماذج" }
-        val temp = File.createTempFile("gguf-import-", ".part", directory)
         val sha = MessageDigest.getInstance("SHA-256")
         var count = 0L
         val head = ByteArray(24) // GGUF magic/version + tensor and metadata counts
         var headerValidated = false
+        var temp: File? = null
         try {
+            // Close the provider stream even when a reported size is invalid or
+            // the storage preflight rejects the import before creating a temp file.
             input.use { source ->
-                FileOutputStream(temp).use { output ->
+                if (expectedBytes != null) {
+                    require(expectedBytes in MIN_BYTES..MAX_BYTES) {
+                        "حجم ملف GGUF المعلن غير صالح أو أكبر من الحد المسموح"
+                    }
+                    require(ModelStorageGate.canStart(availableSpace(), expectedBytes)) {
+                        "المساحة الحرة غير كافية لاستيراد النموذج مع هامش أمان 64 MiB"
+                    }
+                }
+                val temporary = File.createTempFile("gguf-import-", ".part", directory)
+                temp = temporary
+                FileOutputStream(temporary).use { output ->
                     val buffer = ByteArray(64 * 1024)
                     var emptyReads = 0
+                    var lastSpaceCheck = 0L
                     while (true) {
                         val n = source.read(buffer)
                         if (n < 0) break
@@ -51,10 +70,23 @@ object LocalModelImport {
                         }
                         emptyReads = 0
                         require(count <= MAX_BYTES - n) { "النموذج أكبر من الحد المتاح" }
+                        if (expectedBytes != null) {
+                            require(count <= expectedBytes - n) {
+                                "حجم النموذج الفعلي أكبر من الحجم الذي أعلنه مزوّد الملف"
+                            }
+                        }
+                        // Providers may omit or lie about OpenableColumns.SIZE. Recheck
+                        // free space at start and every 4 MiB, preserving a 64 MiB
+                        // reserve so a large import cannot silently fill app storage.
+                        if (count == 0L || count - lastSpaceCheck >= ModelStorageGate.CHECK_INTERVAL_BYTES) {
+                            require(ModelStorageGate.canContinue(availableSpace(), n.toLong())) {
+                                "المساحة الحرة أصبحت غير كافية أثناء الاستيراد؛ أُوقف قبل استهلاك هامش الأمان"
+                            }
+                            lastSpaceCheck = count
+                        }
                         for (i in 0 until n) if (count + i < head.size) head[(count + i).toInt()] = buffer[i]
-                        // Validate as soon as 24 bytes arrive, BEFORE writing the
-                        // rest of a potentially multi-GB malformed upload to disk.
-                        // A provider returning tiny chunks is supported as well.
+                        // Validate as soon as 24 bytes arrive, BEFORE writing the rest
+                        // of a potentially multi-GB malformed upload to disk.
                         if (!headerValidated && count + n >= head.size) {
                             validateHeader(head)
                             headerValidated = true
@@ -68,6 +100,9 @@ object LocalModelImport {
                 }
             }
             require(count >= MIN_BYTES) { "الملف صغير جدًا ليكون نموذج GGUF" }
+            require(expectedBytes == null || count == expectedBytes) {
+                "حجم النموذج الفعلي لا يطابق الحجم الذي أعلنه مزوّد الملف"
+            }
             require(headerValidated) { "ترويسة GGUF ناقصة" }
             val digest = sha.digest().joinToString("") { "%02x".format(it) }
             val target = File(directory, "$digest.gguf")
@@ -80,10 +115,10 @@ object LocalModelImport {
                 }
                 return ImportedGguf(target, digest, count, true)
             }
-            require(temp.renameTo(target)) { "تعذّر حفظ النموذج؛ لن نترك ملفًا ناقصًا" }
+            require(requireNotNull(temp).renameTo(target)) { "تعذّر حفظ النموذج؛ لن نترك ملفًا ناقصًا" }
             return ImportedGguf(target, digest, count, false)
         } finally {
-            temp.delete()
+            temp?.delete()
         }
     }
 

@@ -220,4 +220,58 @@ class LocalModelImportTest {
         assertEquals(9, reads)
         assertEquals(0, dir.listFiles().orEmpty().size)
     }
+
+    @Test fun expectedSizeAndLowStorageAreRejectedBeforeCreatingTempAndCloseProvider() = inTempDir { dir ->
+        val bytes = syntheticHeader()
+        val provider = object : ByteArrayInputStream(bytes) {
+            var closed = false
+            override fun close() {
+                closed = true
+                super.close()
+            }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.import(
+                input = provider,
+                directory = dir,
+                expectedBytes = bytes.size.toLong(),
+                availableSpace = { ModelStorageGate.RESERVE_BYTES + bytes.size - 1L }
+            )
+        }
+        assertTrue("SAF provider stream must close even when preflight rejects", provider.closed)
+        assertEquals("no partial model or temp file may be created", 0, dir.listFiles().orEmpty().size)
+    }
+
+    @Test fun inaccurateUnknownSizeStopsBeforeStorageReserveIsConsumed() = inTempDir { dir ->
+        val bytes = syntheticHeader(size = 4 * 1024 * 1024 + 64 * 1024)
+        var spaceChecks = 0
+        val available = {
+            spaceChecks++
+            if (spaceChecks == 1) ModelStorageGate.RESERVE_BYTES + bytes.size.toLong()
+            else ModelStorageGate.RESERVE_BYTES + 64 * 1024L - 1L
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.import(
+                input = ByteArrayInputStream(bytes),
+                directory = dir,
+                availableSpace = available
+            )
+        }
+        assertEquals("storage should be checked at start and after 4 MiB", 2, spaceChecks)
+        assertEquals("partial import must be cleaned", 0, dir.listFiles().orEmpty().size)
+    }
+
+    @Test fun reportedSizeMustMatchActualStreamLength() = inTempDir { dir ->
+        val bytes = syntheticHeader()
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.import(
+                input = ByteArrayInputStream(bytes),
+                directory = dir,
+                expectedBytes = bytes.size.toLong() + 1L,
+                availableSpace = { ModelStorageGate.RESERVE_BYTES + bytes.size + 4096L }
+            )
+        }
+        assertEquals(0, dir.listFiles().orEmpty().size)
+    }
+
 }
