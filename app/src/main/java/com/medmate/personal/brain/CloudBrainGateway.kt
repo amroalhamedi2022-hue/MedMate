@@ -149,6 +149,16 @@ class CloudBrainGateway(
             require(bytes.size() + n <= max) { "رد بوابة AI تجاوز الحد المسموح" }
             bytes.write(data, 0, n)
         }
-        return bytes.toString("UTF-8")
+        // Do not silently replace malformed UTF-8: that can alter Arabic medical
+        // terms, negation, or source quotations while still producing parseable JSON.
+        return try {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(bytes.toByteArray()))
+                .toString()
+        } catch (failure: java.nio.charset.CharacterCodingException) {
+            throw IllegalArgumentException("رد بوابة AI ليس UTF-8 صالحًا؛ رُفض لحماية نص الدراسة", failure)
+        }
     }
 }
