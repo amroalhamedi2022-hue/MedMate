@@ -74,7 +74,7 @@ fi
 "${ADB[@]}" install -r "$TEST_APK_PATH"
 
 device_dir="/sdcard/Android/data/com.medmate.personal/files/native-test"
-device_file="$device_dir/medmate-acceptance.gguf"
+device_file="$device_dir/medmate-acceptance-$-${RANDOM}-${RANDOM}.gguf"
 cleanup(){ "${ADB[@]}" shell rm -f "$device_file" >/dev/null 2>&1 || true; }
 # Install the cleanup trap BEFORE mkdir/push: adb push can fail after creating a
 # partial model file. EXIT also runs after INT/TERM handlers exit non-zero.

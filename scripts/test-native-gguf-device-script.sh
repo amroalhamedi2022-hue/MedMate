@@ -316,8 +316,49 @@ grep -Fq 'SHA-256 mismatch' "$prebuilt/mismatch.log"
 ! grep -Fq 'push ' "$prebuilt/adb.log"
 ! grep -Fq 'INSTRUMENTED' "$prebuilt/adb.log"
 
+run_preserves_existing_device_file_case() {
+  local case_dir="$tmp/preserve-existing-device-file"
+  local legacy_remote="/sdcard/Android/data/com.medmate.personal/files/native-test/medmate-acceptance.gguf"
+  local legacy_target="$case_dir/device-root$legacy_remote"
+  mkdir -p "$(dirname "$legacy_target")"
+  printf 'user-owned pre-existing file; must survive\n' > "$legacy_target"
+  : > "$case_dir/adb.log"
+  printf 'GGUF\\003\\000\\000\\000' > "$case_dir/probe.gguf"
+  head -c 16 /dev/zero >> "$case_dir/probe.gguf"
+  local status=0
+  (
+    cd "$tmp"
+    PATH="$tmp/bin:$PATH" \\
+      FAKE_DEVICE_ROOT="$case_dir/device-root" \\
+      FAKE_ADB_LOG="$case_dir/adb.log" \\
+      FAKE_GRADLE_LOG="$case_dir/gradle.log" \\
+      FAKE_ABI_LIST64="arm64-v8a" \\
+      FAKE_FREE_KB="2000000" \\
+      GGUF_FILE="$case_dir/probe.gguf" \\
+      bash scripts/run-native-gguf-device-test.sh
+  ) > "$case_dir/output.log" 2>&1 || status=$?
+  [[ "$status" == 0 ]] || { cat "$case_dir/output.log"; echo "FAIL: unique-target cleanup case exited $status" >&2; return 1; }
+  grep -Fq 'PASS: Android instrumentation reported a successful native GGUF/PDF acceptance test.' "$case_dir/output.log"
+  [[ "$(cat "$legacy_target")" == 'user-owned pre-existing file; must survive' ]] || {
+    echo "FAIL: test runner overwrote or deleted a pre-existing file" >&2; return 1;
+  }
+  local push_line
+  push_line="$(grep -F 'push ' "$case_dir/adb.log" | tail -n 1)"
+  [[ "$push_line" == *"/native-test/medmate-acceptance-"*".gguf" ]] || {
+    echo "FAIL: GGUF must use a unique per-run remote filename" >&2; return 1;
+  }
+  [[ "$push_line" != *"$legacy_remote" ]] || {
+    echo "FAIL: GGUF push targeted the legacy fixed filename" >&2; return 1;
+  }
+  local unexpected
+  unexpected="$(find "$case_dir/device-root" -type f ! -path "$legacy_target" -print -quit)"
+  [[ -z "$unexpected" ]] || { echo "FAIL: temporary GGUF was not cleaned: $unexpected" >&2; return 1; }
+}
+run_preserves_existing_device_file_case
+
 script="$source_script"
 grep -Fq 'never downloads or uploads weights' "$script"
+grep -Fq 'device_file="$device_dir/medmate-acceptance-$-${RANDOM}-${RANDOM}.gguf"' "$script"
 if grep -Eq '(^|[[:space:]])(curl|wget)[[:space:]]' "$script"; then
   echo "FAIL: device test script must not download model weights" >&2
   exit 1
