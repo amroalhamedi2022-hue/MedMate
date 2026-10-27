@@ -139,7 +139,7 @@ object GeneratedStudyDrafts {
                 GeneratedKind.HIGH_YIELD -> answer.isEmpty() && options.isEmpty() && c.correctIndex == -1
                 GeneratedKind.FLASHCARD -> answer.length in 3..1500 && options.isEmpty() && c.correctIndex == -1
                 GeneratedKind.MCQ -> answer.isEmpty() && options.size in 4..5 &&
-                    options.all { it.length in 2..500 } && options.map { it.lowercase() }.distinct().size == options.size &&
+                    options.all { it.length in 2..500 } && options.map(StudyOptionIdentity::key).distinct().size == options.size &&
                     c.correctIndex in options.indices && mcqEvidenceGrounded
             }
             val key = "${s?.chapterId}|${s?.pageIndex}|${c.kind}|${prompt.lowercase(java.util.Locale.ROOT)}"
