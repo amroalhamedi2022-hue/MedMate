@@ -16,5 +16,5 @@ data class BrainRequestIdentity(
 
     fun matches(chapter: String, currentQuestion: String, currentPageOnly: Boolean, currentPage: Int): Boolean =
         chapterSha256 == chapter && normalizedQuestion == currentQuestion.trim() &&
-            (!pageOnly || sourcePage == currentPage)
+            pageOnly == currentPageOnly && (!pageOnly || sourcePage == currentPage)
 }
