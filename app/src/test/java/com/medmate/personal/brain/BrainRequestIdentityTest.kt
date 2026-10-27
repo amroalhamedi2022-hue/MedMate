@@ -33,6 +33,17 @@ class BrainRequestIdentityTest {
     }
 
     @Test
+    fun pageScopedRequestNeverMatchesAnInvalidNegativePageIndex() {
+        val invalidCapturedPage = BrainRequestIdentity("chapter-a", "Explain edema", true, -1)
+        val validCapturedPage = BrainRequestIdentity("chapter-a", "Explain edema", true, 0)
+
+        assertFalse(invalidCapturedPage.matches("chapter-a", "Explain edema", true, -1))
+        assertFalse(invalidCapturedPage.matches("chapter-a", "Explain edema", true, 0))
+        assertFalse(validCapturedPage.matches("chapter-a", "Explain edema", true, -1))
+        assertTrue(validCapturedPage.matches("chapter-a", "Explain edema", true, 0))
+    }
+
+    @Test
     fun fullChapterRequestDoesNotBecomeStaleWhenViewportPageChanges() {
         val identity = BrainRequestIdentity("chapter-a", "Explain edema", false, -1)
         assertTrue(identity.matches("chapter-a", "Explain edema", false, 1))
