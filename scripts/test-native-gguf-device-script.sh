@@ -58,6 +58,10 @@ case "${1:-}" in
   shell)
     shift
     case "${1:-}" in
+      getprop)
+        [[ "${2:-}" == "ro.product.cpu.abilist64" ]] || { echo "unsupported fake getprop: ${2:-}" >&2; exit 89; }
+        printf '%s\n' "${FAKE_ABI_LIST64:-arm64-v8a}"
+        ;;
       mkdir)
         shift
         [[ "${1:-}" == -p ]] && shift
@@ -218,7 +222,35 @@ run_invalid_header_case() {
   [[ ! -e "$case_dir/gradle.log" ]] || { echo "FAIL: invalid GGUF triggered Gradle" >&2; return 1; }
   ! find "$case_dir/device-root" -type f -print -quit | grep -q .
 }
+run_unsupported_abi_case() {
+  local case_dir="$tmp/unsupported-abi"
+  mkdir -p "$case_dir/device-root"
+  : > "$case_dir/adb.log"
+  printf 'GGUF\003\000\000\000' > "$case_dir/probe.gguf"
+  head -c 16 /dev/zero >> "$case_dir/probe.gguf"
+  local status=0
+  (
+    cd "$tmp"
+    PATH="$tmp/bin:$PATH" \
+      FAKE_DEVICE_ROOT="$case_dir/device-root" \
+      FAKE_ADB_LOG="$case_dir/adb.log" \
+      FAKE_GRADLE_LOG="$case_dir/gradle.log" \
+      FAKE_ABI_LIST64="x86_64" \
+      GGUF_FILE="$case_dir/probe.gguf" \
+      bash scripts/run-native-gguf-device-test.sh
+  ) > "$case_dir/output.log" 2>&1 || status=$?
+  [[ "$status" == 7 ]] || { cat "$case_dir/output.log"; echo "FAIL: unsupported ABI must exit 7" >&2; return 1; }
+  grep -Fq 'does not report arm64-v8a support' "$case_dir/output.log"
+  grep -Fq 'getprop ro.product.cpu.abilist64' "$case_dir/adb.log"
+  ! grep -Fq 'install -r' "$case_dir/adb.log"
+  ! grep -Fq 'push ' "$case_dir/adb.log"
+  ! grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+  [[ ! -e "$case_dir/gradle.log" ]] || { echo "FAIL: unsupported ABI triggered Gradle" >&2; return 1; }
+  ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+}
+
 run_invalid_header_case bad-magic 'not a GGUF model'
+run_unsupported_abi_case
 run_invalid_header_case short-header 'GGUF'
 
 run_case matching-digest pass 0 0 pass
@@ -245,6 +277,7 @@ status=0
     FAKE_DEVICE_ROOT="$prebuilt/device-root" \
     FAKE_ADB_LOG="$prebuilt/adb.log" \
     FAKE_GRADLE_LOG="$prebuilt/gradle.log" \
+    FAKE_ABI_LIST64="arm64-v8a" \
     GGUF_FILE="$prebuilt/probe.gguf" \
     APP_APK="$prebuilt/app-debug.apk" \
     TEST_APK="$prebuilt/app-debug-androidTest.apk" \
@@ -297,4 +330,4 @@ instrument_line="$(grep -nF 'shell am instrument' "$script" | cut -d: -f1)"
 [[ -n "$cleanup_line" && -n "$trap_line" && -n "$push_line" && -n "$hash_line" && -n "$instrument_line" ]]
 (( cleanup_line < push_line && trap_line < push_line && push_line < hash_line && hash_line < instrument_line ))
 
-echo "PASS: source-built and prebuilt APK paths; bad/short GGUF headers fail before ADB or Gradle; low-storage preflight blocks model push; matching synthetic header/digest reaches fake instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."
+echo "PASS: source-built and prebuilt APK paths; bad/short GGUF headers fail before ADB or Gradle; non-ARM64 devices fail before Gradle/install/push; low-storage preflight blocks model push; matching synthetic header/digest reaches fake instrumentation; APK hash mismatch, GGUF mismatch and partial push fail closed and clean up; no model download."

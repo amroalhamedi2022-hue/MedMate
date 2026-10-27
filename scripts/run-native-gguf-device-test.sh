@@ -20,6 +20,13 @@ if [[ -n "${ANDROID_SERIAL:-}" ]]; then ADB=(adb -s "$ANDROID_SERIAL"); else
   ADB=(adb)
 fi
 "${ADB[@]}" get-state >/dev/null
+# This native acceptance path is specifically for the packaged ARM64 llama.cpp
+# libraries. Reject unsupported devices before Gradle, APK installation, or GGUF transfer.
+device_abi64="$("${ADB[@]}" shell getprop ro.product.cpu.abilist64 | tr -d '\r' | tr -d '[:space:]')"
+case ",${device_abi64}," in
+  *,arm64-v8a,*) printf 'PASS: device reports arm64-v8a support.\n' ;;
+  *) echo "FAIL: device does not report arm64-v8a support; refusing APK install and GGUF transfer" >&2; exit 7 ;;
+esac
 # Prefer an exact CI-built app + instrumentation APK pair when supplied. This lets
 # device acceptance run without rebuilding; otherwise build both from this checkout.
 PREBUILT_APK_PAIR=0

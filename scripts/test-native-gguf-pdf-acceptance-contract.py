@@ -44,6 +44,7 @@ required = {
 for label, needle in required.items():
     assert needle in test, f"missing device acceptance stage: {label}"
 assert "FakeLlama" not in test, "device acceptance must never use the fake backend"
+assert "ro.product.cpu.abilist64" in device_script and "arm64-v8a" in device_script, "native GGUF acceptance must reject unsupported ABI before APK/model transfer"
 assert "ggufPath" in test and "LlamaAndroidPort()" in test
 assert "ggufPath" in device_script, "device runner must pass the user-supplied model path"
 assert "sha256" in device_script.lower(), "device runner must verify the supplied model"
