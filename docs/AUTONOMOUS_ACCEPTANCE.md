@@ -1046,3 +1046,17 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS — runner contract in CI:** run 40427400685, source SHA `02b576147d9bb3ae1d3d4fe73b5fb33fb8a80def`; the GGUF/device/cloud safety-contract step passed, including bad/short header, digest mismatch, low storage, unparseable storage, partial transfer cleanup and instrumentation-result checks.
 - **Android tests/Lint/APK:** still in progress at this checkpoint; no APK from this source is claimed until the full workflow finishes. The prior artifact is not proof for the current source.
 - **NOT TESTED:** physical Xiaomi Pad 5, actual GGUF/llama.cpp inference, PDF page-2 citation round-trip, live cloud-consent/denial, RAM/thermal and clinical review.
+
+
+## 2026-10-27 — Fail-closed runtime dependency gate and candidate build
+
+- Tested source commit: `aba9018577ccd69ecde2a919b73330ab3839b343`.
+- CI run: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40438093932 — **PASS**.
+- Added a dedicated parser for Gradle's resolved `debugRuntimeClasspath`; the gate now fails if `bcprov-jdk15to18`, `bcpkix-jdk15to18`, or `bcutil-jdk15to18` is missing or resolves to anything other than **1.86**. A requested 1.72 that Gradle resolves to 1.86 is accepted; a mixed or unresolved legacy version is rejected.
+- Dependency-gate fixture tests: **5 PASS**. Existing GGUF safety/source-contract tests, SQLite/migration contracts, APK verifier regressions, Android unit tests, Lint, Debug APK and AndroidTest APK assembly: CI **PASS**.
+- APK verifier: package identity/version/SDK match Gradle; optional-cloud INTERNET permission matches the manifest; cleartext traffic is disabled; no broad-storage permissions.
+- Device-test Artifact: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40438093932/artifacts/12705630481.
+- Recomputed SHA-256 from the downloaded artifact ZIP and matched its `SHA256SUMS`:
+  - `app-debug.apk`: `9a65b3fe162b12a5399d19bea146a584d69100d82ad44f1ee827fd0ba8a167fd`
+  - `app-debug-androidTest.apk`: `33e383e33feb00ef80358e4bc3a28d23f7f90fd5f63c71493901af0f0190fb34`
+- **NOT TESTED:** physical Xiaomi Pad 5; real GGUF/JNI inference; real two-page PDF page-2 citation; live HTTPS consent/denial; memory/thermal/latency; independent medical review. The artifact contains no GGUF model, personal PDF, or provider key.

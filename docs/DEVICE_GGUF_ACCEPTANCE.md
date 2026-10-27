@@ -148,3 +148,14 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 - **PASS — runner contract in CI:** run 40427400685, source SHA `02b576147d9bb3ae1d3d4fe73b5fb33fb8a80def`; the GGUF/device/cloud safety-contract step passed, including bad/short header, digest mismatch, low storage, unparseable storage, partial transfer cleanup and instrumentation-result checks.
 - **Android tests/Lint/APK:** still in progress at this checkpoint; no APK from this source is claimed until the full workflow finishes. The prior artifact is not proof for the current source.
 - **NOT TESTED:** physical Xiaomi Pad 5, actual GGUF/llama.cpp inference, PDF page-2 citation round-trip, live cloud-consent/denial, RAM/thermal and clinical review.
+
+
+## Candidate bundle — 2026-10-27 (source commit `aba9018577ccd69ecde2a919b73330ab3839b343`)
+
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40438093932 — **PASS**.
+- Artifact: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40438093932/artifacts/12705630481.
+- The downloaded bundle's `SHA256SUMS` was independently recomputed and matched:
+  - Debug APK SHA-256: `9a65b3fe162b12a5399d19bea146a584d69100d82ad44f1ee827fd0ba8a167fd`
+  - AndroidTest APK SHA-256: `33e383e33feb00ef80358e4bc3a28d23f7f90fd5f63c71493901af0f0190fb34`
+- Install only on the intended test device and run the documented device acceptance script with a locally held GGUF model. Do not upload that model, any PDF, or any session token to this public repository.
+- **Physical device and real model remain NOT TESTED**; CI and APK identity do not prove inference, citation quality, live network behavior, or thermal suitability.
