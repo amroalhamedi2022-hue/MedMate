@@ -62,9 +62,27 @@ data class LocalAnswerGateResult(
 object LocalAnswerGate {
     fun evaluate(answer: String, prepared: PreparedPrompt): LocalAnswerGateResult {
         require(prepared.task == BrainTask.EXPLAIN) { "Local answer gate accepts explanation tasks only" }
-        require(prepared.presentedEvidence.isNotEmpty()) { "No PDF evidence for local explanation" }
-        val check = CitationValidator.check(answer, prepared.presentedEvidence.size)
-        val safeAnswer = if (check.accepted) answer.trim().takeIf { it.isNotEmpty() } else null
-        return LocalAnswerGateResult(safeAnswer, check)
+        val evidence = prepared.presentedEvidence
+        require(evidence.isNotEmpty()) { "No PDF evidence for local explanation" }
+        val check = CitationValidator.check(answer, evidence.size)
+        // An explicit source-insufficient abstention makes no source claim and
+        // remains displayable. Any factual answer, however, must be traceable to
+        // stable page identities so its [S#] markers can navigate to the exact PDF.
+        val sourceFreeAbstention = check.accepted && check.used.isEmpty()
+        val chapter = evidence.first().chapterId
+        val identitySafe = chapter.isNotBlank() &&
+            evidence.all { it.chapterId == chapter && it.pageIndex >= 0 && it.text.isNotBlank() } &&
+            EvidenceIdentity.hasUniqueCanonicalIds(evidence)
+        val accepted = check.accepted && (sourceFreeAbstention || identitySafe)
+        val finalCheck = if (check.accepted && !accepted) {
+            CitationCheck(
+                accepted = false,
+                used = check.used,
+                invalid = check.invalid,
+                reason = "Invalid or ambiguous PDF source identity"
+            )
+        } else check
+        val safeAnswer = if (accepted) answer.trim().takeIf { it.isNotEmpty() } else null
+        return LocalAnswerGateResult(safeAnswer, finalCheck)
     }
 }
