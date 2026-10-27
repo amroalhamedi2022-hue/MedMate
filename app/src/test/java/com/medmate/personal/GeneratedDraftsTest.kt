@@ -243,7 +243,7 @@ class GeneratedDraftsTest {
             quote, "S1", quote)
 
         val hiddenDuplicate = valid.copy(options =
-            listOf("Fracture", "Dislocation", "Sprain", "Spra\u200Bn"))
+            listOf("Fracture", "Dislocation", "Sprain", "Sprai\u200Bn"))
         assertEquals(1, GeneratedStudyDrafts.validate(listOf(hiddenDuplicate), listOf(source)).rejected)
 
         val compatibilityDuplicate = valid.copy(options =
