@@ -129,6 +129,11 @@ class NativeGgufDeviceAcceptanceTest {
             assertFalse("page-1-only marker [S2] must not be invented for page-2 evidence", answer.contains("[S2]"))
             val citationCheck = CitationValidator.check(answer, prepared.presentedEvidence.size)
             assertTrue("real native answer failed citation validation: " + citationCheck.reason, citationCheck.accepted)
+            // The physical-model test must pass the same production display gate as the UI,
+            // not merely a looser citation-regex check.
+            val displayGate = LocalAnswerGate.evaluate(answer, prepared)
+            assertTrue("real native answer failed production display gate: " + displayGate.citationCheck.reason, displayGate.accepted)
+            assertEquals(answer.trim(), displayGate.displayableAnswer)
             assertEquals("only the requested PDF page may enter the native prompt", listOf(1), prepared.presentedEvidence.map { it.pageIndex })
             val links = SourceCitationLinks.resolve(answer, prepared.presentedEvidence)
             assertEquals("the page-2-only request must resolve exactly one source marker", listOf("S1"), links.map { it.marker })
