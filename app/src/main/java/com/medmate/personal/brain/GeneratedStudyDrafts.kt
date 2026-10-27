@@ -121,6 +121,7 @@ object GeneratedStudyDrafts {
             val answer = c.answer.trim()
             val explanation = c.explanation.trim()
             val options = c.options.map { it.trim() }
+            val optionKeys = options.map(StudyOptionIdentity::key)
             val quoted = c.supportingQuote.trim()
             val quoteVerifiable = s != null && quoted.length in 16..500 &&
                 quoteOnWordBoundaries(normalizedQuote(s.text), normalizedQuote(quoted))
