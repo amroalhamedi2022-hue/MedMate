@@ -1,6 +1,7 @@
 package com.medmate.personal.reader
 
 import android.content.Context
+import com.medmate.personal.domain.PdfPageLimits
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.io.MemoryUsageSetting
 import com.tom_roush.pdfbox.pdmodel.PDDocument
