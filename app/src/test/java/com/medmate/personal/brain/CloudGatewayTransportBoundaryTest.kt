@@ -32,7 +32,8 @@ class CloudGatewayTransportBoundaryTest {
         private val responseStream: InputStream? = null,
         private val responseCode: Int = 200,
         private val failOutput: Boolean = false,
-        private val failRequestProperty: Boolean = false
+        private val failRequestProperty: Boolean = false,
+        private val contentType: String? = "application/json; charset=utf-8"
     ) : HttpURLConnection(url) {
         val requestBytes = ByteArrayOutputStream()
         var disconnected = false
@@ -48,6 +49,7 @@ class CloudGatewayTransportBoundaryTest {
             return requestBytes
         }
         override fun getResponseCode() = responseCode
+        override fun getContentType(): String? = contentType
         override fun getInputStream(): InputStream = responseStream ?: ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
     }
 
@@ -65,6 +67,9 @@ class CloudGatewayTransportBoundaryTest {
         assertTrue(connection.disconnected)
         assertEquals("POST", connection.requestMethod)
         assertFalse("cloud gateway must never follow redirects with a PDF prompt or bearer token", connection.instanceFollowRedirects)
+        assertFalse("private PDF prompts must not use URLConnection caches", connection.useCaches)
+        assertEquals("no-store, no-cache, max-age=0", connection.getRequestProperty("Cache-Control"))
+        assertEquals("no-cache", connection.getRequestProperty("Pragma"))
         assertEquals("Bearer SESSION-TOKEN", connection.getRequestProperty("Authorization"))
         val json = JSONObject(connection.requestBytes.toString("UTF-8"))
         assertEquals(model, json.getString("model"))
@@ -244,6 +249,39 @@ class CloudGatewayTransportBoundaryTest {
         assertFalse(opened.single().instanceFollowRedirects)
         assertTrue(opened.single().disconnected)
         assertFalse(consent.permits(endpoint, model, request, seal))
+    }
+
+
+    @Test fun nonJsonResponseIsRejectedBeforeBodyParsingAndCannotReplayConsent() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, contentType = "text/html; charset=utf-8").also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val failure = runCatching {
+            gateway.explain(endpoint, model, "", prepared, consent, request)
+        }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+        assertTrue(failure?.message.orEmpty().contains("غير JSON"))
+        assertEquals(1, opened.size)
+        assertTrue(opened.single().disconnected)
+        assertFalse(consent.permits(endpoint, model, request, seal))
+        assertTrue(runCatching { gateway.explain(endpoint, model, "", prepared, consent, request) }.isFailure)
+        assertEquals("a rejected response must not permit a replay", 1, opened.size)
+    }
+
+    @Test fun vendorJsonMediaTypeRemainsCompatible() = runBlocking {
+        val opened = mutableListOf<FakeHttpsConnection>()
+        val gateway = CloudBrainGateway { url ->
+            FakeHttpsConnection(url, contentType = "application/vnd.example+json; charset=utf-8").also(opened::add)
+        }
+        val seal = CloudEvidenceSeal.of(prepared, request)
+        val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
+        val answer = gateway.explain(endpoint, model, "", prepared, consent, request)
+        assertTrue(answer.contains("[S1]"))
+        assertTrue(opened.single().disconnected)
+        assertFalse(opened.single().useCaches)
     }
 
     @Test fun oversizedCloudResponseIsRejectedAndApprovalCannotBeReplayed() = runBlocking {

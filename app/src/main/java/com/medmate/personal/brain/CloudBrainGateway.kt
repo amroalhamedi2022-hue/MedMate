@@ -95,6 +95,9 @@ class CloudBrainGateway(
         }
         val connection = connectionFactory(URL(safeUrl))
         try {
+            // Medical study prompts may contain private PDF excerpts. Do not use URLConnection caches,
+            // and explicitly tell intermediaries not to retain either request or response.
+            connection.useCaches = false
             connection.requestMethod = "POST"
             connection.connectTimeout = 10_000
             connection.readTimeout = 45_000
@@ -102,10 +105,19 @@ class CloudBrainGateway(
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty("Cache-Control", "no-store, no-cache, max-age=0")
+            connection.setRequestProperty("Pragma", "no-cache")
             if (ephemeralGatewayToken.isNotBlank()) connection.setRequestProperty("Authorization", "Bearer $ephemeralGatewayToken")
             connection.outputStream.use { it.write(payloadBytes) }
             val status = connection.responseCode
             require(status == 200) { "بوابة AI رجّعت خطأ HTTP $status، تحقق من الرابط أو الإعدادات" }
+            val responseType = connection.contentType
+                ?.substringBefore(';')
+                ?.trim()
+                ?.lowercase(java.util.Locale.ROOT)
+            require(responseType == "application/json" || responseType?.endsWith("+json") == true) {
+                "بوابة AI أعادت نوع محتوى غير JSON؛ رُفض الرد قبل تحليله"
+            }
             val response = connection.inputStream.use { limitedRead(it, 200_000) }
             val answer = JSONObject(response).getJSONArray("choices")
                 .getJSONObject(0).getJSONObject("message").getString("content").trim()
