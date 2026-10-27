@@ -9,9 +9,14 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 coverage = (root / "app/src/main/java/com/medmate/personal/brain/PdfTextCoverage.kt").read_text(encoding="utf-8")
+limits = (root / "app/src/main/java/com/medmate/personal/domain/PdfPageLimits.kt").read_text(encoding="utf-8")
+extractor = (root / "app/src/main/java/com/medmate/personal/reader/PdfTextExtractor.kt").read_text(encoding="utf-8")
 store = (root / "app/src/main/java/com/medmate/personal/data/ChapterStore.kt").read_text(encoding="utf-8")
 
-assert "const val MAX_AUDIT_PAGES = 100_000" in coverage
+assert "const val MAX_PAGES = 100_000" in limits
+assert "const val MAX_AUDIT_PAGES = com.medmate.personal.domain.PdfPageLimits.MAX_PAGES" in coverage
+assert "PdfPageLimits.requireSafeCount(opened.numberOfPages)" in extractor
+assert "try { opened.close() }" in extractor, "rejected PDF documents must release PDFBox resources"
 assert "fun requireSafePageCount(totalPages: Int)" in coverage
 assert "firstUnusablePages.zipWithNext().all { (first, next) -> first < next }" in coverage
 
@@ -23,4 +28,4 @@ assert page_count < guard_index < move_index, "page-count limit must run before 
 
 index_region = store[store.index("suspend fun indexText"): ]
 assert index_region.index("PdfCoverageAudit.requireSafePageCount(chapter.pageCount)") < index_region.index("PdfTextExtractor(app, fileFor(chapter))"), "indexing must reject unsupported page counts before PDFBox opens the document"
-print("PASS PDF page-limit contract: import and indexing share the 100,000-page guard; navigation preview is ascending.")
+print("PASS PDF page-limit contract: shared 100,000-page guard covers import, re-indexing and direct extraction; rejected documents close; navigation preview is ascending.")
