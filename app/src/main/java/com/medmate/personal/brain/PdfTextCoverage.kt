@@ -46,7 +46,7 @@ data class PdfTextCoverage(
 object PdfCoverageAudit {
     // The audit allocates one byte per PDF page. Bound hostile or pathological
     // page counts before allocation so a malformed document cannot trigger an OOM.
-    const val MAX_AUDIT_PAGES = 100_000
+    const val MAX_AUDIT_PAGES = com.medmate.personal.domain.PdfPageLimits.MAX_PAGES
     private const val MIN_TEXT_CHARS = 16
     /**
      * Conservative warning gate for clearly damaged PDF text extraction.
@@ -69,11 +69,8 @@ object PdfCoverageAudit {
             (replacements >= 4 && replacements.toLong() * 12 >= text.length)
     }
 
-    fun requireSafePageCount(totalPages: Int) {
-        require(totalPages in 1..MAX_AUDIT_PAGES) {
-            "PDF page count is outside the safe local audit range"
-        }
-    }
+    fun requireSafePageCount(totalPages: Int) =
+        com.medmate.personal.domain.PdfPageLimits.requireSafeCount(totalPages)
 
     fun inspect(chapterId: String, totalPages: Int, pages: List<PageSource>,
                 maxListed: Int = 8): PdfTextCoverage {
