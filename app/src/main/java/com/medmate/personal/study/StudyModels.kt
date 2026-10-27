@@ -66,7 +66,7 @@ object StudyValidation {
                 require(options.size in 4..5 && options.all { it.trim().isNotEmpty() && it.length <= 1000 }) {
                     "السؤال يحتاج أربعة أو خمسة اختيارات"
                 }
-                require(options.map { it.trim().lowercase() }.distinct().size == options.size) { "الاختيارات لازم تكون مختلفة" }
+                require(options.map(StudyOptionIdentity::key).distinct().size == options.size) { "الاختيارات لازم تكون مختلفة" }
                 require(correctIndex in options.indices) { "حدد الإجابة الصحيحة" }
             }
         }
