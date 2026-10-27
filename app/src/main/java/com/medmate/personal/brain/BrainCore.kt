@@ -197,13 +197,29 @@ object MedicalPromptBuilder {
 
     fun build(r: GroundedRequest): String = prepare(r).prompt
 
+    /** One canonical question sanitizer shared by prompt creation and cloud-consent validation. */
+    internal fun sanitizeQuestion(query: String): String =
+        query
+            .replace(Regex("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]+"), " ")
+            .replace(Regex("\\s+"), " ").trim().take(1200)
+
+    /** Verify that the actual prompt question matches the question the user approved. */
+    internal fun promptMatchesQuestion(prompt: String, query: String): Boolean {
+        val marker = "\nQUESTION:\n"
+        val sourceMarker = "\n\nSOURCE EXCERPTS:\n"
+        val start = prompt.indexOf(marker)
+        if (start < 0 || prompt.indexOf(marker, start + marker.length) >= 0) return false
+        val questionStart = start + marker.length
+        val end = prompt.indexOf(sourceMarker, questionStart)
+        if (end < questionStart || prompt.indexOf(sourceMarker, end + sourceMarker.length) >= 0) return false
+        return prompt.substring(questionStart, end).trim() == sanitizeQuestion(query)
+    }
+
     fun prepare(r: GroundedRequest): PreparedPrompt {
         require(r.query.isNotBlank())
         // The question is user-supplied data. Flatten forged prompt headings and
         // bound its length without changing the original request identity.
-        val safeQuestion = r.query
-            .replace(Regex("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]+"), " ")
-            .replace(Regex("\\s+"), " ").trim().take(1200)
+        val safeQuestion = sanitizeQuestion(r.query)
         require(safeQuestion.isNotBlank()) { "Question has no visible content" }
         require(r.maxEvidenceChars in 500..20000)
         require(r.evidence.all { it.chapterId == r.chapterId }) { "Cross-chapter evidence forbidden" }
