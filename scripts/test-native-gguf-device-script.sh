@@ -147,7 +147,7 @@ run_case() {
       FAKE_PUSH_FAIL="$push_fail" \
       FAKE_INSTRUMENT_MODE="$instrument_mode" \
       FAKE_FREE_KB="$free_kb" \
-      FAKE_DF_MODE="$df_mode" \\
+      FAKE_DF_MODE="$df_mode" \
       GGUF_FILE="$case_dir/probe.gguf" \
       bash scripts/run-native-gguf-device-test.sh
   ) > "$case_dir/output.log" 2>&1 || status=$?
