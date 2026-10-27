@@ -81,7 +81,14 @@ host_bytes="$(wc -c < "$GGUF_FILE" | tr -d '[:space:]')"
 printf 'Host GGUF SHA-256: %s\nHost GGUF bytes: %s\n' "$host_sha" "$host_bytes"
 # Fail closed before pushing a large local model if device storage cannot be verified.
 # A 64 MiB reserve protects app/runtime data from a nearly-full shared data partition.
-free_kb="$("${ADB[@]}" shell toybox df -k "$device_dir" | tr -d '\r' | awk 'NF >= 4 && $1 !~ /^Filesystem$/ {available=$4} END {if (available ~ /^[0-9]+$/) print available; else exit 1}')"
+# Command substitution under `set -e` would otherwise exit with awk's status
+# before the explicit fail-closed diagnostic and exit code below.
+free_kb=""
+if free_kb="$("${ADB[@]}" shell toybox df -k "$device_dir" | tr -d '\r' | awk 'NF >= 4 && $1 !~ /^Filesystem$/ {available=$4} END {if (available ~ /^[0-9]+$/) print available; else exit 1}')"; then
+  :
+else
+  free_kb=""
+fi
 if [[ ! "$free_kb" =~ ^[0-9]+$ ]]; then
   echo "FAIL: cannot verify device free storage; refusing to push GGUF" >&2
   exit 6
