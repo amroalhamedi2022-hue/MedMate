@@ -111,6 +111,10 @@ case "${1:-}" in
             incomplete)
               printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\nINSTRUMENTATION_CODE: -1\n'
               ;;
+            transport-failure)
+              printf 'NativeGgufDeviceAcceptanceTest started; transport lost after runner started\n' >&2
+              exit 13
+              ;;
             *) echo "unsupported fake instrumentation mode" >&2; exit 94 ;;
           esac
         else
@@ -176,6 +180,12 @@ run_case() {
   elif [[ "$expected" == instrument-incomplete ]]; then
     [[ "$status" == 5 ]] || { cat "$case_dir/output.log"; echo "FAIL: incomplete instrumentation output exited $status, expected 5" >&2; return 1; }
     grep -Fq 'missing a successful JUnit summary' "$case_dir/output.log"
+    grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+    ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+  elif [[ "$expected" == instrument-transport-failure ]]; then
+    [[ "$status" == 5 ]] || { cat "$case_dir/output.log"; echo "FAIL: transport failure exited $status, expected fail-closed status 5" >&2; return 1; }
+    grep -Fq 'Android instrumentation command exited with status 13' "$case_dir/output.log"
+    grep -Fq 'transport lost after runner started' "$case_dir/output.log"
     grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
     ! find "$case_dir/device-root" -type f -print -quit | grep -q .
   elif [[ "$expected" == storage ]]; then
@@ -258,6 +268,7 @@ run_case mismatched-digest mismatch 1 0 pass
 run_case interrupted-partial-push fail 0 1 pass
 run_case instrumentation-reported-failure instrument-failure 0 0 fail
 run_case instrumentation-missing-summary instrument-incomplete 0 0 incomplete
+run_case instrumentation-transport-loss instrument-transport-failure 0 0 transport-failure
 run_case low-storage storage 0 0 pass 1000
 run_case unparseable-storage storage-unverifiable 0 0 pass 2000000 malformed
 
