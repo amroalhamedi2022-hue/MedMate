@@ -328,14 +328,14 @@ run_preserves_existing_device_file_case() {
   local status=0
   (
     cd "$tmp"
-    PATH="$tmp/bin:$PATH" \\
-      FAKE_DEVICE_ROOT="$case_dir/device-root" \\
-      FAKE_ADB_LOG="$case_dir/adb.log" \\
-      FAKE_GRADLE_LOG="$case_dir/gradle.log" \\
-      FAKE_ABI_LIST64="arm64-v8a" \\
-      FAKE_FREE_KB="2000000" \\
-      GGUF_FILE="$case_dir/probe.gguf" \\
-      bash scripts/run-native-gguf-device-test.sh
+    export PATH="$tmp/bin:$PATH"
+    export FAKE_DEVICE_ROOT="$case_dir/device-root"
+    export FAKE_ADB_LOG="$case_dir/adb.log"
+    export FAKE_GRADLE_LOG="$case_dir/gradle.log"
+    export FAKE_ABI_LIST64="arm64-v8a"
+    export FAKE_FREE_KB="2000000"
+    export GGUF_FILE="$case_dir/probe.gguf"
+    bash scripts/run-native-gguf-device-test.sh
   ) > "$case_dir/output.log" 2>&1 || status=$?
   [[ "$status" == 0 ]] || { cat "$case_dir/output.log"; echo "FAIL: unique-target cleanup case exited $status" >&2; return 1; }
   grep -Fq 'PASS: Android instrumentation reported a successful native GGUF/PDF acceptance test.' "$case_dir/output.log"
