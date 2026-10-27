@@ -205,14 +205,15 @@ object MedicalPromptBuilder {
 
     /** Verify that the actual prompt question matches the question the user approved. */
     internal fun promptMatchesQuestion(prompt: String, query: String): Boolean {
-        val marker = "\nQUESTION:\n"
-        val sourceMarker = "\n\nSOURCE EXCERPTS:\n"
-        val start = prompt.indexOf(marker)
-        if (start < 0 || prompt.indexOf(marker, start + marker.length) >= 0) return false
-        val questionStart = start + marker.length
-        val end = prompt.indexOf(sourceMarker, questionStart)
-        if (end < questionStart || prompt.indexOf(sourceMarker, end + sourceMarker.length) >= 0) return false
-        return prompt.substring(questionStart, end).trim() == sanitizeQuestion(query)
+        // Match complete label lines rather than an exact blank-line sequence:
+        // trimIndent() and harmless whitespace around a section must not disable consent.
+        val questionLabels = Regex("(?m)^[ \\t]*QUESTION:[ \\t]*$").findAll(prompt).toList()
+        val sourceLabels = Regex("(?m)^[ \\t]*SOURCE EXCERPTS:[ \\t]*$").findAll(prompt).toList()
+        if (questionLabels.size != 1 || sourceLabels.size != 1) return false
+        val questionStart = questionLabels.single().range.last + 1
+        val sourceStart = sourceLabels.single().range.first
+        if (sourceStart < questionStart) return false
+        return prompt.substring(questionStart, sourceStart).trim() == sanitizeQuestion(query)
     }
 
     fun prepare(r: GroundedRequest): PreparedPrompt {
