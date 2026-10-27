@@ -1144,3 +1144,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - `app-debug-androidTest.apk`: 373,785 bytes; SHA-256 `2b2fdd227da5aff2ceeb732557eeb42ded16a4d3bbb18b9583d37de9c1c1d969`.
   - Debug APK Artifact **12721117413**; validation reports Artifact **12721526615**.
 - **NOT TESTED:** physical Xiaomi Pad 5 installation, user-supplied GGUF with real llama.cpp/JNI inference, model-backed two-page PDF answer, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. The test bundle contains no GGUF weights, PDF or credentials. CI/Mock transport is not clinical validation; Debug is not final.
+
+
+## 2026-10-27 — Canonical PDF evidence identities before cloud consent (CI in progress)
+
+- **Production:** CloudEvidenceSeal now accepts only canonical source IDs of 1–160 characters with no whitespace, control characters or Unicode format characters, and still rejects duplicate IDs. This prevents padded or invisible IDs from making PDF citation provenance ambiguous before the one-shot cloud-consent seal is created.
+- **Regression:** added cases for leading/trailing whitespace, newline, zero-width format character, overlong ID, blank ID and duplicate ID. The tests use synthetic source text only; no PDF, model weights or credentials were added.
+- **Purposeful build question:** do the new Kotlin validation gate and regression tests compile and pass with the Android/JUnit suite and APK packaging? Static review alone cannot establish Kotlin/Gradle integration.
+- **CI:** run [40482189945](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40482189945), source/test SHA `e6e7c1a649d31304e346f8f18ffcec4e54cf012b`, **IN PROGRESS at checkpoint**. No PASS is claimed until the run completes.
+- **NOT TESTED:** Xiaomi Pad 5 installation, real GGUF/llama.cpp/JNI inference, model-backed PDF page-two citations, live HTTPS consent/denial, device RAM/thermal/latency and independent clinical review. Debug is not final.
