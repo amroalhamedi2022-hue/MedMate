@@ -66,7 +66,10 @@ object StudyValidation {
                 require(options.size in 4..5 && options.all { it.trim().isNotEmpty() && it.length <= 1000 }) {
                     "السؤال يحتاج أربعة أو خمسة اختيارات"
                 }
-                require(options.map(StudyOptionIdentity::key).distinct().size == options.size) { "الاختيارات لازم تكون مختلفة" }
+                val optionKeys = options.map(StudyOptionIdentity::key)
+                require(optionKeys.all { it.isNotBlank() } && optionKeys.distinct().size == options.size) {
+                    "الاختيارات لازم تكون مختلفة وغير فارغة"
+                }
                 require(correctIndex in options.indices) { "حدد الإجابة الصحيحة" }
             }
         }
