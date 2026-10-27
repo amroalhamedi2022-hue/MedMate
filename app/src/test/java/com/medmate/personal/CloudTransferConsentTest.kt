@@ -56,6 +56,25 @@ class CloudTransferConsentTest {
         assertTrue(consent.consume(endpoint, "local-model", source))
     }
 
+    @Test fun concurrentEvidenceSealedClaimsCannotDuplicatePdfUploadPermission() {
+        val seal = "a".repeat(64)
+        val consent = CloudTransferConsent.grant(endpoint, "local-model", source, seal)
+        val start = CountDownLatch(1)
+        val finished = CountDownLatch(16)
+        val claims = AtomicInteger(0)
+        repeat(16) {
+            Thread {
+                try {
+                    start.await()
+                    if (consent.consume(endpoint, "local-model", source, seal)) claims.incrementAndGet()
+                } finally { finished.countDown() }
+            }.start()
+        }
+        start.countDown()
+        assertTrue("workers timed out", finished.await(5, TimeUnit.SECONDS))
+        assertEquals("exactly one evidence-sealed PDF upload permission", 1, claims.get())
+    }
+
     @Test fun concurrentClaimsCannotDuplicatePdfUploadPermission() {
         val consent = CloudTransferConsent.grant(endpoint, "local-model", source)
         val start = CountDownLatch(1)
