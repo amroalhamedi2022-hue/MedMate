@@ -14,8 +14,8 @@ object StudyOptionIdentity {
     private val whitespace = Regex("[\\p{Z}\\s]+")
 
     fun key(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFC)
-        .trim()
         .replace(whitespace, " ")
+        .trim()
         .lowercase(Locale.ROOT)
 }
 
