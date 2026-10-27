@@ -10,5 +10,5 @@ fun main() {
     val wholeChapter = BrainRequestIdentity("sha-A", "fracture", false, 7)
     check(wholeChapter.matches("sha-A", "fracture", false, 8))
     check(!wholeChapter.matches("sha-B", "fracture", false, 7))
-    println("PASS: 7 cloud result source-context safety checks")
+    println("PASS: 7 local/cloud async result source-context safety checks")
 }
