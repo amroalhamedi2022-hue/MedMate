@@ -43,6 +43,32 @@ jobs:
           python3 scripts/test-pdf-page-limit-contract.py
           python3 scripts/test-model-load-ui-contract.py
       - uses: gradle/actions/setup-gradle@v4
+      - name: Assert resolved Bouncy Castle runtime alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/medmate-runtime-dependencies.txt"
+          ./gradlew --no-daemon :app:dependencies --configuration debugRuntimeClasspath > "$report"
+          for module in bcprov-jdk15to18 bcpkix-jdk15to18 bcutil-jdk15to18; do
+            if ! grep -E "org\\.bouncycastle:${module}:" "$report" | awk '
+              {
+                line=$0
+                sub(/^.*org\\.bouncycastle:[^:]+:/, "", line)
+                n=split(line, parts, /[[:space:]]*->[[:space:]]*/)
+                selected=parts[n]
+                sub(/^[[:space:]]+/, "", selected)
+                split(selected, version, /[[:space:]]+/)
+                if (version[1] == "1.86") ok=1
+              }
+              END { exit(ok ? 0 : 1) }
+            '; then
+              echo "FAIL: ${module} is not resolved to 1.86 in debugRuntimeClasspath" >&2
+              grep -E "org\\.bouncycastle:${module}:" "$report" || true
+              exit 1
+            fi
+          done
+          echo "PASS: bcprov, bcpkix and bcutil all resolve to Bouncy Castle 1.86"
+          grep -E 'org\\.bouncycastle:(bcprov-jdk15to18|bcpkix-jdk15to18|bcutil-jdk15to18):' "$report" | sort -u
       - name: Validate SQLite schema and migration contracts
         run: |
           python3 scripts/test-database-contract.py
