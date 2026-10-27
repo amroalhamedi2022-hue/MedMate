@@ -37,6 +37,24 @@ internal fun <T> verifyNativeSessionBeforePublishing(
     }
 }
 
+/**
+ * Publish a completed native answer only while its originating coroutine remains active.
+ * The backend is synchronous, so cancellation can arrive while inference is running.
+ * The second check closes the gap between validating returned text and calling UI code.
+ */
+internal fun publishNativeCompletionIfActive(
+    rawAnswer: String,
+    ensureActive: () -> Unit,
+    onToken: (String) -> Unit
+): String {
+    ensureActive()
+    val text = rawAnswer.trim()
+    require(text.isNotBlank() && text.length <= 40_000) { "النموذج لم يُرجع شرحًا صالحًا" }
+    ensureActive()
+    onToken(text)
+    return text
+}
+
 class LlamaAndroidPort : OnDeviceLlmPort {
     private val gate = Mutex()
     @Volatile override var loadedModelName: String? = null
@@ -97,15 +115,22 @@ class LlamaAndroidPort : OnDeviceLlmPort {
 
     override suspend fun generate(prepared: PreparedPrompt, onToken: (String) -> Unit): String =
         withContext(Dispatchers.Default) {
+            val caller = currentCoroutineContext()
+            caller.ensureActive()
             require(prepared.presentedEvidence.isNotEmpty()) { "لا توجد مقاطع من الكتاب للشرح" }
             gate.lock()
             try {
+                caller.ensureActive()
                 val handler = requireNotNull(completion) { "استورد نموذج GGUF وحمّله أولًا" }
-                val text = handler(prepared).trim()
-                require(text.isNotBlank() && text.length <= 40_000) { "النموذج لم يُرجع شرحًا صالحًا" }
-                // Free backend does not offer streaming; emit the completed answer once.
-                onToken(text)
-                text
+                // Native completion is synchronous and may not stop mid-call when its
+                // coroutine is cancelled. Re-check before publishing completed text so
+                // stale/cancelled requests cannot reach the UI.
+                val answer = handler(prepared)
+                publishNativeCompletionIfActive(
+                    rawAnswer = answer,
+                    ensureActive = { caller.ensureActive() },
+                    onToken = onToken
+                )
             } finally { gate.unlock() }
         }
 
