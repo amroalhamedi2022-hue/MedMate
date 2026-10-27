@@ -136,6 +136,33 @@ class BrainRetrievalRegressionTest {
         assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", damagedOnly))
     }
 
+    @Test fun ambiguousPageAnchorsFailClosedBeforeGrounding() {
+        val pages = listOf(
+            PageSource("ortho", 0, "A fracture is a break in bone continuity."),
+            PageSource("ortho", 0, "A different excerpt was incorrectly assigned to page zero."),
+            PageSource("ortho", 1, "Fracture management requires careful neurovascular assessment.")
+        )
+        val fullChapter = StudyBrain.search("ortho", pages, "fracture")
+        assertEquals(BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, fullChapter.status)
+        assertTrue(fullChapter.evidence.isEmpty())
+        assertEquals(0, fullChapter.shownPages)
+        assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", fullChapter))
+
+        // A page-scoped query may use a different, uniquely anchored page;
+        // duplicate identity on the selected page itself must still fail closed.
+        val uniquePage = StudyBrain.search("ortho", pages, "fracture", onlyPage = 1)
+        assertEquals(BrainSearchStatus.FOUND, uniquePage.status)
+        assertEquals(listOf(1), uniquePage.evidence.map { it.pageIndex }.distinct())
+        val ambiguousPage = StudyBrain.search("ortho", pages, "fracture", onlyPage = 0)
+        assertEquals(BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, ambiguousPage.status)
+        assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", ambiguousPage))
+
+        val invalidAnchor = StudyBrain.search("ortho", listOf(
+            PageSource("ortho", -1, "Fracture evidence with an invalid negative page anchor.")
+        ), "fracture")
+        assertEquals(BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, invalidAnchor.status)
+        assertTrue(invalidAnchor.evidence.isEmpty())
+    }
     @Test fun shortQuestionCountsOnlySelectedPdfPages() {
         val pages = listOf(
             PageSource("ortho", 0, "A fracture is a break in bone continuity."),
