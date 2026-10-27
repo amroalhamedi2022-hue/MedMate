@@ -211,3 +211,8 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 - **NOT TESTED:** physical Xiaomi Pad 5, a user-supplied GGUF through real llama.cpp/JNI inference, citation accuracy on a real textbook, live HTTPS consent/denial, RAM/thermal, clinical review and final signing. The bundle contains no model weights, personal PDFs or credentials.
 - CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256
 - Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256/artifacts/12711812350
+
+
+## 2026-10-27 — Temporary model path safety
+
+The device runner now uses a per-run unique filename under app-specific external storage and removes only that filename. A Fake ADB regression preserves a sentinel placed at the previous fixed filename, proving that cleanup does not delete or overwrite a pre-existing file. The latest CI run is pending; this is not device/model acceptance. Continue to supply a locally held GGUF, verify the APK pair hashes, and never place weights or personal PDFs in the public repository.
