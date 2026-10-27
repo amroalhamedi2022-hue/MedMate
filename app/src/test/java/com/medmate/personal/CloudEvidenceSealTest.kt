@@ -96,8 +96,8 @@ class CloudEvidenceSealTest {
         val invalidIds = listOf(
             " ${source.id}",
             "${source.id} ",
-            "${source.id}\\n",
-            "${source.id}\\u200B",
+            "${source.id}\n",
+            "${source.id}\u200B",
             "x".repeat(161)
         )
         invalidIds.forEach { id ->
