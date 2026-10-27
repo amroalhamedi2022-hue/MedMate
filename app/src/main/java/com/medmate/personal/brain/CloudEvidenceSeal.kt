@@ -22,6 +22,13 @@ object CloudEvidenceSeal {
             "Cloud excerpts exceed the reviewed source budget"
         }
         require(prepared.prompt.length in 1..32_000) { "Cloud prompt exceeds safe length" }
+        // Citation markers are positional ([S1] maps to evidence[0]). Duplicate or
+        // blank IDs make provenance ambiguous even when the text itself is present.
+        // Reject before consent can be claimed or any bytes can leave the device.
+        require(excerpts.all { it.id.isNotBlank() } &&
+            excerpts.map { it.id }.toSet().size == excerpts.size) {
+            "Cloud evidence has blank or duplicate source identities"
+        }
         require(excerpts.all { e ->
             e.chapterId == request.chapterSha256 && e.pageIndex >= 0 &&
                 (!request.pageOnly || e.pageIndex == request.sourcePage) &&
