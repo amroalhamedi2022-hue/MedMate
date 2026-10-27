@@ -47,6 +47,7 @@ class BackupManager(context: Context) {
                 c.getString(0), c.getString(1), c.getString(2), c.getLong(3), c.getInt(4),
                 c.getInt(5), c.getLong(6)
             ) }
+            BackupArchiveLimits.requireSafeDocumentBytes(chapters.map { it.bytes })
             val manifest = JSONObject().put("format", "MedMatePersonalBackup").put("version", 2)
                 .put("createdAt", System.currentTimeMillis())
             val chaptersJson = JSONArray()
@@ -176,11 +177,13 @@ class BackupManager(context: Context) {
                                 val bytesLength = row.getLong("bytes")
                                 val pageCount = row.getInt("pageCount")
                                 val lastPage = row.getInt("lastPage")
-                                require(bytesLength >= 5 && pageCount > 0 && lastPage in 0 until pageCount)
+                                require(bytesLength in 5L..BackupArchiveLimits.MAX_PDF_BYTES && pageCount > 0 && lastPage in 0 until pageCount)
                                 require(!chapters.containsKey(sha)) { "ملف مكرر في الفهرس" }
                                 chapters[sha] = Chapter(sha, title, "$sha.pdf", bytesLength,
                                     pageCount, lastPage, row.getLong("addedAt"))
                             }
+                            // Validate the aggregate declared payload before any PDF bytes are staged.
+                            BackupArchiveLimits.requireSafeDocumentBytes(chapters.values.map { it.bytes })
                         }
                         entry.name.startsWith("documents/") && notesFile == null -> {
                             val sha = entry.name.removePrefix("documents/").removeSuffix(".pdf")

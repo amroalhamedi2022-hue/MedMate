@@ -116,6 +116,30 @@ class BackupRoundTripTest {
         assertEquals(3, StudyStore(context).list(chapter.sha256).size)
     }
 
+    @Test fun oversizedPdfDeclarationIsRejectedBeforeAnyRestoreWrites() = runBlocking {
+        val bytes = pdf.readBytes()
+        val sha = MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        val manifest = JSONObject().put("format", "MedMatePersonalBackup").put("version", 2)
+            .put("createdAt", 1L).put("chapters", JSONArray().put(JSONObject()
+                .put("sha256", sha).put("title", "Oversized declaration")
+                .put("bytes", BackupArchiveLimits.MAX_PDF_BYTES + 1)
+                .put("pageCount", 4).put("lastPage", 0).put("addedAt", 1L)))
+        val malicious = File(context.cacheDir, "oversized-pdf-manifest.zip")
+        ZipOutputStream(malicious.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("manifest.json"))
+            zip.write(manifest.toString().toByteArray(Charsets.UTF_8))
+            zip.closeEntry()
+        }
+
+        expectFailure { runBlocking { BackupManager(context).restore(Uri.fromFile(malicious)) } }
+        assertTrue(File(context.filesDir, "original_documents").listFiles().orEmpty().isEmpty())
+        MedMateDatabase(context).readableDatabase.rawQuery("SELECT COUNT(*) FROM chapters", null).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+    }
+
     @Test fun fiveOptionQuestionRoundTripsAndWrongChoiceRemainsWrong() = runBlocking {
         val chapter = ChapterStore(context).importPdf(Uri.fromFile(pdf)).chapter
         val store = StudyStore(context)
