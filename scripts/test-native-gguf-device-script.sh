@@ -81,11 +81,11 @@ case "${1:-}" in
             wc -c < "$target" | tr -d '[:space:]'
             ;;
           df)
-            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\\n'
+            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n'
             if [[ "${FAKE_DF_MODE:-valid}" == malformed ]]; then
-              printf 'fakefs 1000000 0 unknown 0%% /sdcard\\n'
+              printf 'fakefs 1000000 0 unknown 0%% /sdcard\n'
             else
-              printf 'fakefs 1000000 0 %s 0%% /sdcard\\n' "${FAKE_FREE_KB:-2000000}"
+              printf 'fakefs 1000000 0 %s 0%% /sdcard\n' "${FAKE_FREE_KB:-2000000}"
             fi
             ;;
           *) echo "unsupported toybox command: $cmd" >&2; exit 90 ;;
