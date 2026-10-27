@@ -51,6 +51,35 @@ class LocalInferenceAuditTest {
         } catch (_: IllegalArgumentException) { }
     }
 
+    @Test fun ambiguousOrEmptyPageIdentityCannotPassNativeDiagnostic() {
+        val duplicateId = listOf(
+            source.copy(id = "same-id"),
+            source.copy(id = "same-id", pageIndex = 6, text = source.text + " Follow-up notes.")
+        )
+        val invisibleId = listOf(source.copy(id = "book\\u200Bhidden"))
+        val blankText = listOf(source.copy(text = ""))
+
+        for (sources in listOf(duplicateId, invisibleId, blankText)) {
+            val report = LocalInferenceAudit.fromNativeResponse(
+                "local.gguf", 5L, prompt(*sources.toTypedArray()),
+                "A fracture is a break in bone continuity [S1]."
+            )
+            assertFalse("unsafe source identity must fail the diagnostic gate", report.syntaxPass)
+            assertEquals(emptyList<Int>(), report.sourcePages)
+            assertEquals("Invalid or ambiguous PDF source identity", report.citationCheck.reason)
+        }
+    }
+
+    @Test fun sourceFreeAbstentionDoesNotClaimUnsafePages() {
+        val report = LocalInferenceAudit.fromNativeResponse(
+            "local.gguf", 5L, prompt(source.copy(id = "bad\\nid")),
+            "المعلومة مش كافية بالنص الموجود"
+        )
+        assertTrue(report.syntaxPass)
+        assertTrue(report.sourcePages.isEmpty())
+        assertTrue(report.citationCheck.used.isEmpty())
+    }
+
     @Test fun identityDiscardsOldQuestionAndPage() {
         val captured = BrainRequestIdentity("pdf-sha", "fracture", true, 1)
         assertTrue(captured.matches("pdf-sha", " fracture ", true, 1))
