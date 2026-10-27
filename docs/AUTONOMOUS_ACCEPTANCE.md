@@ -1264,3 +1264,6 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **CI NOT VERIFIED:** the connected workflow/status adapter returned no run/status rows for this latest head. The final Android Debug/AndroidTest build and complete JVM/Robolectric + safety-contract suite must pass before marking this gate PASS.
 - **NOT TESTED:** physical Xiaomi Pad 5, genuine user-supplied GGUF/llama.cpp/JNI inference, synthetic two-page PDF round-trip on device, cloud HTTPS allow/deny, RAM/thermal/latency and independent clinical review. The new JUnit test checks cancellation/publication semantics, not real inference. No GGUF, personal PDF, token, key or signing secret was added.
 - **Release status:** no final APK is claimed for this head; previous verified Debug APK hashes do not apply to the updated source. PR #1 remains draft/unmerged.
+
+
+- **Isolated Kotlin helper smoke (2026-10-28): PASS, 3 cases** — compiled and ran the cancellation/publication gate semantics for cancellation before callback, one-time trimmed output, and blank/oversized rejection. This is not the repository Gradle/JUnit suite and does not exercise JNI or a real GGUF model.
