@@ -15,6 +15,18 @@ class StudyValidationTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun rejectsWhitespaceEquivalentOptions() {
+        StudyValidation.check(StudyKind.MCQ, "Which phrase?", "", 
+            listOf("Femur fracture", "Femur   fracture", "Fibula", "Humerus"), 0, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsCanonicallyEquivalentUnicodeOptions() {
+        StudyValidation.check(StudyKind.MCQ, "Which word?", "",
+            listOf("Café", "Cafe\\u0301", "Fibula", "Humerus"), 0, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun flashcardNeedsAnswer() {
         StudyValidation.check(StudyKind.FLASHCARD, "What is OA?", "", emptyList(), -1, "")
     }
