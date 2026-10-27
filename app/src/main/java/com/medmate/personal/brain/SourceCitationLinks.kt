@@ -14,16 +14,9 @@ object SourceCitationLinks {
 
     fun resolve(answer: String, evidence: List<Evidence>): List<SourceCitationLink> {
         if (evidence.isEmpty()) return emptyList()
-        val chapter = evidence.first().chapterId
-        // A marker's position is meaningful only when every evidence row has
-        // a stable, nonblank identity and nonblank source text. Duplicate IDs
-        // make the underlying page/chunk ambiguous, so fail closed instead of
-        // making a potentially misleading citation tappable.
-        if (chapter.isBlank() ||
-            evidence.any { it.chapterId != chapter || it.pageIndex < 0 || it.text.isBlank() } ||
-            !EvidenceIdentity.hasUniqueCanonicalIds(evidence)) {
-            return emptyList()
-        }
+        // A marker is navigable only when every excerpt has a unique canonical
+        // identity and a stable, non-empty page anchor.
+        if (!EvidenceIdentity.hasSafePageAnchors(evidence)) return emptyList()
         // Do not link a valid-looking [S1] when the same answer also contains
         // a forged [S99], [S-1], [S01], or a deceptive Unicode source marker.
         if (!CitationValidator.check(answer, evidence.size).accepted) return emptyList()
