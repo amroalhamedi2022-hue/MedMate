@@ -565,13 +565,18 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     // This is the actual native llama.cpp port, not FakeLlama.
                                     val response = onDevice.generate(p) { }
                                     val elapsed = ((System.nanoTime() - startNanos) / 1_000_000L).coerceAtLeast(0L)
+                                    val gate = LocalAnswerGate.evaluate(response, p)
                                     val audit = LocalInferenceAudit.fromNativeResponse(
                                         onDevice.loadedModelName, elapsed, p, response)
                                     if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
-                                        localAnswer = response
-                                        localCitationCheck = audit.citationCheck
+                                        // Never render an uncited/forged local answer as grounded.
+                                        // Keep only a small diagnostic record when the gate rejects it.
                                         localInferenceAudit = audit
-                                        localCitationLinks = SourceCitationLinks.resolve(response, p.presentedEvidence)
+                                        localCitationCheck = gate.citationCheck
+                                        localAnswer = gate.displayableAnswer
+                                        localCitationLinks = if (gate.accepted)
+                                            SourceCitationLinks.resolve(response, p.presentedEvidence)
+                                        else emptyList()
                                     } else {
                                         error = "تغيّر السؤال أو الصفحة أثناء الاستدلال؛ تجاهلنا النتيجة القديمة."
                                     }
@@ -636,6 +641,19 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                         else "تحذير: الاستشهاد ناقص أو غير صالح؛ لا تعتمد الشرح للحفظ.",
                             color = if (localCitationCheck?.accepted == true) Muted else MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall)
+                    }
+                    localInferenceAudit?.takeIf { !it.syntaxPass }?.let { audit ->
+                        Text(
+                            "تم تشغيل النموذج المحلي، لكن حجبنا نص الإجابة لأن استشهادات PDF ناقصة أو غير صالحة.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "سبب الرفض: ${audit.citationCheck.reason} · ${audit.elapsedMs} ms · " +
+                                "${audit.answerChars} حرف. افتح المقتطفات الأصلية أو أعد المحاولة.",
+                            color = Muted,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                     OutlinedButton(onClick = { showGateway = !showGateway }, modifier = Modifier.fillMaxWidth()) {
                         Text(if (showGateway) "إخفاء إعدادات الذكاء السحابي" else "☁️ Cloud AI (اختياري وبموافقتك)")

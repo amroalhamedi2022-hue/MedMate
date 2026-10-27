@@ -41,3 +41,30 @@ data class LocalInferenceAudit(
         }
     }
 }
+
+
+/**
+ * Fail-closed display gate for native local explanations. A response is exposed
+ * to the student only when every citation marker is syntactically valid and
+ * points inside the exact prepared PDF evidence list, or it is the explicit
+ * source-insufficient abstention accepted by CitationValidator.
+ *
+ * This validates citation syntax/provenance only; it does not prove medical
+ * truth. Rejected model text is deliberately not returned for UI display.
+ */
+data class LocalAnswerGateResult(
+    val displayableAnswer: String?,
+    val citationCheck: CitationCheck
+) {
+    val accepted: Boolean get() = displayableAnswer != null
+}
+
+object LocalAnswerGate {
+    fun evaluate(answer: String, prepared: PreparedPrompt): LocalAnswerGateResult {
+        require(prepared.task == BrainTask.EXPLAIN) { "Local answer gate accepts explanation tasks only" }
+        require(prepared.presentedEvidence.isNotEmpty()) { "No PDF evidence for local explanation" }
+        val check = CitationValidator.check(answer, prepared.presentedEvidence.size)
+        val safeAnswer = if (check.accepted) answer.trim().takeIf { it.isNotEmpty() } else null
+        return LocalAnswerGateResult(safeAnswer, check)
+    }
+}
