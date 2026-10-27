@@ -17,6 +17,9 @@ object CloudEvidenceSeal {
         require(prepared.question.trim() == request.question.trim()) {
             "Cloud question changed since source selection"
         }
+        require(MedicalPromptBuilder.promptMatchesQuestion(prepared.prompt, request.question)) {
+            "Cloud prompt text does not match the approved question"
+        }
         require(!request.pageOnly || request.sourcePage >= 0) { "Invalid selected PDF page" }
         require(excerpts.size in 1..20 && excerpts.sumOf { it.text.length.toLong() } <= 20_000L) {
             "Cloud excerpts exceed the reviewed source budget"
