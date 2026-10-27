@@ -134,3 +134,8 @@ Before any ADB interaction, APK installation or model transfer, `run-native-gguf
 ## 2026-10-27 — Bouncy Castle dependency alignment (CI pending)
 
 The Gradle lint report for the prior successful build surfaced `TrustAllX509TrustManager` warnings inside the transitive Bouncy Castle 1.72 JARs brought by PDFBox-Android 2.0.27.0 (the report points to dependency-cache JARs, not MedMate source). Upstream PDFBox-Android issue #475 documents this long-standing dependency warning. To avoid staying on the 2022-era 1.72 cryptography modules, MedMate now pins `bcprov`, `bcpkix`, and `bcutil` together at the official Bouncy Castle Java 1.86 release. This is a dependency-alignment attempt, **not yet a claim that the lint warning is resolved**; CI must verify dependency resolution, PDF extraction tests, Android compilation and the new lint report. The real PDF/GGUF device acceptance remains separate.
+
+
+## 2026-10-27 — Malformed free-space output coverage
+
+The runner already rejects an unreadable/non-numeric device free-space result before transferring the GGUF. The host-side fake-ADB contract now includes an explicit `Available=unknown` case and asserts fail-closed exit 6 with no push/instrumentation or residual file. This is still a host contract test, not device evidence. The updated test is awaiting a CI result on the current PR branch; previous APK artifacts do not include this source/test checkpoint.
