@@ -12,8 +12,12 @@ enum class StudyKind { HIGH_YIELD, FLASHCARD, MCQ }
  */
 object StudyOptionIdentity {
     private val whitespace = Regex("[\\p{Z}\\s]+")
+    // Remove invisible formatting controls and fold compatibility forms so
+    // visually equivalent answer choices cannot bypass duplicate detection.
+    private val formattingControls = Regex("\\p{Cf}+")
 
-    fun key(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFC)
+    fun key(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKC)
+        .replace(formattingControls, "")
         .replace(whitespace, " ")
         .trim()
         .lowercase(Locale.ROOT)

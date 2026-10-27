@@ -13,6 +13,23 @@ class StudyValidationTest {
             StudyOptionIdentity.key(java.text.Normalizer.normalize("Café", java.text.Normalizer.Form.NFD)))
     }
 
+    @Test fun optionIdentityFoldsCompatibilityFormsAndInvisibleControls() {
+        assertEquals(StudyOptionIdentity.key("fibula"), StudyOptionIdentity.key("ﬁbula"))
+        assertEquals(StudyOptionIdentity.key("Femur"), StudyOptionIdentity.key("Fe\u200Bmur"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsZeroWidthDisguisedDuplicateOptions() {
+        StudyValidation.check(StudyKind.MCQ, "Which bone?", "",
+            listOf("Femur", "Fe\u200Bmur", "Fibula", "Humerus"), 0, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsCompatibilityLigatureDuplicateOptions() {
+        StudyValidation.check(StudyKind.MCQ, "Which bone?", "",
+            listOf("Fibula", "ﬁbula", "Femur", "Humerus"), 0, "")
+    }
+
     @Test fun acceptsManualMcq() {
         StudyValidation.check(StudyKind.MCQ, "Which bone?", "", listOf("Femur", "Tibia", "Fibula", "Humerus"), 1, "Study reference")
     }

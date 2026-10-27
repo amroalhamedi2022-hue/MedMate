@@ -234,4 +234,21 @@ class GeneratedDraftsTest {
         assertEquals(1, blankResult.rejected)
     }
 
+    @Test fun generatedMcqRejectsInvisibleAndCompatibilityEquivalentOptions() {
+        val quote = "A fracture is a break in the continuity of bone."
+        val source = Evidence("book:0:0", "book", 0, "$quote It is not a joint dislocation.")
+        val valid = GeneratedCandidate(GeneratedKind.MCQ,
+            "Which term names a break in bone continuity?", "",
+            listOf("Fracture", "Dislocation", "Sprain", "Contusion"), 0,
+            quote, "S1", quote)
+
+        val hiddenDuplicate = valid.copy(options =
+            listOf("Fracture", "Dislocation", "Sprain", "Spra\u200Bn"))
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(hiddenDuplicate), listOf(source)).rejected)
+
+        val compatibilityDuplicate = valid.copy(options =
+            listOf("Fracture", "Dislocation", "Fibula", "ﬁbula"))
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(compatibilityDuplicate), listOf(source)).rejected)
+    }
+
 }
