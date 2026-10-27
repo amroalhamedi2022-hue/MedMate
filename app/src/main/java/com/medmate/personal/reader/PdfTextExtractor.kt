@@ -14,7 +14,18 @@ class PdfTextExtractor(context: Context, file: File) : Closeable {
 
     init {
         PDFBoxResourceLoader.init(context.applicationContext)
-        document = PDDocument.load(file, MemoryUsageSetting.setupTempFileOnly().setTempDir(context.cacheDir))
+        val opened = PDDocument.load(file, MemoryUsageSetting.setupTempFileOnly().setTempDir(context.cacheDir))
+        try {
+            // Defense in depth: import and re-indexing already validate page counts,
+            // but every direct extractor caller must enforce the same bound too.
+            PdfPageLimits.requireSafeCount(opened.numberOfPages)
+        } catch (failure: Throwable) {
+            // PDFBox owns temporary resources after load; close even when the
+            // document is rejected before the extractor instance is published.
+            try { opened.close() } catch (_: Throwable) { /* preserve the rejection */ }
+            throw failure
+        }
+        document = opened
     }
 
     val pageCount: Int get() = document.numberOfPages
