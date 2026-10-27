@@ -8,8 +8,9 @@ class CloudEvidenceSealTest {
     private val excerpt = "Osteomyelitis is an infection of bone, and the selected source discusses diagnostic findings."
     private val source = Evidence("book:3:0", "sha-chapter", 3, excerpt)
     private val request = BrainRequestIdentity("sha-chapter", "Explain osteomyelitis", true, 3)
-    private val prompt = PreparedPrompt("QUESTION: Explain osteomyelitis\n[S1] $excerpt",
-        listOf(source), question = request.question)
+    private val prompt = MedicalPromptBuilder.prepare(
+        GroundedRequest(request.chapterSha256, request.question, listOf(source), maxEvidenceChars = 2400)
+    )
 
     @Test fun identicalSourceAllowsExactlyOneCloudAttempt() {
         val seal = CloudEvidenceSeal.of(prompt, request)
@@ -18,6 +19,25 @@ class CloudEvidenceSealTest {
         assertTrue(grant.permits("https://example.org/v1/chat/completions", "model", request, seal))
         assertTrue(grant.consume("https://example.org/v1/chat/completions", "model", request, seal))
         assertFalse(grant.consume("https://example.org/v1/chat/completions", "model", request, seal))
+    }
+
+    @Test fun visiblePromptQuestionCannotDriftBehindMatchingMetadata() {
+        val altered = prompt.copy(prompt = prompt.prompt.replace(
+            "\nQUESTION:\nExplain osteomyelitis\n\nSOURCE EXCERPTS:\n",
+            "\nQUESTION:\nExplain a different diagnosis\n\nSOURCE EXCERPTS:\n"
+        ))
+        assertEquals("metadata still carries the approved question", request.question, altered.question)
+        assertTrue("the visible outbound question must be bound to the approved identity",
+            runCatching { CloudEvidenceSeal.of(altered, request) }.isFailure)
+    }
+
+    @Test fun questionSanitizationIsSharedByPromptAndConsentValidation() {
+        val noisy = request.copy(question = "Explain\tosteomyelitis\u200B")
+        val prepared = MedicalPromptBuilder.prepare(
+            GroundedRequest(noisy.chapterSha256, noisy.question, listOf(source), maxEvidenceChars = 2400)
+        )
+        assertEquals("Explain osteomyelitis", MedicalPromptBuilder.sanitizeQuestion(noisy.question))
+        assertTrue(runCatching { CloudEvidenceSeal.of(prepared, noisy) }.isSuccess)
     }
 
     @Test fun changedExcerptOrQuestionCannotReuseConsent() {
