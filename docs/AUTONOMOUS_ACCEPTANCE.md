@@ -1183,3 +1183,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - CI-calculated Debug APK SHA-256 `c3568e55eb4be70782bb8b3044dee77027e9c54ee0080e8366eb04ccda43b43d`; Debug APK Artifact **12734927494**. Device-test bundle Artifact **12734723114**. **PASS — independent artifact verification:** downloaded device-test bundle Artifact **12734723114** and recalculated both APK hashes; both match `SHA256SUMS`: Debug APK (30,264,727 bytes) `c3568e55eb4be70782bb8b3044dee77027e9c54ee0080e8366eb04ccda43b43d`; AndroidTest APK (373,785 bytes) `34fedba413ff27f70393b5fa1e45b52264f96fa7d8aaf4ba4d1cabc796a2841b`.
 - The APK includes ARM64 llama.cpp/JNI libraries; no GGUF, private PDF, token, key or signing secret is bundled.
 - **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-2 citation accuracy, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. Debug is not final; no main write or merge.
+
+
+## 2026-10-27 — Collision-safe prompt source labels (targeted CI pending)
+
+- **Production:** `MedicalPromptBuilder` now assigns unique prompt-safe display labels when distinct evidence IDs normalize to the same visible label (for example `book/a` and `book_a`). Original evidence IDs and positional `[S#]` citation mapping remain unchanged; a collision is suffixed deterministically in evidence order.
+- **Regression:** `BrainRetrievalRegressionTest` covers a collision chain including `book/a`, `book_a`, and `book_a_2`, verifying that the prompt headers remain distinct while original IDs remain intact.
+- **Purposeful build question:** does the Kotlin change compile with the real Android/JUnit suite and does the prompt-injection/source-grounding regression remain green? Static review cannot establish Gradle integration.
+- **Current CI:** [run 40510912718](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40510912718) on test-bearing commit `006b0580461c907b4d4bdaba50fe28192514ff7a` is **IN PROGRESS**. Repository safety, native GGUF/PDF contracts, SQLite/migration checks, wrapper validation and runtime dependency alignment have passed; JVM/Robolectric + Lint + APK assembly are still running. Do not record overall CI PASS until the run concludes.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-two citation, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No GGUF, personal PDF, credential or signing key was added.
