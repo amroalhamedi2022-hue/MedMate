@@ -228,6 +228,10 @@ class GeneratedDraftsTest {
         val result = GeneratedStudyDrafts.validate(listOf(duplicate), listOf(source))
         assertTrue(result.accepted.isEmpty())
         assertEquals(1, result.rejected)
+        val blankOption = valid.copy(options = listOf("Fracture", "Dislocation muscle", "Sprain", "\u00A0\u00A0"))
+        val blankResult = GeneratedStudyDrafts.validate(listOf(blankOption), listOf(source))
+        assertTrue(blankResult.accepted.isEmpty())
+        assertEquals(1, blankResult.rejected)
     }
 
 }
