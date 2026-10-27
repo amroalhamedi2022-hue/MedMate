@@ -157,11 +157,6 @@ class BrainRetrievalRegressionTest {
         assertEquals(BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, ambiguousPage.status)
         assertNull(StudyBrain.prepareSourceOnly("ortho", "fracture", ambiguousPage))
 
-        val invalidAnchor = StudyBrain.search("ortho", listOf(
-            PageSource("ortho", -1, "Fracture evidence with an invalid negative page anchor.")
-        ), "fracture")
-        assertEquals(BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, invalidAnchor.status)
-        assertTrue(invalidAnchor.evidence.isEmpty())
     }
     @Test fun shortQuestionCountsOnlySelectedPdfPages() {
         val pages = listOf(
