@@ -1,6 +1,23 @@
 package com.medmate.personal.study
 
+import java.text.Normalizer
+import java.util.Locale
+
 enum class StudyKind { HIGH_YIELD, FLASHCARD, MCQ }
+
+/**
+ * Canonical identity for answer choices. Collapse Unicode separators and
+ * normalize canonical Unicode forms before case-folding so visually identical
+ * options cannot slip through as distinct MCQ answers.
+ */
+object StudyOptionIdentity {
+    private val whitespace = Regex("[\\p{Z}\\s]+")
+
+    fun key(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFC)
+        .trim()
+        .replace(whitespace, " ")
+        .lowercase(Locale.ROOT)
+}
 
 data class StudyItem(
     val id: String,
