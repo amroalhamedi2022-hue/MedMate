@@ -22,7 +22,8 @@ import org.robolectric.RuntimeEnvironment
 class PdfTextExtractorTest {
     @Test
     fun extractionIsPageScopedAndRejectsOutOfRangeNavigation() {
-        val context = RuntimeEnvironment.getApplication<Application>()
+        // Robolectric's RuntimeEnvironment API returns Application directly; it is not generic.
+        val context: Application = RuntimeEnvironment.getApplication()
         PDFBoxResourceLoader.init(context.applicationContext)
         val pdf = File.createTempFile("medmate-page-scope-", ".pdf", context.cacheDir)
         try {
