@@ -273,8 +273,8 @@ class CloudGatewayTransportBoundaryTest {
 
     @Test fun malformedUtf8ResponseIsRejectedWithoutSilentMedicalTextReplacement() = runBlocking {
         val opened = mutableListOf<FakeHttpsConnection>()
-        val prefix = "{\\"choices\\":[{\\"message\\":{\\"content\\":\\"source ".toByteArray(Charsets.UTF_8)
-        val suffix = " [S1]\\\"}}]}".toByteArray(Charsets.UTF_8)
+        val prefix = "{\"choices\":[{\"message\":{\"content\":\"source ".toByteArray(Charsets.UTF_8)
+        val suffix = " [S1]\"}}]}".toByteArray(Charsets.UTF_8)
         // Invalid UTF-8 bytes inside otherwise JSON-shaped response text. A
         // permissive decoder would silently replace them and keep parsing.
         val malformed = prefix + byteArrayOf(0xC3.toByte(), 0x28.toByte()) + suffix
