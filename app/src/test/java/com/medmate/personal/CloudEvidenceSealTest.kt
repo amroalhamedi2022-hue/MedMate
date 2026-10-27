@@ -51,17 +51,16 @@ class CloudEvidenceSealTest {
             request.copy(question = "Different question"), original))
     }
 
-    @Test fun changingOnlyPromptTextInvalidatesPreviouslyApprovedTransfer() {
+    @Test fun unreviewedPromptAdditionCannotBeSealedForCloudTransfer() {
         val approved = CloudEvidenceSeal.of(prompt, request)
         val altered = prompt.copy(prompt = prompt.prompt +
             "\nPRIVATE ADDITION: unrelated confidential notes")
-        // The excerpt list, question and PDF page are intentionally identical.
+        // The excerpt list, question and PDF page are intentionally identical,
+        // but the added text is outside the reviewed source preview and must fail closed.
         assertEquals(prompt.presentedEvidence, altered.presentedEvidence)
-        assertNotEquals(approved, CloudEvidenceSeal.of(altered, request))
+        assertTrue(runCatching { CloudEvidenceSeal.of(altered, request) }.isFailure)
         val grant = CloudTransferConsent.grant(
             "https://example.org/v1/chat/completions", "model", request, approved)
-        assertFalse(grant.consume("https://example.org/v1/chat/completions", "model",
-            request, CloudEvidenceSeal.of(altered, request)))
         assertTrue(grant.consume("https://example.org/v1/chat/completions", "model",
             request, approved))
     }
