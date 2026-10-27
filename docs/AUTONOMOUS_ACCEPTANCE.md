@@ -1088,3 +1088,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709208494
 - Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709597321
 - **NOT TESTED:** physical Xiaomi Pad 5 install/import flow, real GGUF/llama.cpp/JNI inference, real two-page PDF page-2 citations with model output, live HTTPS cloud-consent/denial, RAM/thermal/latency and independent medical review. The artifact contains no GGUF model, personal PDF, provider key or session token.
+
+
+## 2026-10-27 — Cloud outbound privacy boundary (CI pending; live network NOT TESTED)
+
+- **Production change:** the optional cloud gateway disables `HttpURLConnection` caching, sends `Cache-Control: no-store, no-cache, max-age=0` and `Pragma: no-cache`, and rejects response media types other than `application/json` or `+json` before reading/parsing the response body.
+- **Regression coverage:** added in-memory transport tests for the exact no-cache headers, rejecting a `text/html` response and preventing consent replay after that failure, and accepting a vendor `+json` media type. Existing evidence-sealed, one-shot consent, HTTPS-only endpoint, redirect denial, bounded payload/response and disconnect tests remain in place.
+- **Purposeful build question:** do the production Kotlin gateway and Robolectric boundary tests compile and prove these outbound behaviors? Source inspection alone cannot establish resolved Android/Robolectric API compatibility or execute the boundary test.
+- **CI:** pending run `40451798717` on source/test head `33076ff62664a50e4a071f250fa74486b30467c0`. Do not reuse the previous APK as evidence for this change.
+- **NOT TESTED:** live HTTPS endpoint, physical Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, real PDF-grounded answer/page-2 citation, network consent/denial on device, RAM/thermal/latency, and independent medical review. Tests use synthetic evidence and an in-memory fake transport; no PDF, GGUF model, provider key or user data is uploaded.

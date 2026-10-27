@@ -184,3 +184,11 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 - Both hashes were independently recomputed from the downloaded ZIP and matched `SHA256SUMS`.
 - The bundle contains no model, personal PDF, key or session token. A local synthetic oversized-manifest fixture is available separately for manual restore rejection testing; it is not committed to the public repository.
 - **Device/model acceptance remains NOT TESTED:** install on Xiaomi Pad 5, test the synthetic oversized-backup rejection without data changes, then run the documented native-GGUF harness with a privately held compatible GGUF. Do not add the model, PDFs, credentials or tokens to this public repository.
+
+
+## 2026-10-27 — Cloud gateway privacy regression (source-level / CI pending)
+
+- The client now disables URLConnection caching and asks intermediaries not to retain sensitive study prompts/responses; it accepts only JSON or a `+json` response media type before parsing.
+- New Robolectric tests cover no-cache headers, fail-closed rejection of HTML content, one-shot consent after a rejected response, and compatibility with vendor JSON media types.
+- These tests do **not** constitute a live HTTPS or device network test. Physical device, real GGUF/JNI, real PDF citation round-trip and cloud consent/denial remain **NOT TESTED** until independently exercised on the target device.
+- Candidate source/test commit: `33076ff62664a50e4a071f250fa74486b30467c0`; CI run `40451798717` pending. No APK is approved from this source until CI passes.
