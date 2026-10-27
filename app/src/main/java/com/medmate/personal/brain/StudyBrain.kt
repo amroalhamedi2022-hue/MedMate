@@ -9,7 +9,7 @@ data class BrainSearchResult(
     val firstCorruptedPage: Int? = null
 )
 
-enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, CORRUPTED_PDF_TEXT, TOO_SHORT }
+enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, CORRUPTED_PDF_TEXT, AMBIGUOUS_PAGE_IDENTITIES, TOO_SHORT }
 
 object StudyBrain {
     // Bound retained PDF text and token maps: one active chapter at a time.
@@ -40,6 +40,18 @@ object StudyBrain {
         // for a generated medical explanation. Keep the original PDF intact;
         // the coverage panel identifies the excluded page for inspection.
         val scoped = pages.filter { it.chapterId == chapterId }
+        // Page identity is part of every visible [S#] citation. A duplicate or
+        // negative page anchor can make different excerpts point at the same
+        // human-facing page, so fail closed before retrieval or model prompting.
+        // Page-only questions validate that selected page; full-chapter search
+        // validates every page in the selected chapter.
+        val identityScope = if (onlyPage == null) scoped else scoped.filter { it.pageIndex == onlyPage }
+        if (identityScope.any { it.pageIndex < 0 } ||
+            identityScope.groupingBy { it.pageIndex }.eachCount().any { it.value > 1 }) {
+            return BrainSearchResult(
+                emptyList(), BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, 0
+            )
+        }
         // Distinguish extraction damage from scanned/image-only pages. The
         // latter may need OCR; corrupt text must never become LLM evidence.
         val damagedPageIndices = scoped.asSequence().filter {
