@@ -10,7 +10,7 @@ tests = (root / "app/src/test/java/com/medmate/personal/brain/LocalModelImportTe
 
 assert "OpenableColumns.SIZE" in ui and "expectedBytes = expectedBytes" in ui
 assert "ModelStorageGate.canStart(availableSpace(), expectedBytes)" in importer
-assert "ModelStorageGate.canContinue(availableSpace(), n.toLong())" in importer
+assert "ModelStorageGate.canContinue(availableSpace(), n.toLong(), expectedBytes?.minus(count))" in importer
 assert "count == expectedBytes" in importer
 assert "CHECK_INTERVAL_BYTES" in importer and "RESERVE_BYTES" in gate
 assert "expectedSizeAndLowStorageAreRejectedBeforeCreatingTempAndCloseProvider" in tests
