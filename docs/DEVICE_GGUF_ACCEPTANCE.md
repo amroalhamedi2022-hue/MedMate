@@ -171,3 +171,16 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 - AndroidTest APK SHA-256: `c4a0921f3f963658de65beb070f031252437947e0c0e96e746137384d6ff3629` (373,777 bytes).
 - Both hashes were independently recomputed from the downloaded bundle and matched `SHA256SUMS`.
 - **Device/model acceptance remains NOT TESTED:** install and run the documented script on Xiaomi Pad 5 with a privately held compatible GGUF. Never add the model, any PDF, credentials, or session tokens to this public repository.
+
+
+## 2026-10-27 — Current candidate: backup bounds + GGUF device-test pair
+
+**Purposeful build question:** after adding fail-closed per-PDF (512 MiB) and aggregate PDF payload (2 GiB) backup limits, does the Kotlin restore/export code compile, do all backup boundary/round-trip tests pass, and do APK identity/SDK/permission checks pass? This CI build answers those questions; it does not prove physical-device inference.
+
+- **PASS:** CI Run 40448427007; 154 tests, 0 failures, 0 ignored; lint, Debug APK and AndroidTest APK assembly, SQLite and dependency alignment passed.
+- Device-test bundle Artifact **12709208494**: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709208494.
+- Debug APK SHA-256: `72afb68223c02863fc946f453130cb29aa601dd959358520bc874ea4345bc6d2` (30,248,343 bytes).
+- AndroidTest APK SHA-256: `05d503ea528e66e07e25b7c43173e2e84f69f969f2b60b95ceee53092a50a69f` (373,777 bytes).
+- Both hashes were independently recomputed from the downloaded ZIP and matched `SHA256SUMS`.
+- The bundle contains no model, personal PDF, key or session token. A local synthetic oversized-manifest fixture is available separately for manual restore rejection testing; it is not committed to the public repository.
+- **Device/model acceptance remains NOT TESTED:** install on Xiaomi Pad 5, test the synthetic oversized-backup rejection without data changes, then run the documented native-GGUF harness with a privately held compatible GGUF. Do not add the model, PDFs, credentials or tokens to this public repository.

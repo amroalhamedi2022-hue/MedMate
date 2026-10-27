@@ -1075,3 +1075,16 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588
 - Artifact: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588/artifacts/12707718539
 - **NOT TESTED:** physical Xiaomi Pad 5 installation, actual GGUF/llama.cpp/JNI inference, real PDF-grounded answer and page-2 citation, live HTTPS cloud-consent/denial, RAM/thermal/latency, and independent medical review. The artifact contains APKs/checksums only; no GGUF, personal PDF, or key.
+
+
+## 2026-10-27 — Backup archive size bounds (CI PASS; device NOT TESTED)
+
+- Added `BackupArchiveLimits`: each restored/exported PDF must be 5 bytes–512 MiB; aggregate declared PDF payload per backup is capped at 2 GiB. Restore validates individual and aggregate manifest sizes before staging any document bytes; export uses the same limits so the app does not create a backup it would later refuse to restore.
+- **PASS:** five pure Kotlin boundary tests cover empty input, exact per-file/aggregate boundaries, tiny/negative/oversized declarations and overflow-sized values. The Robolectric backup round-trip suite now includes `oversizedPdfDeclarationIsRejectedBeforeAnyRestoreWrites`, which verifies a manifest declaring a 512 MiB + 1 byte PDF is rejected before document staging and before database rows are added.
+- **PASS — CI Run 40448427007** on source commit `d6f39a9ae5987682488aaa12cbeca2294fed0d26`: **154 unit tests, 0 failures, 0 ignored**; Gradle unit tests, lint, Debug APK and AndroidTest APK assembly, APK identity/SDK/offline-permission verification, SQLite migration checks, and resolved Bouncy Castle `bcprov`/`bcpkix`/`bcutil` alignment at **1.86** passed. Lint emitted existing non-fatal warnings.
+- **Purposeful build question:** do the new Kotlin restore/export limits compile and pass the actual backup-restore unit path, and does the resulting APK pass the manifest/permission verifier? Source inspection alone cannot establish Kotlin compilation or prove the restore path rejects the malicious manifest before writes.
+- **PASS — independently re-hashed APK pair:** Debug APK 30,248,343 bytes; SHA-256 `72afb68223c02863fc946f453130cb29aa601dd959358520bc874ea4345bc6d2`. AndroidTest APK 373,777 bytes; SHA-256 `05d503ea528e66e07e25b7c43173e2e84f69f969f2b60b95ceee53092a50a69f`. Both match `SHA256SUMS` in device-test bundle Artifact **12709208494**.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709208494
+- Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709597321
+- **NOT TESTED:** physical Xiaomi Pad 5 install/import flow, real GGUF/llama.cpp/JNI inference, real two-page PDF page-2 citations with model output, live HTTPS cloud-consent/denial, RAM/thermal/latency and independent medical review. The artifact contains no GGUF model, personal PDF, provider key or session token.
