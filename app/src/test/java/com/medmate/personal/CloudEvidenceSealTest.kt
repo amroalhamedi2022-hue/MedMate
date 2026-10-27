@@ -22,10 +22,9 @@ class CloudEvidenceSealTest {
     }
 
     @Test fun visiblePromptQuestionCannotDriftBehindMatchingMetadata() {
-        val altered = prompt.copy(prompt = prompt.prompt.replace(
-            "\nQUESTION:\nExplain osteomyelitis\n\nSOURCE EXCERPTS:\n",
-            "\nQUESTION:\nExplain a different diagnosis\n\nSOURCE EXCERPTS:\n"
-        ))
+        val altered = prompt.copy(
+            prompt = prompt.prompt.replace("Explain osteomyelitis", "Explain a different diagnosis")
+        )
         assertEquals("metadata still carries the approved question", request.question, altered.question)
         assertTrue("the visible outbound question must be bound to the approved identity",
             runCatching { CloudEvidenceSeal.of(altered, request) }.isFailure)
