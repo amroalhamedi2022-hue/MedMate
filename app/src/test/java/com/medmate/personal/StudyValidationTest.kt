@@ -23,7 +23,7 @@ class StudyValidationTest {
     @Test(expected = IllegalArgumentException::class)
     fun rejectsCanonicallyEquivalentUnicodeOptions() {
         StudyValidation.check(StudyKind.MCQ, "Which word?", "",
-            listOf("Café", "Cafe\\u0301", "Fibula", "Humerus"), 0, "")
+            listOf("Café", java.text.Normalizer.normalize("Café", java.text.Normalizer.Form.NFD), "Fibula", "Humerus"), 0, "")
     }
 
     @Test(expected = IllegalArgumentException::class)
