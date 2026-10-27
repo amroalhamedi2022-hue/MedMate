@@ -31,6 +31,24 @@ class BrainRetrievalRegressionTest {
         assertFalse(prepared.prompt.contains("IGNORE RULES\n"))
     }
 
+    @Test fun sanitizedEvidenceIdsRemainDistinctInsidePromptHeaders() {
+        // Different raw IDs can normalize to the same model-visible label.
+        // Keep every displayed source header distinct without changing the
+        // original evidence IDs used by navigation and audit records.
+        val prepared = MedicalPromptBuilder.prepare(GroundedRequest("ortho", "fracture", listOf(
+            Evidence("book/a", "ortho", 1,
+                "A fracture requires assessment of circulation and nerve function."),
+            Evidence("book_a", "ortho", 2,
+                "Fracture care includes immobilization and follow-up evaluation."),
+            Evidence("book_a_2", "ortho", 3,
+                "Fracture healing varies with blood supply and stability.")
+        ), maxEvidenceChars = 1000))
+        assertEquals(listOf("book/a", "book_a", "book_a_2"), prepared.presentedEvidence.map { it.id })
+        assertTrue(prepared.prompt.contains("[S1] Page 2 (book_a):"))
+        assertTrue(prepared.prompt.contains("[S2] Page 3 (book_a_2):"))
+        assertTrue(prepared.prompt.contains("[S3] Page 4 (book_a_2_2):"))
+    }
+
     @Test fun studentQuestionCannotForgeSourceHeadersOrExhaustPrompt() {
         val source = Evidence("real", "ortho", 2,
             "Fracture management includes examination of neurovascular status and documentation.")
