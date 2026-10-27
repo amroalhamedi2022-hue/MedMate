@@ -14,4 +14,19 @@ internal object EvidenceIdentity {
     fun hasUniqueCanonicalIds(evidence: List<Evidence>): Boolean =
         evidence.all { isCanonicalId(it.id) } &&
             evidence.map { it.id }.toSet().size == evidence.size
+
+    /**
+     * One source marker must resolve to one stable, non-empty page excerpt.
+     * Shared by answer display, clickable citations and diagnostics so their
+     * acceptance decisions cannot drift apart.
+     */
+    fun hasSafePageAnchors(evidence: List<Evidence>): Boolean {
+        if (evidence.isEmpty()) return false
+        val chapter = evidence.first().chapterId
+        return chapter.isNotBlank() &&
+            evidence.all {
+                it.chapterId == chapter && it.pageIndex >= 0 && it.text.isNotBlank()
+            } &&
+            hasUniqueCanonicalIds(evidence)
+    }
 }
