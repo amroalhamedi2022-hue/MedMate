@@ -1211,3 +1211,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Source/test head:** `659bb7806ef54350a8a48cb3ba7ba8ca6625d8b0`.
 - **CI:** **NOT VERIFIED** for this exact head in this checkpoint; no PASS is inferred from source inspection. The branch workflow is push-triggered, but the connected status lookup did not expose the resulting run.
 - **NOT TESTED:** Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, real PDF page-two citations, live HTTPS consent/denial, device RAM/thermal/latency, and independent clinical review. No model, personal PDF, credential, or signing key was added.
+
+
+## 2026-10-27 — Invalid page-scoped identity and instrumentation transport regression (CI pending)
+
+- **Production:** `BrainRequestIdentity.matches` now fails closed when either the captured or current page index is negative for a page-only request. Zero remains a valid zero-based page index; full-chapter requests continue to ignore viewport-page movement.
+- **JUnit regression:** added cases for a negative captured page, negative current page, and valid page zero.
+- **Device harness regression:** the fake-ADB suite now simulates `am instrument` emitting diagnostic output and exiting non-zero. The runner must print that output, report the transport exit status, reject acceptance, and remove the temporary model. This covers a previously untested non-zero transport path; it does not run a model.
+- **Purposeful CI question:** do the production identity guard, JVM/Robolectric suite, Android Lint/APK assembly, and fake-ADB fail-closed/cleanup cases pass together? Source inspection alone cannot establish the Kotlin/Gradle integration or Bash exit-path behavior.
+- **CI:** pending for source/test head `f56a48b8502b84c332af6b5108d3738668d00485`; no PASS inferred yet.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-two citation, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No model, personal PDF, credentials or signing key was added; no main write/merge.
