@@ -1202,3 +1202,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS — Android CI:** [run 40533697210](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40533697210) on source/test head bdcc6855a11207fc49197f095e9ebcd63d778a46. **179 JVM/Robolectric tests passed, 0 failures, 0 ignored**; the source-contract gates, Lint, Debug + AndroidTest APK assembly, package/SDK/permission verification and device-test bundle packaging passed.
 - **PASS — independent APK-pair SHA-256:** downloaded device-test bundle Artifact **12748740398** and recomputed both hashes; both match SHA256SUMS. Debug APK (30,264,727 bytes) SHA-256 f0229958978dc3d46d2635a007533c7c0eceaf1f7f931e65173e893260e5eace; AndroidTest APK (374,045 bytes) SHA-256 1fa5e1773a47ccf5205449f2868e5e946cbac78efe160c77958694fd68aae297. Debug APK Artifact **12747791765**; reports Artifact **12748920142**.
 - **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, model-backed two-page PDF citation round-trip, live HTTPS consent/denial, RAM/thermal/latency and independent medical review. No GGUF weights, personal PDF, credential or signing key is included. Debug is not final; no merge/release.
+
+
+## 2026-10-27 — Symmetric async-question identity normalization
+
+- **Production:** `BrainRequestIdentity` now normalizes both the captured question and the live question using the same outer-whitespace rule before deciding whether an asynchronous result is stale. Chapter identity and page-only/page-index checks remain strict; a full-chapter request is still valid when only the viewport page changes.
+- **Regression:** added four Android/JUnit tests for symmetric whitespace normalization, changed chapter rejection, page-only/page-mode mismatch, and full-chapter viewport-page changes. These tests exercise the production identity class; they do not execute a model.
+- **Source/test head:** `659bb7806ef54350a8a48cb3ba7ba8ca6625d8b0`.
+- **CI:** **NOT VERIFIED** for this exact head in this checkpoint; no PASS is inferred from source inspection. The branch workflow is push-triggered, but the connected status lookup did not expose the resulting run.
+- **NOT TESTED:** Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, real PDF page-two citations, live HTTPS consent/denial, device RAM/thermal/latency, and independent clinical review. No model, personal PDF, credential, or signing key was added.
