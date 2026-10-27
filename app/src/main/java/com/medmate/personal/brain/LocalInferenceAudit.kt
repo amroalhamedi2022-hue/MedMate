@@ -31,12 +31,26 @@ data class LocalInferenceAudit(
                 "Cross-chapter or invalid PDF evidence"
             }
             require(answer.isNotBlank()) { "No model response" }
+            val rawCheck = CitationValidator.check(answer, sources.size)
+            val sourceFreeAbstention = rawCheck.accepted && rawCheck.used.isEmpty()
+            val identitySafe = EvidenceIdentity.hasSafePageAnchors(sources)
+            val accepted = rawCheck.accepted && (sourceFreeAbstention || identitySafe)
+            val finalCheck = if (rawCheck.accepted && !accepted) {
+                CitationCheck(
+                    accepted = false,
+                    used = rawCheck.used,
+                    invalid = rawCheck.invalid,
+                    reason = "Invalid or ambiguous PDF source identity"
+                )
+            } else rawCheck
             return LocalInferenceAudit(
                 modelName = modelName,
                 elapsedMs = elapsedMs,
                 answerChars = answer.length,
-                sourcePages = sources.map { it.pageNumber }.distinct(),
-                citationCheck = CitationValidator.check(answer, sources.size)
+                // Never report source pages as accepted evidence when the page
+                // identity is ambiguous; the UI may use this record diagnostically.
+                sourcePages = if (identitySafe) sources.map { it.pageNumber }.distinct() else emptyList(),
+                citationCheck = finalCheck
             )
         }
     }
@@ -69,10 +83,7 @@ object LocalAnswerGate {
         // remains displayable. Any factual answer, however, must be traceable to
         // stable page identities so its [S#] markers can navigate to the exact PDF.
         val sourceFreeAbstention = check.accepted && check.used.isEmpty()
-        val chapter = evidence.first().chapterId
-        val identitySafe = chapter.isNotBlank() &&
-            evidence.all { it.chapterId == chapter && it.pageIndex >= 0 && it.text.isNotBlank() } &&
-            EvidenceIdentity.hasUniqueCanonicalIds(evidence)
+        val identitySafe = EvidenceIdentity.hasSafePageAnchors(evidence)
         val accepted = check.accepted && (sourceFreeAbstention || identitySafe)
         val finalCheck = if (check.accepted && !accepted) {
             CitationCheck(
