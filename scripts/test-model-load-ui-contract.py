@@ -47,7 +47,26 @@ assert "CloudBrainGateway().explain" in source and "CloudBrainGateway().generate
     "Optional cloud actions should remain explicit, separate UI operations"
 )
 
-print("PASS: local inference and local-draft errors do not route to CloudBrainGateway; cloud remains a separate consent/evidence-bound action")
+# Async inference must compare against the newest Compose inputs, not the chapter/page
+# values captured by the click-time callback. This applies to local explanations,
+# local study drafts, cloud explanations and cloud study drafts.
+for state in (
+    "chapter.sha256", "question", "pageOnly", "currentPage"
+):
+    assert f"rememberUpdatedState({state})" in source, (
+        f"Missing latest-state guard for async source context: {state}"
+    )
+latest_match = (
+    "requestIdentity.matches(latestRequestChapterSha.value, "
+    "latestRequestQuestion.value, latestRequestPageOnly.value, "
+    "latestRequestCurrentPage.value)"
+)
+assert source.count(latest_match) == 4, (
+    "All four async result paths must compare against latest chapter/question/page state"
+)
+
+print("PASS: local inference errors never silently route to cloud; cloud remains explicit and consent/evidence-bound")
+print("PASS: all four async answer/draft paths reject results against the latest chapter/question/page context")
 
 print("PASS: imported GGUF persists in model list; failed preflight keeps native-model UI consistent")
 print("NOT TESTED: Android composition, native GGUF inference, real memory pressure")
