@@ -323,7 +323,7 @@ run_preserves_existing_device_file_case() {
   mkdir -p "$(dirname "$legacy_target")"
   printf 'user-owned pre-existing file; must survive\n' > "$legacy_target"
   : > "$case_dir/adb.log"
-  printf 'GGUF\\003\\000\\000\\000' > "$case_dir/probe.gguf"
+  printf 'GGUF\003\000\000\000' > "$case_dir/probe.gguf"
   head -c 16 /dev/zero >> "$case_dir/probe.gguf"
   local status=0
   (
