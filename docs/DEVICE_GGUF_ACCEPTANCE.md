@@ -215,4 +215,6 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 
 ## 2026-10-27 — Temporary model path safety
 
-The device runner now uses a per-run unique filename under app-specific external storage and removes only that filename. A Fake ADB regression preserves a sentinel placed at the previous fixed filename, proving that cleanup does not delete or overwrite a pre-existing file. The latest CI run is pending; this is not device/model acceptance. Continue to supply a locally held GGUF, verify the APK pair hashes, and never place weights or personal PDFs in the public repository.
+The runner uses a per-run unique filename under app-specific external storage and removes only that filename. Fake ADB CI passed a regression that preserves a sentinel placed at the former fixed filename while cleaning the temporary test file. Latest CI: [40468626666](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40468626666), source/test SHA `9e2b91bcc10b4c36c3def0d6bea89ffd1ef7945c`; Debug APK SHA-256 `a14191fec0a0ec14a2914d7e118df543b0f54b7af22ec4a51b3959bfbc418421`; device-test bundle Artifact [12717803444](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40468626666/artifacts/12717803444).
+
+This is harness/source acceptance only. Physical-device installation, a user-supplied local GGUF, real llama.cpp/JNI inference, PDF citation correctness with a real model, and network consent/denial remain **NOT TESTED**. Never place model weights, personal PDFs or credentials in the public repository.

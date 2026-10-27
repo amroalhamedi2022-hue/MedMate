@@ -1124,9 +1124,11 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712447566
 
 
-## 2026-10-27 — Collision-safe GGUF device-test temporary file (CI pending; device NOT TESTED)
+## 2026-10-27 — Collision-safe GGUF device-test temporary file (CI PASS; device NOT TESTED)
 
 - The runner now pushes the user-supplied GGUF to a unique app-specific remote path using the current Bash PID plus two random values. Cleanup removes only that exact per-run path, rather than a fixed `medmate-acceptance.gguf` that could overwrite or delete a pre-existing user file.
-- Added a Fake ADB regression that seeds the old fixed path with a sentinel, runs the test harness with a synthetic 24-byte GGUF header, asserts the sentinel remains byte-for-byte unchanged, and verifies the newly pushed temporary file is removed after the simulated instrumentation completes. The synthetic header never establishes native inference.
-- CI history: initial runs `40468283882` / `40468377981` exposed mistakes in the new test harness (temporary path expression and shell line-continuation/fixture escaping); those were corrected. Latest source/test head: `9e2b91bcc10b4c36c3def0d6bea89ffd1ef7945c`, run [`40468626666`](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40468626666) was still **IN PROGRESS** at documentation time. No success is claimed until that run completes.
-- **NOT TESTED:** physical Xiaomi Pad 5 installation, real GGUF/llama.cpp/JNI inference, actual PDF citation round-trip with a real model, live HTTPS consent/denial, RAM/thermal/latency, and clinical review. No model weights, personal PDFs, credentials or signing keys are included.
+- Added a Fake ADB regression that seeds the old fixed path with a sentinel, runs the harness with a synthetic 24-byte GGUF header, asserts the sentinel remains unchanged, and verifies the new temporary file is removed after simulated instrumentation. This validates harness file safety only; the synthetic header is not a model and never establishes native inference.
+- The first two attempts exposed test-harness construction issues (shell continuation escaping and synthetic-header escaping); these were corrected before the successful run.
+- **PASS — CI run 40468626666** on source/test SHA `9e2b91bcc10b4c36c3def0d6bea89ffd1ef7945c`: fake-ADB GGUF contract suite, SQLite/migration and dependency guards, Gradle unit tests, Lint, Debug APK and AndroidTest APK assembly all completed successfully.
+- CI-calculated Debug APK SHA-256: `a14191fec0a0ec14a2914d7e118df543b0f54b7af22ec4a51b3959bfbc418421`. Debug APK Artifact **12718415174**; device-test APK-pair bundle Artifact **12717803444**; validation reports Artifact **12717642389**. Independent download/re-hash of this run's APK is **NOT TESTED**.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, actual GGUF/llama.cpp/JNI inference, real-model PDF citation round-trip, live HTTPS consent/denial, RAM/thermal/latency and clinical review. No model weights, personal PDFs, credentials or signing keys are included.
