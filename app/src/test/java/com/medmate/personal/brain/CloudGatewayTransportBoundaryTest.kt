@@ -233,7 +233,7 @@ class CloudGatewayTransportBoundaryTest {
             gateway.explain(endpoint, model, "", largePrepared, consent, request)
         }.exceptionOrNull()
         assertTrue(failure is IllegalArgumentException)
-        assertTrue(failure.message.orEmpty().contains("تجاوز الحد الآمن"))
+        assertTrue(failure?.message.orEmpty().contains("تجاوز الحد الآمن"))
         assertEquals(0, sockets)
         assertTrue(consent.permits(endpoint, model, request, seal))
     }
