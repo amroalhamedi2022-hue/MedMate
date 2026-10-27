@@ -358,7 +358,7 @@ run_preserves_existing_device_file_case
 
 script="$source_script"
 grep -Fq 'never downloads or uploads weights' "$script"
-grep -Fq 'device_file="$device_dir/medmate-acceptance-$-${RANDOM}-${RANDOM}.gguf"' "$script"
+grep -Fq 'device_file="$device_dir/medmate-acceptance-${BASHPID}-${RANDOM}-${RANDOM}.gguf"' "$script"
 if grep -Eq '(^|[[:space:]])(curl|wget)[[:space:]]' "$script"; then
   echo "FAIL: device test script must not download model weights" >&2
   exit 1
