@@ -159,3 +159,15 @@ The runner already rejects an unreadable/non-numeric device free-space result be
   - AndroidTest APK SHA-256: `33e383e33feb00ef80358e4bc3a28d23f7f90fd5f63c71493901af0f0190fb34`
 - Install only on the intended test device and run the documented device acceptance script with a locally held GGUF model. Do not upload that model, any PDF, or any session token to this public repository.
 - **Physical device and real model remain NOT TESTED**; CI and APK identity do not prove inference, citation quality, live network behavior, or thermal suitability.
+
+
+## 2026-10-27 — Latest device-test candidate (source SHA `66f4c88e28ce18d6196388ee177c4ad32eb807b3`)
+
+**Purposeful build question:** does the current Robolectric/PDFBox extraction test compile and pass, and do the complete Android unit, lint, APK and AndroidTest assembly gates pass after the test API correction? Source inspection alone cannot prove Kotlin test compilation or PDFBox page-scoping behavior.
+
+- **PASS:** CI Run 40445019588; 148 unit tests passed, zero failed/ignored; lint and both APK assemblies passed.
+- Debug APK Artifact bundle: `12707718539` (https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588/artifacts/12707718539).
+- Debug APK SHA-256: `836d72b5472a1c5a513606935508ebbea079363a43011701ed8335eeeb11d9fc` (30,248,343 bytes).
+- AndroidTest APK SHA-256: `c4a0921f3f963658de65beb070f031252437947e0c0e96e746137384d6ff3629` (373,777 bytes).
+- Both hashes were independently recomputed from the downloaded bundle and matched `SHA256SUMS`.
+- **Device/model acceptance remains NOT TESTED:** install and run the documented script on Xiaomi Pad 5 with a privately held compatible GGUF. Never add the model, any PDF, credentials, or session tokens to this public repository.
