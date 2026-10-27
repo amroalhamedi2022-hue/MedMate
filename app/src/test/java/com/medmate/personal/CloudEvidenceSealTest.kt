@@ -72,6 +72,20 @@ class CloudEvidenceSealTest {
         assertTrue(runCatching { CloudEvidenceSeal.of(prompt.copy(prompt = "No PDF excerpt"), request) }.isFailure)
     }
 
+    @Test fun blankOrDuplicateEvidenceIdsCannotBeSealedForCloudTransfer() {
+        val duplicateIdentity = prompt.copy(
+            presentedEvidence = listOf(source, source.copy())
+        )
+        assertTrue("duplicate citation IDs must fail before a cloud grant is created",
+            runCatching { CloudEvidenceSeal.of(duplicateIdentity, request) }.isFailure)
+
+        val blankIdentity = prompt.copy(
+            presentedEvidence = listOf(source.copy(id = ""))
+        )
+        assertTrue("blank citation IDs must fail before a cloud grant is created",
+            runCatching { CloudEvidenceSeal.of(blankIdentity, request) }.isFailure)
+    }
+
     @Test fun unsealedLegacyGrantCannotSendPdfExcerpts() {
         val legacy = CloudTransferConsent.grant("https://example.org/v1/chat/completions", "model", request)
         val seal = CloudEvidenceSeal.of(prompt, request)
