@@ -72,3 +72,13 @@ The gateway endpoint must be a user-specified HTTPS URL ending in `/v1/chat/comp
 ## Compatibility caveat
 
 New source versionCode=9, but **do not attempt to reinstall/upgrade a Work-signed v0.6.1 with a new debug signing key.** Obtain the original signing key, or export a backup, verify it in a separate installation before any uninstall. A different signer cannot update a user data preserving Android package install.
+
+
+## 2026-10-27 — Async result context freshness gate
+
+- BrainPanel now snapshots the latest Compose values for chapter SHA-256, question, page-only mode and current PDF page with rememberUpdatedState. The four long-running publication paths (local explanation, local study drafts, cloud explanation, cloud study drafts) compare their captured BrainRequestIdentity to those latest values before publishing results.
+- This closes a stale-closure hazard: the coroutine launched by an earlier composition must not compare only against the click-time chapter/page parameter after the reader has moved to another chapter/page.
+- The source-contract gate in scripts/test-model-load-ui-contract.py asserts all four latest-state snapshots and exactly four latest-context comparisons. This is a source/UI wiring guard, not a substitute for a device timing test.
+- **PASS — Android CI run 40533697210**, source/test head bdcc6855a11207fc49197f095e9ebcd63d778a46. 179 JVM/Robolectric tests passed, 0 failures, 0 ignored; Lint, Debug + AndroidTest APK assembly, package/SDK/permission verification and device-bundle packaging passed.
+- **PASS — independently re-hashed APK pair:** app-debug.apk 30,264,727 bytes, SHA-256 f0229958978dc3d46d2635a007533c7c0eceaf1f7f931e65173e893260e5eace; app-debug-androidTest.apk 374,045 bytes, SHA-256 1fa5e1773a47ccf5205449f2868e5e946cbac78efe160c77958694fd68aae297. Both match SHA256SUMS in device-test bundle Artifact **12748740398**.
+- **NOT TESTED:** Xiaomi Pad 5 installation, real GGUF/llama.cpp/JNI inference, model-backed PDF page-two answer, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No GGUF, PDF, token or key is included. Debug is not final.
