@@ -1173,3 +1173,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Purposeful build question:** does the new local-answer gate compile through the Compose result flow and pass the full JVM/Robolectric suite and APK verifier? Source inspection alone cannot establish Kotlin integration or UI branch compilation.
 - **CI:** pending for the next targeted Android workflow run. This is a citation-syntax/provenance gate, not clinical accuracy validation and not proof that a real GGUF model ran on a physical device.
 - **NOT TESTED:** Xiaomi Pad 5 installation, genuine GGUF/llama.cpp/JNI inference, real textbook page-two answer, live HTTPS consent/denial, RAM/thermal/latency and independent medical review.
+
+
+## 2026-10-27 — Native local-answer display gate regression (CI PASS; device NOT TESTED)
+
+- Added `app/src/test/java/com/medmate/personal/brain/LocalAnswerGateTest.kt` with four JUnit cases against production `LocalAnswerGate`: valid cited answer is trimmed and displayable; missing/out-of-range/Unicode-lookalike citations return no displayable answer; citation-only output is rejected while the explicit evidence-insufficient abstention remains valid; study-draft tasks cannot enter the EXPLAIN-only gate.
+- The test validates citation/provenance syntax only; it does **not** establish clinical truth or run a model.
+- **PASS — Android CI run 40505639432** on source/test SHA `662e6235351b2845265827088d8f2944eceef18d`: repository safety/schema guards, Gradle JVM/Robolectric tests, Lint, Debug + AndroidTest APK assembly, APK metadata verification and device-test bundle packaging passed.
+- CI-calculated Debug APK SHA-256 `c3568e55eb4be70782bb8b3044dee77027e9c54ee0080e8366eb04ccda43b43d`; Debug APK Artifact **12734927494**. Device-test bundle Artifact **12734723114**. Independent download/re-hash of this run's APK pair **NOT TESTED**.
+- The APK includes ARM64 llama.cpp/JNI libraries; no GGUF, private PDF, token, key or signing secret is bundled.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-2 citation accuracy, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. Debug is not final; no main write or merge.
