@@ -8,7 +8,7 @@ class LocalAnswerGateTest {
     private fun prepared(): PreparedPrompt = MedicalPromptBuilder.prepare(
         GroundedRequest(
             chapterId = "orthopedics",
-            question = "Explain fracture",
+            query = "Explain fracture",
             evidence = listOf(
                 Evidence(
                     id = "orthopedics-page-2",
