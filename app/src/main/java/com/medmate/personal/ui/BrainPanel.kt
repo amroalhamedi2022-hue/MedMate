@@ -46,6 +46,13 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var draftBusyId by remember { mutableStateOf<String?>(null) }
     var question by remember(chapter.sha256) { mutableStateOf("") }
     var pageOnly by remember(chapter.sha256) { mutableStateOf(false) }
+    // Long native/cloud requests outlive the click-time composition. Read the latest
+    // chapter, question and page from rememberUpdatedState before publishing results;
+    // otherwise an old closure can compare against its own captured chapter/page.
+    val latestRequestChapterSha = rememberUpdatedState(chapter.sha256)
+    val latestRequestQuestion = rememberUpdatedState(question)
+    val latestRequestPageOnly = rememberUpdatedState(pageOnly)
+    val latestRequestCurrentPage = rememberUpdatedState(currentPage)
     var busy by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
     var results by remember(chapter.sha256) { mutableStateOf<BrainSearchResult?>(null) }
@@ -568,7 +575,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     val gate = LocalAnswerGate.evaluate(response, p)
                                     val audit = LocalInferenceAudit.fromNativeResponse(
                                         onDevice.loadedModelName, elapsed, p, response)
-                                    if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
+                                    if (requestIdentity.matches(latestRequestChapterSha.value, latestRequestQuestion.value, latestRequestPageOnly.value, latestRequestCurrentPage.value)) {
                                         // Never render an uncited/forged local answer as grounded.
                                         // Keep only a small diagnostic record when the gate rejects it.
                                         localInferenceAudit = audit
@@ -601,7 +608,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     val raw = onDevice.generate(task) { }
                                     val outcome = GeneratedDraftJson.parseAndValidate(raw, original.presentedEvidence)
                                     // If the user changed the source while inference ran, discard stale drafts.
-                                    if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
+                                    if (requestIdentity.matches(latestRequestChapterSha.value, latestRequestQuestion.value, latestRequestPageOnly.value, latestRequestCurrentPage.value)) {
                                         generatedDrafts = outcome.accepted
                                         rejectedGenerated = outcome.rejected
                                         generatedBy = "Local AI"
@@ -734,7 +741,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                         try {
                             val text = CloudBrainGateway().explain(endpoint, selectedModel, token, p, consent, requestIdentity)
                             // Do not attach a delayed cloud answer to a different question/page/chapter.
-                            if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
+                            if (requestIdentity.matches(latestRequestChapterSha.value, latestRequestQuestion.value, latestRequestPageOnly.value, latestRequestCurrentPage.value)) {
                                 cloudAnswer = text
                                 validation = CitationValidator.check(text, p.presentedEvidence.size)
                                 cloudCitationLinks = SourceCitationLinks.resolve(text, p.presentedEvidence)
@@ -764,7 +771,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                         try {
                             val response = CloudBrainGateway().generateDrafts(endpoint, selectedModel, token, p, consent, requestIdentity)
                             // Never offer stale drafts for saving after the user changed source context.
-                            if (requestIdentity.matches(chapter.sha256, question, pageOnly, currentPage)) {
+                            if (requestIdentity.matches(latestRequestChapterSha.value, latestRequestQuestion.value, latestRequestPageOnly.value, latestRequestCurrentPage.value)) {
                                 generatedDrafts = response.accepted
                                 rejectedGenerated = response.rejected
                                 generatedBy = "Cloud AI"
