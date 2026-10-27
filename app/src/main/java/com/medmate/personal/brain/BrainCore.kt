@@ -180,6 +180,21 @@ object MedicalPromptBuilder {
     private fun safePromptId(id: String): String =
         id.replace(unsafeSourceIdChars, "_").take(96).ifBlank { "source" }
 
+    // Distinct source IDs can collapse to the same prompt-safe label (for
+    // example "book/a" and "book_a"). Keep the visible labels unique in the
+    // exact evidence order so a model cannot see two indistinguishable headers.
+    private fun uniquePromptId(id: String, used: Set<String>): String {
+        val base = safePromptId(id)
+        if (base !in used) return base
+        var suffix = 2
+        while (true) {
+            val tail = "_$suffix"
+            val candidate = base.take((96 - tail.length).coerceAtLeast(1)) + tail
+            if (candidate !in used) return candidate
+            suffix++
+        }
+    }
+
     fun build(r: GroundedRequest): String = prepare(r).prompt
 
     fun prepare(r: GroundedRequest): PreparedPrompt {
@@ -194,12 +209,14 @@ object MedicalPromptBuilder {
         require(r.evidence.all { it.chapterId == r.chapterId }) { "Cross-chapter evidence forbidden" }
         val excerpt = StringBuilder()
         val presented = mutableListOf<Evidence>()
+        val usedPromptIds = mutableSetOf<String>()
         for (e in r.evidence) {
             // Empty or too-short snippets must not hide later usable evidence.
             // Number citations only for excerpts actually shown to the model.
             val sourceText = e.text.trim()
             if (sourceText.length < 40) continue
-            val prefix = "[S${presented.size + 1}] Page ${e.pageNumber} (${safePromptId(e.id)}):\n"
+            val promptId = uniquePromptId(e.id, usedPromptIds)
+            val prefix = "[S${presented.size + 1}] Page ${e.pageNumber} (${promptId}):\n"
             val room = r.maxEvidenceChars - excerpt.length - prefix.length - 2
             if (room < 40) break
             // Never show a half-word as PDF evidence: a truncated medical
@@ -214,6 +231,7 @@ object MedicalPromptBuilder {
             if (shownText.length < 40) continue
             excerpt.append(prefix).append(shownText).append("\n\n")
             presented.add(e.copy(text = shownText))
+            usedPromptIds.add(promptId)
         }
         val prompt = """
             You are MedMate, a Palestinian-Arabic medical study tutor. Keep English medical terms intact.
