@@ -1267,3 +1267,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 
 
 - **Isolated Kotlin helper smoke (2026-10-28): PASS, 3 cases** — compiled and ran the cancellation/publication gate semantics for cancellation before callback, one-time trimmed output, and blank/oversized rejection. This is not the repository Gradle/JUnit suite and does not exercise JNI or a real GGUF model.
+
+
+## 2026-10-28 — Native completion cancellation publication guard (CI + APK integrity PASS)
+
+- **Production:** `LlamaAndroidPort.generate` now checks the originating coroutine before native inference and after the synchronous JNI call, validates the returned text, checks cancellation again, and only then invokes the UI publication callback. This prevents a completed native answer from being published when cancellation has already been observed; it does not claim the native call itself is interruptible.
+- **Regression:** `NativeCompletionPublicationTest` covers cancellation before callback, successful one-time trimmed publication, and rejection of blank/oversized output. These are helper/JVM tests, not genuine GGUF inference.
+- **Purposeful Android build question:** does the production cancellation gate compile alongside the full app and the real-device PDF→JNI instrumentation test? Source inspection alone cannot prove Kotlin/Gradle integration or that the AndroidTest APK still assembles.
+- **PASS — Android CI:** [run 40596545073](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073), exact source/test SHA `41442ef3bf58361a011651d3ce39dff81603f75d`. **200 JVM/Robolectric tests passed, 0 failures, 0 ignored**; Lint, Debug + AndroidTest APK assembly, APK identity/SDK/permission checks and device-test-bundle packaging passed.
+- **PASS — independent APK hash verification:** downloaded device-test bundle [Artifact 12775889349](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073/artifacts/12775889349), extracted both APKs, recalculated SHA-256 and matched the bundled `SHA256SUMS`: Debug APK 30,264,727 bytes, `b11579edc0030b1e283a11f15dc082cd55a55a1287ba1685fc9344e60b8c3ee6`; AndroidTest APK 374,045 bytes, `e6b99b2eb1ae9b7250431860e675e602a6621468465c3e5472497fc2c7f3b80b`.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, actual two-page PDF citation round-trip, live HTTPS cloud consent/denial, RAM/thermal/latency and independent clinical review. The instrumentation test was compiled, not executed; no GGUF, private PDF, credential or signing key is in the artifacts. Debug is not final and PR #1 remains draft/unmerged.
