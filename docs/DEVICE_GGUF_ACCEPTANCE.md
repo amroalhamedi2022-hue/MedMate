@@ -1,7 +1,11 @@
 ## Source-version caveat for the latest verified pair
 
-The APK pair from run `40366568877` is the last **verified CI baseline**, not proof of the newest PR source. It predates the Chapter/source checkpoint `dd5201e9dd056a4ffce58450f50f3db8cf7603cf` and later host-side guard changes. It can be used for a preliminary device smoke, but a pass with this pair must not close the latest exact-marker/cleanup or local-cloud regression gates. A fresh CI-built pair for the current PR head is required.
+The latest verified CI-built pair is from run **40453735256**, source/test SHA `716ea0019c7dfbb88767ed141bcac73068e11903`. It includes the PDFBox → grounded prompt → page-two citation-navigation integration regression and the current cloud-consent boundary. The exact device-test bundle is Artifact **12711812350**; validation reports are Artifact **12711542738**.
 
+- `app-debug.apk`: 30,248,343 bytes; SHA-256 `74eae731cd290612c611b8cb26a06e239a16b0b209e82668def58d9a870fd8fc`.
+- `app-debug-androidTest.apk`: 373,777 bytes; SHA-256 `8f09542f6dd6528f5e88c7e51347c75c59427a27fb8ad43a50c1ced803a20fb4`.
+- Both hashes were independently recomputed and match `SHA256SUMS`. CI passed 156 JVM/Robolectric tests (0 failures/ignored), Lint, APK and AndroidTest assembly, manifest/permission checks and the source-level model/cloud boundary contracts.
+- This is the current source-built pair, but it is **not evidence that native GGUF inference ran**. The AndroidTest APK is compiled; device-only instrumentation still requires a user-supplied model and an ARM64 Android device.
 ## Latest two-page PDF citation test APK pair — 2026-10-26
 
 - CI run: [40366568877](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877), source/test SHA `baa6b7cff1939fe24d1448806514bde9071a667b`.
@@ -192,3 +196,13 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 - New Robolectric tests cover no-cache headers, fail-closed rejection of HTML content, one-shot consent after a rejected response, and compatibility with vendor JSON media types.
 - These tests do **not** constitute a live HTTPS or device network test. Physical device, real GGUF/JNI, real PDF citation round-trip and cloud consent/denial remain **NOT TESTED** until independently exercised on the target device.
 - Source/test commit: `33076ff62664a50e4a071f250fa74486b30467c0`; CI run `40451798717` **PASS** (156 tests, 0 failures/ignored; build and identity/offline-permission checks pass). Debug APK SHA-256: `7f489adede365811ce0ef5b60173e610bc808bffc2241a1eec3cb30af21183fc` (30,248,343 bytes), independently recomputed from artifact `12709814695`. Device-test APK-pair bundle: `12710139297`; reports: `12710314088`. This is a debug candidate, not final device acceptance.
+
+## 2026-10-27 — PDFBox → grounded prompt → page-two citation integration (CI PASS; native model NOT TESTED)
+
+- Extended PdfTextExtractorTest with a synthetic two-page PDF whose second page contains a unique marker. The test now follows the production path from PDFBox page-scoped extraction through MedicalPromptBuilder.prepare into SourceCitationLinks.resolve, asserting that [S1] still navigates to human-facing page 2 and that page-one text is not injected.
+- **PASS — CI run 40453735256**, source/test SHA `716ea0019c7dfbb88767ed141bcac73068e11903`: 156 JVM/Robolectric tests passed, 0 failures, 0 ignored; Lint and Debug/AndroidTest APK assembly passed; package ID, SDK, optional-cloud INTERNET declaration, cleartext policy and broad-storage permission checks passed.
+- **PASS — independently re-hashed CI APK pair:** app-debug.apk 30,248,343 bytes, SHA-256 `74eae731cd290612c611b8cb26a06e239a16b0b209e82668def58d9a870fd8fc`; app-debug-androidTest.apk 373,777 bytes, SHA-256 `8f09542f6dd6528f5e88c7e51347c75c59427a27fb8ad43a50c1ced803a20fb4`. Both match SHA256SUMS in device-test bundle Artifact **12711812350**.
+- Validation reports: Artifact **12711542738**. The new test is real PDFBox extraction plus the production citation-link projection, but uses a synthetic PDF and no model-generated answer.
+- **NOT TESTED:** physical Xiaomi Pad 5, a user-supplied GGUF through real llama.cpp/JNI inference, citation accuracy on a real textbook, live HTTPS consent/denial, RAM/thermal, clinical review and final signing. The bundle contains no model weights, personal PDFs or credentials.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256/artifacts/12711812350
