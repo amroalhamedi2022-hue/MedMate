@@ -215,4 +215,19 @@ class GeneratedDraftsTest {
             "The lungs appear normal"))
     }
 
+    @Test fun generatedMcqRejectsWhitespaceEquivalentOptions() {
+        val quote = "A fracture is a break in the continuity of bone."
+        val source = Evidence("book:0:0", "book", 0,
+            "$quote It is not a joint dislocation.")
+        val valid = GeneratedCandidate(GeneratedKind.MCQ,
+            "Which term names a break in bone continuity?", "",
+            listOf("Fracture", "Dislocation", "Sprain", "Contusion"), 0,
+            quote, "S1", quote)
+        assertEquals(1, GeneratedStudyDrafts.validate(listOf(valid), listOf(source)).accepted.size)
+        val duplicate = valid.copy(options = listOf("Fracture", "Dislocation", "Sprain", "Dislocation   "))
+        val result = GeneratedStudyDrafts.validate(listOf(duplicate), listOf(source))
+        assertTrue(result.accepted.isEmpty())
+        assertEquals(1, result.rejected)
+    }
+
 }
