@@ -139,3 +139,12 @@ The Gradle lint report for the prior successful build surfaced `TrustAllX509Trus
 ## 2026-10-27 — Malformed free-space output coverage
 
 The runner already rejects an unreadable/non-numeric device free-space result before transferring the GGUF. The host-side fake-ADB contract now includes an explicit `Available=unknown` case and asserts fail-closed exit 6 with no push/instrumentation or residual file. This is still a host contract test, not device evidence. The updated test is awaiting a CI result on the current PR branch; previous APK artifacts do not include this source/test checkpoint.
+
+
+## 2026-10-27 — Explicit fail-closed result for unreadable device storage
+
+- The corrected Fake ADB fixture now emits actual line breaks in its `toybox df -k` output, so both numeric and `Available=unknown` cases exercise the production parser rather than a malformed one-line string.
+- The malformed-storage case exposed a production-shell issue: with `set -e`, an `awk` status 1 inside command substitution terminated the runner before its intended diagnostic/exit code. The runner now catches that parse failure, clears the value, and reaches the explicit fail-closed exit **6** before GGUF push or instrumentation.
+- **PASS — runner contract in CI:** run 40427400685, source SHA `02b576147d9bb3ae1d3d4fe73b5fb33fb8a80def`; the GGUF/device/cloud safety-contract step passed, including bad/short header, digest mismatch, low storage, unparseable storage, partial transfer cleanup and instrumentation-result checks.
+- **Android tests/Lint/APK:** still in progress at this checkpoint; no APK from this source is claimed until the full workflow finishes. The prior artifact is not proof for the current source.
+- **NOT TESTED:** physical Xiaomi Pad 5, actual GGUF/llama.cpp inference, PDF page-2 citation round-trip, live cloud-consent/denial, RAM/thermal and clinical review.
