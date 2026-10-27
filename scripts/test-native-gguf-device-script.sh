@@ -81,8 +81,12 @@ case "${1:-}" in
             wc -c < "$target" | tr -d '[:space:]'
             ;;
           df)
-            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n'
-            printf 'fakefs 1000000 0 %s 0%% /sdcard\n' "${FAKE_FREE_KB:-2000000}"
+            printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\\n'
+            if [[ "${FAKE_DF_MODE:-valid}" == malformed ]]; then
+              printf 'fakefs 1000000 0 unknown 0%% /sdcard\\n'
+            else
+              printf 'fakefs 1000000 0 %s 0%% /sdcard\\n' "${FAKE_FREE_KB:-2000000}"
+            fi
             ;;
           *) echo "unsupported toybox command: $cmd" >&2; exit 90 ;;
         esac
@@ -125,7 +129,7 @@ ADB
 chmod +x "$tmp/bin/adb"
 
 run_case() {
-  local name="$1" expected="$2" corrupt="$3" push_fail="$4" instrument_mode="${5:-pass}" free_kb="${6:-2000000}"
+  local name="$1" expected="$2" corrupt="$3" push_fail="$4" instrument_mode="${5:-pass}" free_kb="${6:-2000000}" df_mode="${7:-valid}"
   local case_dir="$tmp/$name"
   mkdir -p "$case_dir/device-root"
   : > "$case_dir/adb.log"
@@ -143,6 +147,7 @@ run_case() {
       FAKE_PUSH_FAIL="$push_fail" \
       FAKE_INSTRUMENT_MODE="$instrument_mode" \
       FAKE_FREE_KB="$free_kb" \
+      FAKE_DF_MODE="$df_mode" \\
       GGUF_FILE="$case_dir/probe.gguf" \
       bash scripts/run-native-gguf-device-test.sh
   ) > "$case_dir/output.log" 2>&1 || status=$?
@@ -172,6 +177,13 @@ run_case() {
   elif [[ "$expected" == storage ]]; then
     [[ "$status" == 6 ]] || { cat "$case_dir/output.log"; echo "FAIL: low-storage case exited $status, expected 6" >&2; return 1; }
     grep -Fq 'insufficient device free storage' "$case_dir/output.log"
+    grep -Fq 'shell toybox df' "$case_dir/adb.log"
+    ! grep -Fq 'push ' "$case_dir/adb.log"
+    ! grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+    ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+  elif [[ "$expected" == storage-unverifiable ]]; then
+    [[ "$status" == 6 ]] || { cat "$case_dir/output.log"; echo "FAIL: unparseable storage report exited $status, expected 6" >&2; return 1; }
+    grep -Fq 'cannot verify device free storage' "$case_dir/output.log"
     grep -Fq 'shell toybox df' "$case_dir/adb.log"
     ! grep -Fq 'push ' "$case_dir/adb.log"
     ! grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
@@ -215,6 +227,7 @@ run_case interrupted-partial-push fail 0 1 pass
 run_case instrumentation-reported-failure instrument-failure 0 0 fail
 run_case instrumentation-missing-summary instrument-incomplete 0 0 incomplete
 run_case low-storage storage 0 0 pass 1000
+run_case unparseable-storage storage-unverifiable 0 0 pass 2000000 malformed
 
 # A prebuilt CI bundle must install the exact supplied APK pair and skip Gradle.
 prebuilt="$tmp/prebuilt-apks"
