@@ -35,6 +35,13 @@ class StudyValidationTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun rejectsUnicodeSeparatorOnlyOption() {
+        assertEquals("", StudyOptionIdentity.key("\u00A0\u00A0"))
+        StudyValidation.check(StudyKind.MCQ, "Which bone?", "",
+            listOf("Femur", "\u00A0\u00A0", "Fibula", "Humerus"), 0, "")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun flashcardNeedsAnswer() {
         StudyValidation.check(StudyKind.FLASHCARD, "What is OA?", "", emptyList(), -1, "")
     }
