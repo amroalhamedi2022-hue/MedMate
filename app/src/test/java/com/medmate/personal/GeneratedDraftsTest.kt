@@ -224,7 +224,7 @@ class GeneratedDraftsTest {
             listOf("Fracture", "Dislocation", "Sprain", "Contusion"), 0,
             quote, "S1", quote)
         assertEquals(1, GeneratedStudyDrafts.validate(listOf(valid), listOf(source)).accepted.size)
-        val duplicate = valid.copy(options = listOf("Fracture", "Dislocation", "Sprain", "Dislocation   "))
+        val duplicate = valid.copy(options = listOf("Fracture", "Dislocation muscle", "Sprain", "Dislocation   muscle"))
         val result = GeneratedStudyDrafts.validate(listOf(duplicate), listOf(source))
         assertTrue(result.accepted.isEmpty())
         assertEquals(1, result.rejected)
