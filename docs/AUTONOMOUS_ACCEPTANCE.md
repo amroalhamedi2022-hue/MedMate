@@ -1028,3 +1028,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Purposeful build question:** does the current PDFBox-based extraction/citation test suite and Android build remain compatible with the aligned cryptography modules, and does lint still report the dependency trust-manager pattern? A CI build is justified because source-only inspection cannot validate Maven resolution, DEX packaging or runtime PDF parsing compatibility.
 - **CI/APK:** PENDING for the dependency alignment; the previous APK is not evidence for this dependency change.
 - **NOT TESTED:** real PDFBox/native GGUF citation round-trip on ARM64, live cloud consent/denial, clinical review, Xiaomi Pad 5 performance. Do not suppress or describe the lint warning as fixed unless the new report confirms it.
+
+
+## 2026-10-27 — Malformed device-storage report regression
+
+- **Change:** extended the fake-ADB runner contract with an unparseable `toybox df -k` available-space field. The test expects exit 6, no GGUF push, no instrumentation, and no leftover temporary model. This exercises the existing fail-closed production preflight; it does not claim device storage or native inference was tested.
+- **Test commits:** `c2744c3b4e54181e57e8b1c642a035fb0e29f20c` added the case; `68a75e750a3fbf68a85764f80054223b45f2413b` corrected the shell continuation in its environment setup.
+- **Dependency follow-up:** Bouncy Castle modules remain aligned at 1.86 on this branch, but Maven resolution, PDFBox runtime compatibility and the updated lint report still require a fresh Android CI result.
+- **CI:** NOT VERIFIED for the latest test/source head. The last previously verified APK pair predates the GGUF header preflight and dependency alignment; do not reuse it as proof for these changes.
+- **NOT TESTED:** real Xiaomi Pad 5, valid GGUF inference through llama.cpp/JNI, PDF page-2 citation round-trip, live cloud-consent/denial, clinical review, RAM/thermal and final signing.
