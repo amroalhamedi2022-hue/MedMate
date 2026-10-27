@@ -1060,3 +1060,18 @@ AUTOMATION_COMPLETE: IN_PROGRESS
   - `app-debug.apk`: `9a65b3fe162b12a5399d19bea146a584d69100d82ad44f1ee827fd0ba8a167fd`
   - `app-debug-androidTest.apk`: `33e383e33feb00ef80358e4bc3a28d23f7f90fd5f63c71493901af0f0190fb34`
 - **NOT TESTED:** physical Xiaomi Pad 5; real GGUF/JNI inference; real two-page PDF page-2 citation; live HTTPS consent/denial; memory/thermal/latency; independent medical review. The artifact contains no GGUF model, personal PDF, or provider key.
+
+
+## 2026-10-27 — PDFBox page-scope test compile fix and validated candidate
+
+- **Source/test commit:** `66f4c88e28ce18d6196388ee177c4ad32eb807b3`.
+- The preceding CI failure was a test-only Kotlin compile error: Robolectric's `RuntimeEnvironment.getApplication()` is non-generic in the resolved version. Updated `PdfTextExtractorTest` to use the current API with an explicit `Application` type.
+- **PASS — CI Run 40445019588:** `:app:testDebugUnitTest`, `lintDebug`, `assembleDebugAndroidTest`, and `assembleDebug` completed successfully. Test report: **148 tests, 0 failures, 0 ignored**. The synthetic two-page PDFBox test confirms page-1/page-2 text isolation and rejects out-of-range page navigation; this is JVM extraction evidence, not real-model evidence.
+- **PASS — cryptography dependency gate:** resolved `bcprov`, `bcpkix`, and `bcutil` all at **1.86**.
+- **PASS — APK verifier:** Gradle package/version/SDK match, optional-cloud INTERNET declaration matches the APK, cleartext is disabled, and no broad-storage permission is present.
+- Device bundle Artifact **12707718539**. Independent re-hash of downloaded APKs matched `SHA256SUMS`:
+  - Debug APK: 30,248,343 bytes; SHA-256 `836d72b5472a1c5a513606935508ebbea079363a43011701ed8335eeeb11d9fc`.
+  - AndroidTest APK: 373,777 bytes; SHA-256 `c4a0921f3f963658de65beb070f031252437947e0c0e96e746137384d6ff3629`.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588
+- Artifact: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588/artifacts/12707718539
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, actual GGUF/llama.cpp/JNI inference, real PDF-grounded answer and page-2 citation, live HTTPS cloud-consent/denial, RAM/thermal/latency, and independent medical review. The artifact contains APKs/checksums only; no GGUF, personal PDF, or key.
