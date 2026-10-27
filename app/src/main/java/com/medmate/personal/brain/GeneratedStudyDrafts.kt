@@ -1,5 +1,7 @@
 package com.medmate.personal.brain
 
+import com.medmate.personal.study.StudyOptionIdentity
+
 /**
  * Model outputs are untrusted DRAFTS, not medical facts. Pages are derived from real evidence,
  * never from a language-model-supplied page number. Strict schema and human approval required.
