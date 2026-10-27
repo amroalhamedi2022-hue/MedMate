@@ -82,3 +82,9 @@ New source versionCode=9, but **do not attempt to reinstall/upgrade a Work-signe
 - **PASS — Android CI run 40533697210**, source/test head bdcc6855a11207fc49197f095e9ebcd63d778a46. 179 JVM/Robolectric tests passed, 0 failures, 0 ignored; Lint, Debug + AndroidTest APK assembly, package/SDK/permission verification and device-bundle packaging passed.
 - **PASS — independently re-hashed APK pair:** app-debug.apk 30,264,727 bytes, SHA-256 f0229958978dc3d46d2635a007533c7c0eceaf1f7f931e65173e893260e5eace; app-debug-androidTest.apk 374,045 bytes, SHA-256 1fa5e1773a47ccf5205449f2868e5e946cbac78efe160c77958694fd68aae297. Both match SHA256SUMS in device-test bundle Artifact **12748740398**.
 - **NOT TESTED:** Xiaomi Pad 5 installation, real GGUF/llama.cpp/JNI inference, model-backed PDF page-two answer, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No GGUF, PDF, token or key is included. Debug is not final.
+
+## 2026-10-27 — MCQ option identity hardening
+
+- Manual and generated MCQ paths now share canonical option identity (Unicode NFC, Unicode whitespace collapse, trim, root-locale lowercase); duplicate or normalized-empty options fail closed.
+- JUnit coverage was added for canonical Unicode, repeated whitespace, non-breaking spaces and blank-looking choices.
+- Current head `d74858ed86a3d26ac8be8e279073c871db54977b`: **CI NOT VERIFIED**. The previous successful CI validates the prior cloud-prompt-order head, not this option-identity change. Do not mark P4 complete from this validator alone; clinical correctness, source grounding and human approval remain separate acceptance gates.
