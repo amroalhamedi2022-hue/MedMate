@@ -33,7 +33,7 @@ class CloudGatewayTransportBoundaryTest {
         private val responseCode: Int = 200,
         private val failOutput: Boolean = false,
         private val failRequestProperty: Boolean = false,
-        private val contentType: String? = "application/json; charset=utf-8"
+        private val responseContentType: String? = "application/json; charset=utf-8"
     ) : HttpURLConnection(url) {
         val requestBytes = ByteArrayOutputStream()
         var disconnected = false
@@ -49,7 +49,7 @@ class CloudGatewayTransportBoundaryTest {
             return requestBytes
         }
         override fun getResponseCode() = responseCode
-        override fun getContentType(): String? = contentType
+        override fun getContentType(): String? = responseContentType
         override fun getInputStream(): InputStream = responseStream ?: ByteArrayInputStream(body.toByteArray(Charsets.UTF_8))
     }
 
@@ -255,7 +255,7 @@ class CloudGatewayTransportBoundaryTest {
     @Test fun nonJsonResponseIsRejectedBeforeBodyParsingAndCannotReplayConsent() = runBlocking {
         val opened = mutableListOf<FakeHttpsConnection>()
         val gateway = CloudBrainGateway { url ->
-            FakeHttpsConnection(url, contentType = "text/html; charset=utf-8").also(opened::add)
+            FakeHttpsConnection(url, responseContentType = "text/html; charset=utf-8").also(opened::add)
         }
         val seal = CloudEvidenceSeal.of(prepared, request)
         val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
@@ -274,7 +274,7 @@ class CloudGatewayTransportBoundaryTest {
     @Test fun vendorJsonMediaTypeRemainsCompatible() = runBlocking {
         val opened = mutableListOf<FakeHttpsConnection>()
         val gateway = CloudBrainGateway { url ->
-            FakeHttpsConnection(url, contentType = "application/vnd.example+json; charset=utf-8").also(opened::add)
+            FakeHttpsConnection(url, responseContentType = "application/vnd.example+json; charset=utf-8").also(opened::add)
         }
         val seal = CloudEvidenceSeal.of(prepared, request)
         val consent = CloudTransferConsent.grant(endpoint, model, request, seal)
