@@ -10,7 +10,11 @@ data class BrainRequestIdentity(
     val pageOnly: Boolean,
     val sourcePage: Int
 ) {
+    // Normalize both sides symmetrically: incidental outer whitespace must not
+    // make the same captured question look stale after a long native request.
+    private val normalizedQuestion = question.trim()
+
     fun matches(chapter: String, currentQuestion: String, currentPageOnly: Boolean, currentPage: Int): Boolean =
-        chapterSha256 == chapter && question == currentQuestion.trim() && pageOnly == currentPageOnly &&
+        chapterSha256 == chapter && normalizedQuestion == currentQuestion.trim() &&
             (!pageOnly || sourcePage == currentPage)
 }
