@@ -1132,3 +1132,15 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS — CI run 40468626666** on source/test SHA `9e2b91bcc10b4c36c3def0d6bea89ffd1ef7945c`: fake-ADB GGUF contract suite, SQLite/migration and dependency guards, Gradle unit tests, Lint, Debug APK and AndroidTest APK assembly all completed successfully.
 - CI-calculated Debug APK SHA-256: `a14191fec0a0ec14a2914d7e118df543b0f54b7af22ec4a51b3959bfbc418421`. Debug APK Artifact **12718415174**; device-test APK-pair bundle Artifact **12717803444**; validation reports Artifact **12717642389**. Independent download/re-hash of this run's APK is **NOT TESTED**.
 - **NOT TESTED:** physical Xiaomi Pad 5 installation, actual GGUF/llama.cpp/JNI inference, real-model PDF citation round-trip, live HTTPS consent/denial, RAM/thermal/latency and clinical review. No model weights, personal PDFs, credentials or signing keys are included.
+
+
+## 2026-10-27 — Ambiguous PDF citation identity fails closed (CI PASS; real model/device NOT TESTED)
+
+- **Production:** `CloudEvidenceSeal.of` now rejects blank or duplicate `Evidence.id` values before a sealed cloud-consent grant can be claimed or an HTTP connection opened. Citation markers `[S1]`, `[S2]` are positional; duplicated source identities could otherwise make two visible markers point at an ambiguous underlying PDF chunk/page.
+- **Regression coverage:** `CloudEvidenceSealTest` now proves duplicate and blank IDs cannot be sealed (7/7 tests PASS). `CloudTransferConsentTest` now stresses the actual evidence-sealed one-shot overload with 16 concurrent callers; exactly one claim may succeed (8/8 tests PASS).
+- **PASS — Android CI:** [run 40476354499](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40476354499), source/test head `d3de8bb98bb2749944bafa2b0325ff526f138bb6`. **164 JVM/Robolectric tests passed, 0 failures, 0 ignored**; the GGUF/PDF/local-cloud safety contracts, SQLite/migration checks, dependency alignment, Lint, Debug + AndroidTest APK assembly, and APK identity/permission gates passed.
+- **PASS — independent APK-pair SHA-256 verification:** downloaded device-test bundle Artifact **12721167670** and independently recalculated both inner APK hashes; both match its `SHA256SUMS`.
+  - `app-debug.apk`: 30,248,343 bytes; SHA-256 `9db509c6dcd6016fde9fb2e40d8d53b0f3a99440032c63d3e95558f3f3ea3ad8`.
+  - `app-debug-androidTest.apk`: 373,785 bytes; SHA-256 `2b2fdd227da5aff2ceeb732557eeb42ded16a4d3bbb18b9583d37de9c1c1d969`.
+  - Debug APK Artifact **12721117413**; validation reports Artifact **12721526615**.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, user-supplied GGUF with real llama.cpp/JNI inference, model-backed two-page PDF answer, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. The test bundle contains no GGUF weights, PDF or credentials. CI/Mock transport is not clinical validation; Debug is not final.
