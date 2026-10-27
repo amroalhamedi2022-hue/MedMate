@@ -10,8 +10,14 @@ class ModelStorageGateTest {
         assertTrue(ModelStorageGate.canStart(ModelStorageGate.RESERVE_BYTES + bytes, bytes))
         assertFalse(ModelStorageGate.canStart(ModelStorageGate.RESERVE_BYTES + bytes - 1L, bytes))
         val chunk = 64L * 1024L
-        assertTrue(ModelStorageGate.canContinue(ModelStorageGate.RESERVE_BYTES + chunk, chunk))
-        assertFalse(ModelStorageGate.canContinue(ModelStorageGate.RESERVE_BYTES + chunk - 1L, chunk))
+        val unknownSizeHeadroom = ModelStorageGate.RESERVE_BYTES +
+            ModelStorageGate.CHECK_INTERVAL_BYTES + chunk
+        assertTrue(ModelStorageGate.canContinue(unknownSizeHeadroom, chunk))
+        assertFalse(ModelStorageGate.canContinue(unknownSizeHeadroom - 1L, chunk))
+        assertTrue(ModelStorageGate.canContinue(
+            ModelStorageGate.RESERVE_BYTES + chunk, chunk, expectedRemainingBytes = chunk))
+        assertFalse(ModelStorageGate.canContinue(
+            ModelStorageGate.RESERVE_BYTES + chunk, chunk, expectedRemainingBytes = chunk + 1L))
     }
 
     @Test fun rejectsInvalidSizesAndOverflowShapedInputs() {

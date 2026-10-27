@@ -79,7 +79,7 @@ object LocalModelImport {
                         // free space at start and every 4 MiB, preserving a 64 MiB
                         // reserve so a large import cannot silently fill app storage.
                         if (count == 0L || count - lastSpaceCheck >= ModelStorageGate.CHECK_INTERVAL_BYTES) {
-                            require(ModelStorageGate.canContinue(availableSpace(), n.toLong())) {
+                            require(ModelStorageGate.canContinue(availableSpace(), n.toLong(), expectedBytes?.minus(count))) {
                                 "المساحة الحرة أصبحت غير كافية أثناء الاستيراد؛ أُوقف قبل استهلاك هامش الأمان"
                             }
                             lastSpaceCheck = count
