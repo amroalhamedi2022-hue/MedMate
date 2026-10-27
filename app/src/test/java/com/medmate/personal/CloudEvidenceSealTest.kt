@@ -91,4 +91,20 @@ class CloudEvidenceSealTest {
         val seal = CloudEvidenceSeal.of(prompt, request)
         assertFalse(legacy.consume("https://example.org/v1/chat/completions", "model", request, seal))
     }
+
+    @Test fun paddedInvisibleOrOverlongEvidenceIdsFailClosed() {
+        val invalidIds = listOf(
+            " ${source.id}",
+            "${source.id} ",
+            "${source.id}\\n",
+            "${source.id}\\u200B",
+            "x".repeat(161)
+        )
+        invalidIds.forEach { id ->
+            val malformed = prompt.copy(presentedEvidence = listOf(source.copy(id = id)))
+            assertTrue("non-canonical source ID must not be sealed: " + id.take(24),
+                runCatching { CloudEvidenceSeal.of(malformed, request) }.isFailure)
+        }
+    }
+
 }
