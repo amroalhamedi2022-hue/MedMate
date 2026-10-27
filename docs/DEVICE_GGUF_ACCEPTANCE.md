@@ -218,3 +218,13 @@ The runner already rejects an unreadable/non-numeric device free-space result be
 The runner uses a per-run unique filename under app-specific external storage and removes only that filename. Fake ADB CI passed a regression that preserves a sentinel placed at the former fixed filename while cleaning the temporary test file. Latest CI: [40468626666](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40468626666), source/test SHA `9e2b91bcc10b4c36c3def0d6bea89ffd1ef7945c`; Debug APK SHA-256 `a14191fec0a0ec14a2914d7e118df543b0f54b7af22ec4a51b3959bfbc418421`; device-test bundle Artifact [12717803444](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40468626666/artifacts/12717803444).
 
 This is harness/source acceptance only. Physical-device installation, a user-supplied local GGUF, real llama.cpp/JNI inference, PDF citation correctness with a real model, and network consent/denial remain **NOT TESTED**. Never place model weights, personal PDFs or credentials in the public repository.
+
+
+## Latest device-test pair — native completion cancellation guard (2026-10-28)
+
+- **Build purpose:** verify that the production cancellation-publication guard compiles with the app and that the real-GGUF/PDF Android instrumentation test still compiles. This build does **not** run the instrumentation or include a model.
+- **CI:** [run 40596545073](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073), source/test SHA `41442ef3bf58361a011651d3ce39dff81603f75d`; 200 JVM/Robolectric tests passed, 0 failures/ignored; Lint and both APK assemblies passed.
+- **Device-test bundle:** [Artifact 12775889349](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073/artifacts/12775889349). Both APKs were extracted and re-hashed independently; hashes match `SHA256SUMS`:
+  - `app-debug.apk`: 30,264,727 bytes; SHA-256 `b11579edc0030b1e283a11f15dc082cd55a55a1287ba1685fc9344e60b8c3ee6`.
+  - `app-debug-androidTest.apk`: 374,045 bytes; SHA-256 `e6b99b2eb1ae9b7250431860e675e602a6621468465c3e5472497fc2c7f3b80b`.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, synthetic two-page PDF citation round-trip on device, live cloud consent/denial, RAM/thermal/latency. Debug is not final; the test bundle contains no model, personal PDF or credentials.
