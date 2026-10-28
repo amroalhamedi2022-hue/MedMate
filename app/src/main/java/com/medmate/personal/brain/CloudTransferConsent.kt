@@ -21,6 +21,12 @@ class CloudTransferConsent private constructor(
     // Atomic claiming also covers concurrent callers retaining the same grant.
     private var consumed = false
 
+    /** Invalidates a retained reference too, including one captured by a pending coroutine. */
+    @Synchronized
+    fun revoke() {
+        consumed = true
+    }
+
     @Synchronized
     fun permits(endpointInput: String, modelInput: String, current: BrainRequestIdentity): Boolean =
         !consumed && !expired() && matches(endpointInput, modelInput, current)
