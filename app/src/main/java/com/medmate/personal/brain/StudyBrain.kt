@@ -9,7 +9,7 @@ data class BrainSearchResult(
     val firstCorruptedPage: Int? = null
 )
 
-enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, CORRUPTED_PDF_TEXT, AMBIGUOUS_PAGE_IDENTITIES, TOO_SHORT }
+enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, CORRUPTED_PDF_TEXT, AMBIGUOUS_PAGE_IDENTITIES, TOO_SHORT, SUPERSEDED }
 
 object StudyBrain {
     // Bound retained PDF text and token maps: one active chapter at a time.
@@ -18,57 +18,97 @@ object StudyBrain {
     private val indexCache = BoundedEvidenceIndexCache(MAX_CACHED_CHARS)
 
     fun search(chapterId: String, pages: List<PageSource>, question: String, onlyPage: Int? = null): BrainSearchResult {
-        // Capture request ordering before filtering, validation, or corruption auditing.
-        // A slower older call must not obtain a newer cache epoch merely by reaching
-        // the index later than a request that started after it.
+        // Capture ordering at entry. A newer question/document owns the shared cache
+        // from this point, so older work must stop before scanning the rest of a PDF.
         val cacheRequestEpoch = indexCache.beginRequest(chapterId)
+        fun requestIsCurrent() = indexCache.isCurrentRequest(cacheRequestEpoch)
+        fun supersededResult() = BrainSearchResult(emptyList(), BrainSearchStatus.SUPERSEDED, 0)
+        if (!requestIsCurrent()) return supersededResult()
+
         val cleaned = question.trim()
-        // Apply chapter/page isolation even for an empty or stopword-only
-        // question. A short query must not report pages from another PDF.
-        // A clearly corrupted PDF extraction must not become source evidence
-        // for a generated medical explanation. Keep the original PDF intact;
-        // the coverage panel identifies the excluded page for inspection.
-        val scoped = pages.filter { it.chapterId == chapterId }
-        // Page identity is part of every visible [S#] citation. A duplicate or
-        // negative page anchor can make different excerpts point at the same
-        // human-facing page, so fail closed before retrieval or model prompting.
-        // Page-only questions validate that selected page; full-chapter search
-        // validates every page in the selected chapter.
-        val identityScope = if (onlyPage == null) scoped else scoped.filter { it.pageIndex == onlyPage }
-        if (identityScope.any { it.pageIndex < 0 } ||
-            identityScope.groupingBy { it.pageIndex }.eachCount().any { it.value > 1 }) {
-            // Fail closed before returning: a request with ambiguous citation
-            // anchors must not leave a previous private PDF's text index resident,
-            // nor allow an older in-flight search to repopulate that shared cache.
-            indexCache.invalidateIfCurrent(cacheRequestEpoch)
-            return BrainSearchResult(
-                emptyList(), BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, 0
-            )
+        // Do not use eager filter/grouping operations here: they walk every page
+        // before giving us a chance to notice that a newer search superseded this one.
+        val scoped = ArrayList<PageSource>()
+        for (page in pages) {
+            if (!requestIsCurrent()) return supersededResult()
+            if (page.chapterId == chapterId) scoped.add(page)
         }
-        // Distinguish extraction damage from scanned/image-only pages. The
-        // latter may need OCR; corrupt text must never become LLM evidence.
-        val damagedPageIndices = scoped.asSequence().filter {
-            (onlyPage == null || it.pageIndex == onlyPage) &&
-                PdfCoverageAudit.likelyCorruptedText(it.text)
-        }.map { it.pageIndex }.toList()
+
+        // Citation identity must be unambiguous in the requested scope. Validate
+        // incrementally so a stale request cannot keep traversing an old page list.
+        val identityScope = ArrayList<PageSource>()
+        for (page in scoped) {
+            if (!requestIsCurrent()) return supersededResult()
+            if (onlyPage == null || page.pageIndex == onlyPage) identityScope.add(page)
+        }
+        val seenPageIndices = HashSet<Int>()
+        var ambiguousIdentity = false
+        for (page in identityScope) {
+            if (!requestIsCurrent()) return supersededResult()
+            if (page.pageIndex < 0 || !seenPageIndices.add(page.pageIndex)) {
+                ambiguousIdentity = true
+                break
+            }
+        }
+        if (ambiguousIdentity) {
+            // An older malformed result may not purge a newer request's cache.
+            if (!indexCache.invalidateIfCurrent(cacheRequestEpoch)) return supersededResult()
+            return BrainSearchResult(emptyList(), BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, 0)
+        }
+
+        // Exclude damaged extraction from retrieval while keeping a bounded count
+        // for the UI. No extracted PDF text is copied into the coverage report.
+        val chapterPages = ArrayList<PageSource>()
+        val damagedPageIndices = ArrayList<Int>()
+        for (page in scoped) {
+            if (!requestIsCurrent()) return supersededResult()
+            val corrupted = PdfCoverageAudit.likelyCorruptedText(page.text)
+            if ((onlyPage == null || page.pageIndex == onlyPage) && corrupted) {
+                damagedPageIndices.add(page.pageIndex)
+            }
+            if (!corrupted) chapterPages.add(page)
+        }
         val corruptInScope = damagedPageIndices.size
         val firstCorruptedPage = damagedPageIndices.minOrNull()
-        val chapterPages = scoped.filterNot { PdfCoverageAudit.likelyCorruptedText(it.text) }
-        // Reconcile filtered page content before any early return. This only mutates
-        // shared cache state if this request still owns the epoch allocated at entry.
+
         indexCache.prepareSearch(chapterId, chapterPages, cacheRequestEpoch)
-        val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
-        val readablePages = valid.count { it.text.isNotBlank() }
-        if (MedicalText.queryTokens(cleaned).isEmpty())
-            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages, corruptInScope, firstCorruptedPage)
-        if (readablePages == 0)
+        if (!requestIsCurrent()) return supersededResult()
+
+        val valid = ArrayList<PageSource>()
+        var readablePages = 0
+        for (page in chapterPages) {
+            if (!requestIsCurrent()) return supersededResult()
+            if (onlyPage == null || page.pageIndex == onlyPage) {
+                valid.add(page)
+                if (page.text.isNotBlank()) readablePages++
+            }
+        }
+
+        if (MedicalText.queryTokens(cleaned).isEmpty()) {
+            if (!requestIsCurrent()) return supersededResult()
+            return BrainSearchResult(emptyList(), BrainSearchStatus.TOO_SHORT, readablePages,
+                corruptInScope, firstCorruptedPage)
+        }
+        if (readablePages == 0) {
+            if (!requestIsCurrent()) return supersededResult()
             return BrainSearchResult(emptyList(), if (corruptInScope > 0)
                 BrainSearchStatus.CORRUPTED_PDF_TEXT else BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT,
                 0, corruptInScope, firstCorruptedPage)
+        }
+
         val index = indexCache.reusableIndex(chapterId, chapterPages, cacheRequestEpoch)
-        val results = if (index != null) index.search(chapterId, cleaned, pageIndex = onlyPage, limit = 5)
-            else EvidenceRetriever(PageSegmenter(850).split(valid)).search(chapterId, cleaned, limit = 5)
-        return BrainSearchResult(results, if (results.isEmpty()) BrainSearchStatus.NO_MATCH else BrainSearchStatus.FOUND,
+        if (!requestIsCurrent()) return supersededResult()
+        val results = if (index != null) {
+            index.search(chapterId, cleaned, pageIndex = onlyPage, limit = 5)
+        } else {
+            // An oversized current PDF uses uncached retrieval. Recheck immediately
+            // before segmentation so an already superseded request does not split it.
+            if (!requestIsCurrent()) return supersededResult()
+            EvidenceRetriever(PageSegmenter(850).split(valid)).search(chapterId, cleaned, limit = 5)
+        }
+        if (!requestIsCurrent()) return supersededResult()
+        return BrainSearchResult(results,
+            if (results.isEmpty()) BrainSearchStatus.NO_MATCH else BrainSearchStatus.FOUND,
             readablePages, corruptInScope, firstCorruptedPage)
     }
 
