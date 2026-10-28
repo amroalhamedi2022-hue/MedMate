@@ -127,4 +127,19 @@ class BoundedEvidenceIndexCacheTest {
         assertNull("an older in-flight request cannot repopulate after invalidation",
             cache.reusableIndex("private-pdf", privatePages, requestEpoch))
     }
+    @Test fun staleOversizedSearchCannotEvictANewerChapter() {
+        val cache = BoundedEvidenceIndexCache(64)
+        val oldPages = listOf(PageSource("older-pdf", 0, "x".repeat(65)))
+        val oldEpoch = cache.beginSearch("older-pdf", oldPages)
+        val currentPages = listOf(PageSource("current-pdf", 0,
+            "Current chapter text that should remain indexed."))
+        val currentEpoch = cache.beginSearch("current-pdf", currentPages)
+        val currentIndex = requireNotNull(cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+
+        // The older oversized request completes late. It must not evict the newer cache entry.
+        assertNull(cache.reusableIndex("older-pdf", oldPages, oldEpoch))
+        assertSame(currentIndex, cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+        assertEquals("current-pdf", cache.retainedChapterId)
+    }
+
 }
