@@ -21,4 +21,21 @@ invalidate = cache[invalidate_start:invalidate_end]
 assert "requestEpoch += 1L" in invalidate and "cached = null" in invalidate, (
     "invalidation must clear retained text and supersede older in-flight requests atomically"
 )
-print("PASS invalid-page cache contract: stale PDF text is purged before citation-identity failure; old epochs cannot repopulate.")
+search_start = brain.index("fun search(")
+search_end = brain.index("fun prepareSourceOnly", search_start)
+search_body = brain[search_start:search_end]
+epoch_start = search_body.index("val cacheRequestEpoch = indexCache.beginRequest(chapterId)")
+identity_check = search_body.index("val identityScope")
+prepare_call = search_body.index("indexCache.prepareSearch(chapterId, chapterPages, cacheRequestEpoch)")
+assert epoch_start < identity_check < prepare_call, (
+    "allocate the epoch before page validation, then reconcile filtered content with that same token"
+)
+
+prepare_start = cache.index("fun prepareSearch(")
+prepare_end = cache.index("/** Compatibility helper", prepare_start)
+prepare = cache[prepare_start:prepare_end]
+assert "if (this.requestEpoch != requestEpoch) return@synchronized" in prepare, (
+    "late preparation from an older request must not evict a newer cache entry"
+)
+
+print("PASS PDF cache contract: invalid anchors purge private text; request epochs are allocated at entry and stale preparation cannot mutate newer cache state.")
