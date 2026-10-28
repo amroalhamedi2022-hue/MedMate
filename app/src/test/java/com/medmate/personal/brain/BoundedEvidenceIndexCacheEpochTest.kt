@@ -49,4 +49,31 @@ class BoundedEvidenceIndexCacheEpochTest {
             cache.reusableIndex("ambiguous-pdf", pages, retryEpoch))
         assertEquals("ambiguous-pdf", cache.retainedChapterId)
     }
+
+    @Test fun supersededRequestSkipsTraversalOfItsStalePageList() {
+        val cache = BoundedEvidenceIndexCache(1_024)
+        val staleEpoch = cache.beginRequest("older-pdf")
+        val currentEpoch = cache.beginRequest("current-pdf")
+        val currentPages = listOf(PageSource(
+            "current-pdf", 0, "Current cardiac examination notes."
+        ))
+        cache.prepareSearch("current-pdf", currentPages, currentEpoch)
+        val currentIndex = requireNotNull(
+            cache.reusableIndex("current-pdf", currentPages, currentEpoch)
+        )
+
+        // Any attempt to size or compare this old page list throws. Once a newer
+        // request owns the epoch, neither preparation nor cache reuse should walk it.
+        val stalePages = object : AbstractList<PageSource>() {
+            override val size: Int
+                get() = error("superseded request traversed stale PDF pages")
+            override fun get(index: Int): PageSource =
+                error("superseded request traversed stale PDF pages")
+        }
+        cache.prepareSearch("older-pdf", stalePages, staleEpoch)
+        assertNull(cache.reusableIndex("older-pdf", stalePages, staleEpoch))
+        assertSame(currentIndex, cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+        assertEquals("current-pdf", cache.retainedChapterId)
+    }
+
 }
