@@ -24,21 +24,40 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
     internal val retainedTextChars: Long get() = cached?.textChars ?: 0L
 
     /**
-     * Run before early returns in search. Even an empty query or unreadable new
-     * chapter must not leave a different PDF's cached text resident.
+     * Allocate the request epoch at search entry, before PDF validation or other
+     * work can suspend/delay this request behind a newer one.
      */
-    fun beginSearch(chapterId: String, pages: List<PageSource>): Long {
+    fun beginRequest(chapterId: String): Long {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
-        val textChars = pages.sumOf { it.text.length.toLong() }
         return synchronized(this) {
             requestEpoch += 1L
+            if (cached?.chapterId != chapterId) cached = null
+            requestEpoch
+        }
+    }
+
+    /**
+     * Reconcile page content after corruption filtering. A superseded request
+     * must never evict or replace the cache owned by a newer request.
+     */
+    fun prepareSearch(chapterId: String, pages: List<PageSource>, requestEpoch: Long) {
+        require(chapterId.isNotBlank()) { "Invalid chapter identity" }
+        val textChars = pages.sumOf { it.text.length.toLong() }
+        synchronized(this) {
+            if (this.requestEpoch != requestEpoch) return@synchronized
             val current = cached
             if (current != null && (textChars > maxCachedChars ||
                     current.chapterId != chapterId || current.pages != pages)) {
                 cached = null
             }
-            requestEpoch
         }
+    }
+
+    /** Compatibility helper for cache-focused tests; production captures the epoch at entry. */
+    fun beginSearch(chapterId: String, pages: List<PageSource>): Long {
+        val epoch = beginRequest(chapterId)
+        prepareSearch(chapterId, pages, epoch)
+        return epoch
     }
 
     /**
