@@ -18,6 +18,10 @@ object StudyBrain {
     private val indexCache = BoundedEvidenceIndexCache(MAX_CACHED_CHARS)
 
     fun search(chapterId: String, pages: List<PageSource>, question: String, onlyPage: Int? = null): BrainSearchResult {
+        // Capture request ordering before filtering, validation, or corruption auditing.
+        // A slower older call must not obtain a newer cache epoch merely by reaching
+        // the index later than a request that started after it.
+        val cacheRequestEpoch = indexCache.beginRequest(chapterId)
         val cleaned = question.trim()
         // Apply chapter/page isolation even for an empty or stopword-only
         // question. A short query must not report pages from another PDF.
@@ -50,9 +54,9 @@ object StudyBrain {
         val corruptInScope = damagedPageIndices.size
         val firstCorruptedPage = damagedPageIndices.minOrNull()
         val chapterPages = scoped.filterNot { PdfCoverageAudit.likelyCorruptedText(it.text) }
-        // Evict a different/changed/oversized PDF even when the query is too short
-        // or the selected page has no readable text and search returns early below.
-        val cacheRequestEpoch = indexCache.beginSearch(chapterId, chapterPages)
+        // Reconcile filtered page content before any early return. This only mutates
+        // shared cache state if this request still owns the epoch allocated at entry.
+        indexCache.prepareSearch(chapterId, chapterPages, cacheRequestEpoch)
         val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
         val readablePages = valid.count { it.text.isNotBlank() }
         if (MedicalText.queryTokens(cleaned).isEmpty())
