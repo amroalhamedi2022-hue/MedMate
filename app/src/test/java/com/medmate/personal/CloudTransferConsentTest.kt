@@ -81,10 +81,10 @@ class CloudTransferConsentTest {
         val consent = CloudTransferConsent.grantForTest(endpoint, "local-model", source, seal) { now }
         assertTrue(consent.permits(endpoint, "local-model", source, seal))
         now += (CloudTransferConsent.GRANT_TTL_MILLIS - 1L) * 1_000_000L
-        assertTrue(consent.permits(endpoint, "local-model", source, seal), "grant remains valid just before expiry")
+        assertTrue("grant remains valid just before expiry", consent.permits(endpoint, "local-model", source, seal))
         now += 1_000_000L
-        assertFalse(consent.permits(endpoint, "local-model", source, seal), "grant expires at five minutes")
-        assertFalse(consent.consume(endpoint, "local-model", source, seal), "expired grant cannot reach the network boundary")
+        assertFalse("grant expires at five minutes", consent.permits(endpoint, "local-model", source, seal))
+        assertFalse("expired grant cannot reach the network boundary", consent.consume(endpoint, "local-model", source, seal))
     }
 
     @Test fun concurrentClaimsCannotDuplicatePdfUploadPermission() {
