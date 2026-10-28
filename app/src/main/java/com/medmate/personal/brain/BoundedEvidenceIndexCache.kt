@@ -42,6 +42,12 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
      */
     fun prepareSearch(chapterId: String, pages: List<PageSource>, requestEpoch: Long) {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
+        // Avoid traversing a potentially huge stale PDF after a newer request
+        // has already taken ownership. Recheck after sizing to cover a race
+        // where this request is superseded while the page list is being read.
+        synchronized(this) {
+            if (this.requestEpoch != requestEpoch) return
+        }
         val textChars = pages.sumOf { it.text.length.toLong() }
         synchronized(this) {
             if (this.requestEpoch != requestEpoch) return@synchronized
@@ -98,6 +104,12 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
         requestEpoch: Long = currentEpoch()
     ): IndexedEvidenceRetriever? {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
+        // A superseded query must not walk every page just to size or compare
+        // stale content. If it becomes stale during sizing, the final locked
+        // check below also prevents reuse or publication into shared state.
+        synchronized(this) {
+            if (this.requestEpoch != requestEpoch) return null
+        }
         val textChars = pages.sumOf { it.text.length.toLong() }
         if (textChars > maxCachedChars) {
             // Oversized input uses uncached retrieval and cannot evict a newer request.
@@ -108,15 +120,16 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
         }
 
         return synchronized(this) {
-            val current = cached
-            if (current != null && current.chapterId == chapterId && current.pages == pages) {
-                current.index
-            } else if (this.requestEpoch != requestEpoch) {
-                // A superseded request may finish locally but cannot repopulate shared state.
+            if (this.requestEpoch != requestEpoch) {
                 null
             } else {
-                IndexedEvidenceRetriever(PageSegmenter(850).split(pages)).also {
-                    cached = Entry(chapterId, pages.toList(), it, textChars)
+                val current = cached
+                if (current != null && current.chapterId == chapterId && current.pages == pages) {
+                    current.index
+                } else {
+                    IndexedEvidenceRetriever(PageSegmenter(850).split(pages)).also {
+                        cached = Entry(chapterId, pages.toList(), it, textChars)
+                    }
                 }
             }
         }
