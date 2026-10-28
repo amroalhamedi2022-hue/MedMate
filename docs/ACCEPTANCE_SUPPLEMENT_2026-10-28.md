@@ -153,3 +153,16 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - Independent device-bundle re-hash: Debug APK `44fef2c64bb3c7fd4141fdddba9c9ee48bac0dca9c194c947c4e7ec84e11f316` (30,281,111 bytes); AndroidTest APK `cf524cfe68a7fec8e6b4f7c487880ad083ff5f3bc7f442cb140fa7d545e9eada` (374,449 bytes). Both match `SHA256SUMS`.
 - Device bundle Artifact **12814603154**, Debug APK Artifact **12814443511**, reports Artifact **12814722650**. ARM64 llama libraries are packaged; no model or PDF is bundled.
 - Physical Pad 5, real GGUF/JNI inference, PDF page-two grounding, live HTTPS consent/denial, clinical review, RAM/thermal and final signing remain **NOT TESTED**. Debug is not final.
+
+## Current PR-head build and artifact recheck — 2026-10-28 12:22 UTC
+
+- **Purpose:** verify the current PR head still compiles after the Brain-panel consent-disposal guard and its lifecycle contract were recorded, and ensure the exact APK pair is downloadable and hash-consistent. Source-only checks cannot prove Gradle/Compose integration or artifact integrity.
+- **PASS — Android CI:** [run 40686487783](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40686487783), associated with current PR head `399876fcd59e81d764f4be3b2d10c1fff45800e4`. The build job completed successfully.
+- **PASS — JVM/Robolectric report:** 221 tests, 0 failures, 0 ignored; Gradle Lint and Debug + AndroidTest assembly completed in the successful workflow.
+- **PASS — independent artifact extraction and SHA-256:** device-test bundle Artifact [12814977618](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40686487783/artifacts/12814977618); validation reports Artifact [12814897769](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40686487783/artifacts/12814897769); standalone Debug APK Artifact [12814728837](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40686487783/artifacts/12814728837).
+  - Debug APK: 30,281,111 bytes; SHA-256 `df721a012b73152808d28e556d4072d308de22b087352ccbf73a0e0eed391bf5`.
+  - AndroidTest APK: 374,449 bytes; SHA-256 `a4a8d5253713f4b204804f0e65897d8fa3ba81e8e74597600ebd44836b897dc2`.
+  - Both digests were independently recomputed from the downloaded bundle and matched `SHA256SUMS`. The bundle SHA-256 is `3a20e947610f0ae33cb0c9e10ff1b60056e0048945bbf13386540b03f7f01dd8`.
+- **PASS — APK content boundary:** ARM64 `libllama.so` and `libllama_jni.so` are packaged; neither APK contains GGUF weights or PDF files.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, actual user-supplied GGUF inference through JNI, generated answer and page-2 citation round-trip, live HTTPS consent/denial, model load/unload on device, clinical review, RAM/thermal/latency and stable signing. This is a Debug/test pair, not a final release; native libraries and compiled instrumentation do not prove real-model acceptance.
+- No model, personal PDF, credential or signing key was uploaded; no main write or merge.
