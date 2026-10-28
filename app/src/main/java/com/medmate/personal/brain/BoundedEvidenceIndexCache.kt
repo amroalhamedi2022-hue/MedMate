@@ -120,7 +120,8 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
         return total
     }
 
-    private fun isCurrentRequest(requestEpoch: Long): Boolean =
+    /** Cheap epoch check used to stop superseded retrieval before more PDF work is done. */
+    fun isCurrentRequest(requestEpoch: Long): Boolean =
         synchronized(this) { this.requestEpoch == requestEpoch }
 
     fun reusableIndex(
