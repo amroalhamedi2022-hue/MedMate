@@ -5,9 +5,9 @@ import re
 
 source_path = Path("app/src/main/java/com/medmate/personal/ui/BrainPanel.kt")
 source = source_path.read_text(encoding="utf-8")
-generic = len(re.findall(r"catch\\s*\\(e:\\s*Exception\\)", source))
+generic = len(re.findall(r"catch\s*\(e:\s*Exception\)", source))
 safe = len(re.findall(
-    r"catch\\s*\\(e:\\s*CancellationException\\)\\s*\\{\\s*throw e\\s*\\}\\s*catch\\s*\\(e:\\s*Exception\\)",
+    r"catch\s*\(e:\s*CancellationException\)\s*\{\s*throw e\s*\}\s*catch\s*\(e:\s*Exception\)",
     source,
 ))
 assert "import kotlinx.coroutines.CancellationException" in source, "CancellationException import missing"
