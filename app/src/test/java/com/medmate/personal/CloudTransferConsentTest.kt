@@ -75,6 +75,15 @@ class CloudTransferConsentTest {
         assertEquals("exactly one evidence-sealed PDF upload permission", 1, claims.get())
     }
 
+    @Test fun revokingRetainedApprovalPreventsLaterOutboundClaim() {
+        val seal = "c".repeat(64)
+        val consent = CloudTransferConsent.grant(endpoint, "local-model", source, seal)
+        assertTrue(consent.permits(endpoint, "local-model", source, seal))
+        consent.revoke()
+        assertFalse("revoked retained reference cannot preview", consent.permits(endpoint, "local-model", source, seal))
+        assertFalse("revoked retained reference cannot claim outbound transfer", consent.consume(endpoint, "local-model", source, seal))
+    }
+
     @Test fun evidenceSealedApprovalExpiresAfterFiveMinutes() {
         var now = 1_000_000L
         val seal = "b".repeat(64)
