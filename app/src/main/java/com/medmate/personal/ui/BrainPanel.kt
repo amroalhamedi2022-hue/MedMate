@@ -23,6 +23,7 @@ import com.medmate.personal.data.ChapterStore
 import com.medmate.personal.data.StudyStore
 import com.medmate.personal.study.StudyKind
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import com.medmate.personal.ui.theme.Muted
 import com.medmate.personal.ui.theme.Turquoise
 import kotlinx.coroutines.Dispatchers
@@ -145,7 +146,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 onDevice.loadModel(imported.file)
                 localModelName = onDevice.loadedModelName
                 nativeProbe = null
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 // A RAM preflight failure does not unload the previous model;
                 // reflect actual native session state instead of hiding it.
                 localModelName = onDevice.loadedModelName
@@ -221,7 +222,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                         pdfCoverage = withContext(Dispatchers.Default) {
                                             PdfCoverageAudit.inspect(chapter.sha256, chapter.pageCount, pages)
                                         }
-                                    } catch (e: Exception) {
+                                    } catch (e: CancellationException) { throw e } catch (e: Exception) {
                                         error = "فشل فحص تغطية النص: ${e.localizedMessage}"
                                     } finally { busy = false }
                                 }
@@ -293,7 +294,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     lastPageOnly = capturedOnly
                     lastSourcePage = capturedPage
                     prepared = StudyBrain.prepareSourceOnly(chapter.sha256, capturedQuestion, answer)
-                } catch (e: Exception) { error = e.localizedMessage ?: "فشل البحث في الشبتر" }
+                } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "فشل البحث في الشبتر" }
                 finally { busy = false }
             }
         }, enabled = !busy && !localBusy && question.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
@@ -320,7 +321,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             item.pageIndex == draft.pageIndex && item.prompt.trim().equals(draft.prompt.trim(), ignoreCase = true)
                         } }
                         draftNotice = "${offlineDrafts.size} مسودة بحاجة مراجعة؛ المتشابهات المحفوظة تم تجاهلها"
-                    } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر استخراج المسودات" }
+                    } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر استخراج المسودات" }
                     finally { busy = false }
                 }
             }
@@ -370,7 +371,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     )
                                     ignoredDrafts = ignoredDrafts + draft.id
                                     draftNotice = if (duplicate) "البطاقة موجودة من قبل" else "انحفظت المسودة بعد الموافقة — بتلاقيها في Study Studio"
-                                } catch (e: Exception) { error = e.localizedMessage ?: "فشل حفظ المسودة" }
+                                } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "فشل حفظ المسودة" }
                                 finally { draftBusyId = null }
                             }
                         }) { Text(if (draftBusyId == draft.id) "جاري الحفظ…" else "اعتماد وحفظ") }
@@ -480,7 +481,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                             onDevice.loadModel(file)
                                             localModelName = onDevice.loadedModelName
                                             nativeProbe = null
-                                        } catch (e: Exception) {
+                                        } catch (e: CancellationException) { throw e } catch (e: Exception) {
                                             // Preserve the visible name of a previously loaded
                                             // model if only the new model's RAM gate failed.
                                             localModelName = onDevice.loadedModelName
@@ -511,7 +512,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                             NativeProbeMemory(pss.coerceAtLeast(0),
                                                 system.availMem.coerceAtLeast(0L), system.lowMemory)
                                         }
-                                    } catch (e: Exception) {
+                                    } catch (e: CancellationException) { throw e } catch (e: Exception) {
                                         error = "فشل اختبار GGUF المحلي: ${e.localizedMessage}"
                                     } finally { localBusy = false }
                                 }
@@ -562,7 +563,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                             localBusy = true
                             scope.launch {
                                 try { onDevice.unload(); localModelName = null; nativeProbe = null }
-                                catch (e: Exception) { error = "تعذّر تفريغ النموذج: ${e.localizedMessage}" }
+                                catch (e: CancellationException) { throw e } catch (e: Exception) { error = "تعذّر تفريغ النموذج: ${e.localizedMessage}" }
                                 finally { localBusy = false }
                             }
                         }) { Text("تفريغ النموذج من RAM (دون حذف الملف)") }
@@ -599,7 +600,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     } else {
                                         error = "تغيّر السؤال أو الصفحة أثناء الاستدلال؛ تجاهلنا النتيجة القديمة."
                                     }
-                                } catch (e: Exception) { error = "تعذّر الشرح المحلي: ${e.localizedMessage}" }
+                                } catch (e: CancellationException) { throw e } catch (e: Exception) { error = "تعذّر الشرح المحلي: ${e.localizedMessage}" }
                                 finally { localBusy = false }
                             }
                         }) { Text("اشرحلي محليًا من صفحات الكتاب") }
@@ -627,7 +628,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                     } else {
                                         error = "تغيّر السؤال أو الصفحة أثناء توليد المسودات؛ تجاهلنا النتيجة القديمة."
                                     }
-                                } catch (e: Exception) { error = "فشل إنشاء المسودات محليًا: ${e.localizedMessage}" }
+                                } catch (e: CancellationException) { throw e } catch (e: Exception) { error = "فشل إنشاء المسودات محليًا: ${e.localizedMessage}" }
                                 finally { localBusy = false }
                             }
                         }) { Text("✨ توليد MCQ وFlashcards محليًا — للمراجعة") }
@@ -763,7 +764,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 validation = CitationValidator.check(text, p.presentedEvidence.size)
                                 cloudCitationLinks = SourceCitationLinks.resolve(text, p.presentedEvidence)
                             }
-                        } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر الحصول على الشرح" }
+                        } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر الحصول على الشرح" }
                         finally { busy = false }
                     }
                 }) { Text("أرسل المقاطع لشرحها") }
@@ -793,7 +794,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 rejectedGenerated = response.rejected
                                 generatedBy = "Cloud AI"
                             }
-                        } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر توليد المسودات" }
+                        } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر توليد المسودات" }
                         finally { busy = false }
                     }
                 }) { Text("✨ توليد High-Yield وMCQ وFlashcards للمراجعة") }
@@ -841,7 +842,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                             StudyEvidenceNote.withSource(c.explanation, draft.sourceQuote))
                                         reviewedGenerated = reviewedGenerated + index
                                         draftNotice = if (dupe) "العنصر موجود" else "تم حفظ المسودة بعد موافقتك"
-                                    } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر الحفظ" }
+                                    } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر الحفظ" }
                                     finally { draftBusyId = null }
                                 }
                             }) { Text("اعتمد بعد المراجعة") }
