@@ -1,6 +1,8 @@
 package com.medmate.personal.brain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotSame
@@ -159,6 +161,36 @@ class BoundedEvidenceIndexCacheTest {
         assertNull(cache.reusableIndex("older-pdf", olderPages, olderEpoch))
         assertSame(currentIndex, cache.reusableIndex("current-pdf", currentPages, currentEpoch))
         assertEquals("current-pdf", cache.retainedChapterId)
+    }
+
+
+    @Test fun staleAmbiguousRequestCannotPurgeANewerChapterIndex() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val staleEpoch = cache.beginRequest("older-pdf")
+        val currentEpoch = cache.beginRequest("current-pdf")
+        val currentPages = listOf(PageSource("current-pdf", 0,
+            "Current cardiac examination notes."))
+        cache.prepareSearch("current-pdf", currentPages, currentEpoch)
+        val currentIndex = requireNotNull(cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+
+        // An older request discovers ambiguous page anchors after a newer request
+        // has already prepared the current chapter's shared index.
+        assertFalse(cache.invalidateIfCurrent(staleEpoch))
+        assertSame(currentIndex, cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+        assertEquals("current-pdf", cache.retainedChapterId)
+    }
+
+    @Test fun currentAmbiguousRequestCanStillPurgeItsOwnPrivateIndex() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val epoch = cache.beginRequest("private-pdf")
+        val pages = listOf(PageSource("private-pdf", 0, "Private source text."))
+        cache.prepareSearch("private-pdf", pages, epoch)
+        assertNotNull(cache.reusableIndex("private-pdf", pages, epoch))
+
+        assertTrue(cache.invalidateIfCurrent(epoch))
+        assertNull(cache.retainedChapterId)
+        assertEquals(0L, cache.retainedTextChars)
+        assertNull(cache.reusableIndex("private-pdf", pages, epoch))
     }
 
 }
