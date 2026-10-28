@@ -36,6 +36,16 @@ for statement in (
     assert statement in observer, f"background revocation missing: {statement}"
 assert "lifecycleOwner.lifecycle.addObserver(observer)" in observer
 assert "lifecycleOwner.lifecycle.removeObserver(observer)" in observer
+dispose_start = observer.index("onDispose {")
+dispose_end = observer.index("}", dispose_start)
+dispose = observer[dispose_start:dispose_end]
+for statement in (
+    "revokeCloudConsent()",
+    'sessionToken = ""',
+    "cloudPreviewReviewed = false",
+    "cloudPreviewExpanded = false",
+):
+    assert statement in dispose, f"panel-disposal cleanup missing: {statement}"
 assert "Lifecycle.Event.ON_START" not in observer, "foregrounding must not silently grant consent"
 context_guard = brain[brain.index("LaunchedEffect(chapter.sha256, question, pageOnly"):brain.index("var lastQuestion")]
 assert "revokeCloudConsent()" in context_guard
