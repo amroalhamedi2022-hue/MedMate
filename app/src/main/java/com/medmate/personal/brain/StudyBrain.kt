@@ -33,6 +33,10 @@ object StudyBrain {
         val identityScope = if (onlyPage == null) scoped else scoped.filter { it.pageIndex == onlyPage }
         if (identityScope.any { it.pageIndex < 0 } ||
             identityScope.groupingBy { it.pageIndex }.eachCount().any { it.value > 1 }) {
+            // Fail closed before returning: a request with ambiguous citation
+            // anchors must not leave a previous private PDF's text index resident,
+            // nor allow an older in-flight search to repopulate that shared cache.
+            indexCache.invalidate()
             return BrainSearchResult(
                 emptyList(), BrainSearchStatus.AMBIGUOUS_PAGE_IDENTITIES, 0
             )
