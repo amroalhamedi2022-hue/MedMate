@@ -32,7 +32,7 @@ assert identity_guard.index("invalidateIfCurrent") < identity_guard.index("retur
 )
 assert "fun isCurrentRequest(requestEpoch: Long)" in cache
 checker_start = cache.index("fun isCurrentRequest(requestEpoch: Long)")
-checker_end = cache.index("\n", checker_start)
+checker_end = cache.index("\n\n", checker_start)
 assert "synchronized(this)" in cache[checker_start:checker_end + 1], (
     "request ownership must be read under the cache lock"
 )
