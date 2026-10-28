@@ -134,12 +134,12 @@ if ! grep -Fq 'NativeGgufDeviceAcceptanceTest' <<<"$instrumentation_output"; the
   echo "FAIL: expected NativeGgufDeviceAcceptanceTest was not reported by instrumentation." >&2
   exit 5
 fi
-if ! grep -Fq 'test=realGgufLoadsAndPassesFreshSyntheticCalibration' <<<"$instrumentation_output"; then
-  echo "FAIL: expected real GGUF/PDF acceptance test method was not reported by instrumentation." >&2
-  exit 5
-fi
 if ! grep -Eq 'OK \([1-9][0-9]* tests?\)' <<<"$instrumentation_output"; then
   echo "FAIL: Android instrumentation output is missing a successful JUnit summary." >&2
+  exit 5
+fi
+if ! grep -Fq 'test=realGgufLoadsAndPassesFreshSyntheticCalibration' <<<"$instrumentation_output"; then
+  echo "FAIL: expected real GGUF/PDF acceptance test method was not reported by instrumentation." >&2
   exit 5
 fi
 printf 'PASS: Android instrumentation reported a successful native GGUF/PDF acceptance test.\n'
