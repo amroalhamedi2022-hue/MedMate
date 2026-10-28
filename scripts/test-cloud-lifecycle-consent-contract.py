@@ -20,6 +20,8 @@ helper_end = brain.index("\n    }", helper_start)
 helper = brain[helper_start:helper_end]
 assert "cloudConsent?.revoke()" in helper
 assert "cloudConsent = null" in helper
+assert "explicitConsent = false" in helper
+assert brain.count("cloudConsent = null") == 1, "all invalidation must go through the revocation helper"
 start = brain.index("val lifecycleOwner = LocalLifecycleOwner.current")
 end = brain.index("var lastQuestion", start)
 observer = brain[start:end]
@@ -27,7 +29,6 @@ assert "DisposableEffect(lifecycleOwner)" in observer
 assert "Lifecycle.Event.ON_STOP" in observer
 for statement in (
     "revokeCloudConsent()",
-    "explicitConsent = false",
     'sessionToken = ""',
     "cloudPreviewReviewed = false",
     "cloudPreviewExpanded = false",
@@ -36,6 +37,11 @@ for statement in (
 assert "lifecycleOwner.lifecycle.addObserver(observer)" in observer
 assert "lifecycleOwner.lifecycle.removeObserver(observer)" in observer
 assert "Lifecycle.Event.ON_START" not in observer, "foregrounding must not silently grant consent"
+context_guard = brain[brain.index("LaunchedEffect(chapter.sha256, question, pageOnly"):brain.index("var lastQuestion")]
+assert "revokeCloudConsent()" in context_guard
+assert "if (pageOnly) currentPage else -1" in context_guard
+assert brain.count("Keep the object reachable until the request claims it or finishes") == 2
+assert brain.count("finally { revokeCloudConsent(); busy = false }") == 2
 
 # The production outbound boundary remains one-shot and redirect-safe.
 consume = gateway.index("consent.consume(gatewayUrl, model, requestIdentity, evidenceSeal)")
