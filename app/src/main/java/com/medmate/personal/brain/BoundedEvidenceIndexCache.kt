@@ -41,6 +41,17 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
         }
     }
 
+    /**
+     * Fail-closed purge for requests whose source/page identity is not trustworthy.
+     * Advancing the epoch also prevents an older in-flight search from repopulating it.
+     */
+    fun invalidate() {
+        synchronized(this) {
+            requestEpoch += 1L
+            cached = null
+        }
+    }
+
     /** Compatibility helper for cache-focused tests; production captures the returned epoch. */
     fun evictIfStale(chapterId: String, pages: List<PageSource>) {
         beginSearch(chapterId, pages)
