@@ -112,3 +112,12 @@ New source versionCode=9, but **do not attempt to reinstall/upgrade a Work-signe
 - Pinned dependency and documented upstream provenance: `dev.ffmpegkit-maintained:llama-android:0.1.1`, public upstream `ffmpegkit-maintained/llama-android`, MIT declaration, documented llama.cpp build `b9878`.
 - CI provenance regression is wired and **PASS** on `aa2b301f203214409be7ddcc5b2774f7872a7f9a` ([run 40611008395](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40611008395)); 200 JVM/Robolectric tests, lint, Android/AndroidTest packaging and independently rehashed APK pair all passed.
 - This is a supply-chain/source wiring gate, **not** independent AAR binary attestation or real inference. Next P2 gate remains the user-supplied real GGUF on ARM64, followed by the synthetic two-page PDF citation path and explicit cloud allow/deny on Xiaomi Pad 5. Record model SHA/bytes and device memory/latency; never upload the model or personal PDFs.
+
+
+## Current source baseline correction — 2026-10-28
+
+The historical plan above originally described an available v0.6 snapshot because v0.6.1 source was missing at that checkpoint. It must **not** be read as the current import state: PR #1 now contains the sanitized **MedMate Personal v0.9.1 round-3 Android source** (116 files, original sanitized archive SHA-256 `07b5b5d11de5f0b5c8948a9a84c1e43017870615e84cb6ea0356765a10ac8b0d`) on `automation/medmate-v091-source-tree-20261023`.
+
+Current source includes the production `LlamaAndroidPort` path through the pinned llama-android AAR, content-addressed local GGUF import, page-grounded PDF retrieval/citations, explicit evidence-bound cloud consent, study-draft validation, backups, and a device-only real-model/PDF acceptance test. This is a **source capability statement**, not proof that any GGUF was loaded or that clinical output is correct.
+
+The 2026-10-28 bounded-index milestone evicts the previous chapter's cached text/token index when the active document exceeds the cache ceiling. Its Kotlin/JUnit integration is **pending exact-head Android CI**. Real ARM64 GGUF inference, page-two citation round-trip, live HTTPS consent/denial, device RAM/thermal/latency and independent clinical review remain **NOT TESTED**. Do not upload GGUF weights, personal PDFs, signing keys or credentials; do not substitute `FakeLlama` for the device acceptance test.
