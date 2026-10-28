@@ -1321,10 +1321,10 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Evidence boundary:** CI compiles but does not execute Android instrumentation. **NOT TESTED:** physical Xiaomi Pad 5, user-supplied real GGUF/llama.cpp/JNI inference, adversarial PDF answer behavior, actual page-2 citation navigation, live HTTPS cloud consent/denial, RAM/thermal/latency and clinical accuracy. No model weights, personal PDF, credentials or signing key were committed or bundled. Debug is not final; PR #1 remains draft and unmerged.
 
 
-## 2026-10-28 — Stale ambiguous PDF request cannot evict a newer chapter
+## 2026-10-28 — Stale ambiguous PDF request cannot evict a newer chapter (CI PASS)
 
-- Added `BoundedEvidenceIndexCache.invalidateIfCurrent(requestEpoch)`; the ambiguous-page early-return in `StudyBrain` now purges only if the request still owns the latest epoch.
-- Added two JUnit regressions (stale invalid request preserves the newer index; current invalid request still clears its own index) and updated the Python source-contract guard.
-- **CI NOT VERIFIED** for current functional head `bc46810cd17c413ca2512e6dd699d405e1d7e56c`; prior successful run 40640264253 is an earlier source SHA and does not validate this change. See `docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md`.
-- **NOT TESTED:** real GGUF/JNI, physical Xiaomi Pad 5, grounded page-2 citations, live cloud-consent allow/deny, clinical review and device memory/thermal. Debug is not final.
+- Added epoch-guarded `invalidateIfCurrent(requestEpoch)`; stale ambiguous searches can no longer purge a newer chapter's cache.
+- **PASS:** [Android CI run 40645050985](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40645050985) on PR head `2402f86fe6552fe3bd3fdb8f185b7043205761e4`; 213 JVM/Robolectric tests passed (0 failures/ignored), cache suite 13/13, contract guards, Lint, Debug/AndroidTest compilation and package checks passed.
+- **PASS:** independently verified Debug APK SHA-256 `e2df022c9fe966c80e1e0d5d1830fa96e8b53a6980a125655c4cc11015f0d372` and AndroidTest APK SHA-256 `91ee1ed28c72974d89adda9ea731692c3ad9de66f76fa6da4a1cf62c77f6085d`; see the dated supplement for artifact IDs and sizes.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 grounding on a real model, live cloud-consent allow/deny, clinical review, device RAM/thermal and final signing. Debug is not final.
 
