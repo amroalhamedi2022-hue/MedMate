@@ -22,6 +22,22 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
     internal val retainedChapterId: String? get() = cached?.chapterId
     internal val retainedTextChars: Long get() = cached?.textChars ?: 0L
 
+    /**
+     * Run before early returns in search. Even an empty query or unreadable new
+     * chapter must not leave a different PDF's cached text resident.
+     */
+    fun evictIfStale(chapterId: String, pages: List<PageSource>) {
+        require(chapterId.isNotBlank()) { "Invalid chapter identity" }
+        val textChars = pages.sumOf { it.text.length.toLong() }
+        synchronized(this) {
+            val current = cached
+            if (current != null && (textChars > maxCachedChars ||
+                    current.chapterId != chapterId || current.pages != pages)) {
+                cached = null
+            }
+        }
+    }
+
     fun reusableIndex(chapterId: String, pages: List<PageSource>): IndexedEvidenceRetriever? {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
         val textChars = pages.sumOf { it.text.length.toLong() }
