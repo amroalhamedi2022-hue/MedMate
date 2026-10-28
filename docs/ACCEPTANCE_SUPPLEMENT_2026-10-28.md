@@ -22,3 +22,12 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **PASS — exact-source contract check:** independently inspected the current branch blobs and confirmed the ambiguous-page guard calls `invalidate()` before its early return, and that invalidation clears the cache while advancing the epoch. This mirrors the new Python CI contract; it is not the CI execution itself.
 - **CI status: NOT VERIFIED for this exact head.** The last verified Android CI run remains [40622394327](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40622394327) on the earlier source/test SHA `cefa3a39557d6b16e39bcc29dc529e11dbd0412c`; it is not evidence for this change. No new APK is claimed. The next required source gate is the full JUnit/Robolectric + static-contract + Lint + Debug/AndroidTest assembly run.
 - **NOT TESTED:** exact-head Android CI, Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, two-page PDF-to-model citation round-trip, live HTTPS consent allow/deny, RAM/thermal/latency and independent clinical review. No GGUF, personal PDF, credential or signing key was uploaded; no main merge.
+
+
+## 2026-10-28 — stale oversized PDF request must not evict newer cache (CI NOT VERIFIED)
+
+- Added a tenth cache lifecycle regression: an oversized search from an older request epoch completes after a newer chapter has populated the cache. The stale request must return uncached without clearing or replacing the newer chapter's index.
+- Test commit: `664e3935df7730ff468e502d4fc39381c22ad31c`.
+- **Purposeful build question:** does the actual Kotlin/JUnit test compile and pass alongside the full BrainCore, Robolectric, safety-contract, Lint, Debug and AndroidTest assembly suite? Source inspection alone cannot prove the Kotlin/Gradle integration.
+- **Execution status: NOT VERIFIED.** The available workflow-run/check lookup did not return a run for this commit. Previous run 40622394327 predates the cache invalidation and stale-oversized regression; it is not evidence for this head. No new APK is claimed.
+- **NOT TESTED:** real Xiaomi Pad 5, GGUF/llama.cpp/JNI inference, two-page PDF citation round-trip, live HTTPS consent allow/deny, RAM/thermal/latency and clinical review. No private model, PDF, credential or signing key uploaded.
