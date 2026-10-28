@@ -76,4 +76,23 @@ class BoundedEvidenceIndexCacheEpochTest {
         assertEquals("current-pdf", cache.retainedChapterId)
     }
 
+
+    @Test fun requestSupersededDuringPageSizingCannotPublishIndex() {
+        val cache = BoundedEvidenceIndexCache(1_024)
+        val racingEpoch = cache.beginRequest("racing-pdf")
+        val racingPages = object : AbstractList<PageSource>() {
+            override val size: Int get() = 1
+            override fun get(index: Int): PageSource {
+                cache.beginRequest("newer-pdf")
+                return PageSource("racing-pdf", 0, "This list supersedes itself while being sized.")
+            }
+        }
+
+        // The request becomes stale during O(n) sizing. The final locked epoch
+        // check must refuse to publish an index built from the older snapshot.
+        assertNull(cache.reusableIndex("racing-pdf", racingPages, racingEpoch))
+        assertNull(cache.retainedChapterId)
+        assertEquals(0L, cache.retainedTextChars)
+    }
+
 }
