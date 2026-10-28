@@ -42,6 +42,7 @@ jobs:
           python3 scripts/test-native-gguf-pdf-acceptance-contract.py
           python3 scripts/test-llama-android-provenance.py
           python3 scripts/test-pdf-page-limit-contract.py
+          python3 scripts/test-brain-cache-early-return-contract.py
           python3 scripts/test-model-load-ui-contract.py
           python3 scripts/test-model-storage-contract.py
           python3 scripts/test_bouncycastle_runtime_gate.py
