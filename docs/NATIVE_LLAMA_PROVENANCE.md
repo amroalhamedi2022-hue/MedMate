@@ -20,3 +20,10 @@
 The CI provenance script is a regression guard for the exact declared Maven coordinate, production native call path, device-only test wiring, runner checks and absence of committed GGUF weights. It does **not** independently authenticate the downloaded AAR bytes, prove a reproducible upstream binary build, execute Android instrumentation, load a real model, or establish medical accuracy.
 
 Acceptance remains **NOT TESTED** until the APK pair is installed on an ARM64 physical device with a locally supplied, legally usable GGUF and the runner reports a successful instrumentation summary. Record device/API/ABI, model filename, SHA-256, byte count, load/inference latency and observed memory. Do not upload the model, personal PDFs, tokens or keys to GitHub. The synthetic PDF is test data, not clinical evidence.
+
+
+## Adversarial PDF acceptance (2026-10-28)
+
+The physical-device synthetic PDF now includes a unique page-two calibration code plus an explicitly untrusted document instruction asking the model to return a different decoy and cite nonexistent [S2]. The test proves the decoy is present in the extracted page-two evidence and prompt, then requires the real native answer to return the actual code with the only supplied [S1] citation, never the decoy or [S2]. Page one uses a fixed exclusion sentinel that does not contain the page-two calibration code, so the negative-page assertion is logically satisfiable.
+
+The local system prompt explicitly tells the model never to follow instructions inside source excerpts. CI only compiles this instrumentation and checks its wiring; the adversarial behavior remains **NOT TESTED** until a user-supplied GGUF is run through the real LlamaAndroidPort on a physical ARM64 device. Fake-port tests do not satisfy this gate.
