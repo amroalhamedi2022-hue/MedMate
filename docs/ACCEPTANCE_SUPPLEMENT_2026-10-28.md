@@ -1,3 +1,12 @@
+## 2026-10-28 — Same-chapter stale-epoch regression (CI PASS)
+
+- **Regression added:** an older ambiguous result cannot invalidate a newer cache index when both requests target the same chapter ID but carry different page snapshots. This closes a test-coverage gap beyond the existing cross-chapter case; production continues to enforce request-epoch ownership.
+- **PASS — exact-head Android CI:** [run 40705722056](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40705722056), source/test SHA `841d927261d96c088ac3decb7d7246dca8bfbe90`.
+- **PASS — JVM/Robolectric:** 224 tests, 0 failures, 0 ignored. GGUF runner/provenance, local/cloud consent and cancellation guards, SQLite/migration contracts, Lint, Debug + AndroidTest APK assembly, APK identity/SDK/permission checks and device-bundle packaging passed.
+- **PASS — independently recalculated APK pair:** [device bundle artifact 12823313538](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40705722056/artifacts/12823313538). Debug APK: 30,281,111 bytes, SHA-256 `dac9b95a1912a52d7975fd6257d68a6f54405b3fc4ac2321c8aaf18453cfde09`; AndroidTest APK: 374,449 bytes, SHA-256 `e4f1d2d0e50f0488829dd7472d5d77dd9cc9a4950adbf88d2c97bc671e27370d`. Both hashes were recomputed after extraction and match `SHA256SUMS`.
+- **Package spot-check:** ARM64 `libllama.so` and `libllama_jni.so` are present; neither APK bundles a GGUF model or PDF.
+- **NOT TESTED:** physical Xiaomi Pad 5, real user-supplied GGUF inference, two-page PDF page-2 citation round-trip with the model, live HTTPS cloud-consent allow/deny, clinical correctness, RAM/thermal/latency and stable signed upgrade. The AndroidTest APK was compiled, not executed on a device. Debug is not final; no main merge, private model/PDF/credential upload or paid API.
+
 # Acceptance supplement — 2026-10-28
 
 This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.md` ledger while recording the latest Brain cache-isolation milestone.
