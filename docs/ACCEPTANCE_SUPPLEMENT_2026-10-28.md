@@ -60,3 +60,11 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **PASS — package safety spot-check:** ARM64 `libllama.so` and `libllama_jni.so` are present; no GGUF or PDF is packaged. Validation reports artifact [12797426031](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40645050985/artifacts/12797426031); standalone Debug APK artifact [12797790267](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40645050985/artifacts/12797790267).
 - **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, two-page PDF page-2 answer/citation with a real model, live HTTPS consent/denial, clinical correctness, device RAM/thermal and final signing. The compiled AndroidTest APK was not executed on a physical device. No model weights, personal PDF, credentials or signing keys were uploaded; no main write or merge.
 
+
+
+## Conditional PDF cache invalidation runtime regression (2026-10-28)
+
+- **Test commit:** `6c0a907086343e024ffb022b17ae66c71a590c96`. Added two JUnit cases against the production `BoundedEvidenceIndexCache` API: an older ambiguous request cannot purge a newer chapter index, and a current request can purge its index while a fresh retry can build a new one.
+- **PASS — isolated Kotlin/JVM harness:** compiled the production cache implementation with minimal stubs for its neighboring retrieval types and exercised both scenarios. This verifies the cache algorithm in isolation, but is **not** the Android Gradle/JUnit/Robolectric suite.
+- **Android CI / full JUnit: NOT VERIFIED** for this exact test head; the available workflow-run/status lookup returned no run/check. The prior successful CI predates this added test, so no new APK is claimed.
+- **NOT TESTED:** Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, two-page PDF page-2 citation round-trip, live HTTPS consent allow/deny, RAM/thermal/latency and clinical review. No model weights, personal PDF, credentials or signing keys were uploaded.
