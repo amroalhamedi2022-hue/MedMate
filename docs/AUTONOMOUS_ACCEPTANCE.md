@@ -1,5 +1,12 @@
 <!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
 
+## Latest verified checkpoint — 2026-10-28 (v0.9.1 integration build)
+
+- **PASS Android CI:** [run 40690225963](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40690225963) on PR head `d5f379c1ec71c41658f2c3cf0becb14548a3a4a9`; all safety contracts, SQLite/migration checks, Lint and Debug/AndroidTest APK assembly passed.
+- **PASS JVM/Robolectric:** 223 tests, 0 failures, 0 ignored.
+- **PASS independent APK integrity:** Debug `97d330bc5badf00ded730e349032cb6ccdb05050b4e11c4768281082e870cc66` (30,281,111 bytes); AndroidTest `55bccae374baedd4dcb887a1203335ea37415da8e119960c3cac6fca3c89f68f` (374,449 bytes), both extracted and rehashed against the device-bundle `SHA256SUMS`.
+- **NOT TESTED:** Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, real PDF page-2 grounding, live cloud consent/denial, clinical accuracy, device RAM/thermal and stable signed upgrade. Debug is not final; no merge.
+
 ## Latest source checkpoint — 2026-10-28 (safe local GGUF storage management)
 
 - **PASS production:** Brain panel now exposes confirmed deletion for saved GGUF imports; deleting the active model unloads the native session first and clears model-derived transient state.
