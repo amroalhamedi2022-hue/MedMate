@@ -47,6 +47,7 @@ jobs:
           python3 scripts/test-brain-cache-early-return-contract.py
           python3 scripts/test-model-load-ui-contract.py
           python3 scripts/test-cancellation-propagation-contract.py
+          python3 scripts/test-cloud-lifecycle-consent-contract.py
           python3 scripts/test-model-storage-contract.py
           python3 scripts/test_bouncycastle_runtime_gate.py
       - uses: gradle/actions/setup-gradle@v4
