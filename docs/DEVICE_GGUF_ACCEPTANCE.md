@@ -228,3 +228,12 @@ This is harness/source acceptance only. Physical-device installation, a user-sup
   - `app-debug.apk`: 30,264,727 bytes; SHA-256 `b11579edc0030b1e283a11f15dc082cd55a55a1287ba1685fc9344e60b8c3ee6`.
   - `app-debug-androidTest.apk`: 374,045 bytes; SHA-256 `e6b99b2eb1ae9b7250431860e675e602a6621468465c3e5472497fc2c7f3b80b`.
 - **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, synthetic two-page PDF citation round-trip on device, live cloud consent/denial, RAM/thermal/latency. Debug is not final; the test bundle contains no model, personal PDF or credentials.
+
+
+## 2026-10-28 — Local model storage deletion acceptance build
+
+- **Build purpose:** validate the confirmed model-delete UI and storage-boundary helper; source-only checks cannot prove the Compose dialog, Kotlin file APIs and JUnit suite integrate.
+- **PASS Android CI:** run 40674871704 on the current branch; 220 JVM/Robolectric tests passed, 0 failures/ignored; APK and AndroidTest assembly and package checks passed.
+- **PASS artifact SHA-256:** Debug APK 30,281,111 bytes, a85277079b53682f06d108350120051ac83525548c3341a7ce6a6354985eea30; AndroidTest APK 374,449 bytes, 49454063b6e72c4f220cf126b90a54975738960ed7f3492c1ebcfe02466fe68d.
+- **Artifacts:** device-test bundle https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12809744923; Debug APK https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12810676126; validation reports https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12810970499.
+- **NOT TESTED:** physical Xiaomi Pad 5, real user-supplied GGUF/JNI inference, PDF page-two grounding, live cloud consent/denial and native model unload/delete behavior on device. The test APK contains no GGUF or PDF.
