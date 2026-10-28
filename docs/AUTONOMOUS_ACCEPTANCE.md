@@ -1345,3 +1345,12 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **PASS:** independently verified Debug APK SHA-256 `e2df022c9fe966c80e1e0d5d1830fa96e8b53a6980a125655c4cc11015f0d372` and AndroidTest APK SHA-256 `91ee1ed28c72974d89adda9ea731692c3ad9de66f76fa6da4a1cf62c77f6085d`; see the dated supplement for artifact IDs and sizes.
 - **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 grounding on a real model, live cloud-consent allow/deny, clinical review, device RAM/thermal and final signing. Debug is not final.
 
+
+
+## 2026-10-28 — Revoke cloud capability on Brain panel disposal (CI NOT VERIFIED; device/model NOT TESTED)
+
+- **Production:** `DisposableEffect.onDispose` now revokes the `CloudTransferConsent` object itself, clears the transient bearer token and resets excerpt-review UI state before removing the lifecycle observer. This covers navigation away from BrainPanel while the Activity remains resumed, not only Activity `ON_STOP`; a coroutine retaining the same unclaimed grant can no longer use it after disposal.
+- **Regression:** `scripts/test-cloud-lifecycle-consent-contract.py` now independently requires disposal cleanup for the grant, token and review state in addition to the existing background/context-change and outbound fail-closed checks. The existing JUnit suite already tests that a revoked retained grant cannot preview or consume consent.
+- **Source commit:** `67a99f559105e4eec6eddfffd73d7517b38af123`; contract-guard commit `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
+- **CI:** NOT VERIFIED for this exact updated source/guard head. Prior run [40683081537](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537) passed 221 tests on earlier head `7514a78dba80fa8bbf98d315bf4e433e88a18a6b`, but does not validate these new changes. No new APK/pass is claimed.
+- **NOT TESTED:** physical Pad 5 disposal/navigation timing, live HTTPS transfer denial, real GGUF inference, PDF page-two grounding, clinical review and device RAM/thermal. No model, PDF, token or key added to the public repository.
