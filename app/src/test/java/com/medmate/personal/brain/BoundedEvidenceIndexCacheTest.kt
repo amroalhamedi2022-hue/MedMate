@@ -142,4 +142,23 @@ class BoundedEvidenceIndexCacheTest {
         assertEquals("current-pdf", cache.retainedChapterId)
     }
 
+    @Test fun olderRequestDelayedBeforePreparationCannotEvictNewerChapter() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val olderEpoch = cache.beginRequest("older-pdf")
+        val currentEpoch = cache.beginRequest("current-pdf")
+        val currentPages = listOf(PageSource("current-pdf", 0,
+            "Current chapter text that should remain indexed."))
+        cache.prepareSearch("current-pdf", currentPages, currentEpoch)
+        val currentIndex = requireNotNull(cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+
+        // Simulate an older call reaching content preparation only after the newer
+        // request has already built its index.
+        val olderPages = listOf(PageSource("older-pdf", 0, "Older private fracture notes."))
+        cache.prepareSearch("older-pdf", olderPages, olderEpoch)
+
+        assertNull(cache.reusableIndex("older-pdf", olderPages, olderEpoch))
+        assertSame(currentIndex, cache.reusableIndex("current-pdf", currentPages, currentEpoch))
+        assertEquals("current-pdf", cache.retainedChapterId)
+    }
+
 }
