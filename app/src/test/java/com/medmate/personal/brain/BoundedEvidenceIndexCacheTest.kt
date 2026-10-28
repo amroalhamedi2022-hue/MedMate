@@ -47,6 +47,29 @@ class BoundedEvidenceIndexCacheTest {
         assertEquals(0L, cache.retainedTextChars)
     }
 
+    @Test fun stalePdfIsEvictedBeforeAnEmptyOrInvalidQueryCanReturn() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val first = listOf(PageSource("private-pdf-a", 0, "A prior private PDF chapter."))
+        assertNotNull(cache.reusableIndex("private-pdf-a", first))
+
+        // StudyBrain calls this before returning TOO_SHORT or MISSING_TEXT.
+        cache.evictIfStale("private-pdf-b", listOf(PageSource("private-pdf-b", 0, "")))
+        assertNull("new chapter must not retain the previous PDF", cache.retainedChapterId)
+        assertEquals(0L, cache.retainedTextChars)
+    }
+
+    @Test fun unchangedActivePdfKeepsItsIndexButChangedTextEvictsIt() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val original = listOf(PageSource("same-pdf", 0, "Original searchable text."))
+        val index = requireNotNull(cache.reusableIndex("same-pdf", original))
+        cache.evictIfStale("same-pdf", original)
+        assertSame(index, cache.reusableIndex("same-pdf", original))
+
+        cache.evictIfStale("same-pdf", listOf(PageSource("same-pdf", 0, "Replaced page text.")))
+        assertNull("changed page content must invalidate old retained text", cache.retainedChapterId)
+        assertEquals(0L, cache.retainedTextChars)
+    }
+
     @Test fun exactCharacterLimitIsCacheableButOneCharacterOverClearsIt() {
         val cache = BoundedEvidenceIndexCache(32)
         val exact = listOf(PageSource("boundary", 0, "x".repeat(32)))
