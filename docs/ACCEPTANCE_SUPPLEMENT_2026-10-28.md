@@ -81,3 +81,12 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **Package check:** ARM64 `libllama.so` and `libllama_jni.so` are present. No GGUF or PDF files are bundled in either APK.
 - **NOT TESTED:** physical Xiaomi Pad 5, actual user-supplied GGUF inference through llama.cpp/JNI, the two-page PDF adversarial answer/citation round-trip on a real model, live HTTPS cloud-consent allow/deny, device RAM/thermal/latency, and independent clinical review. Android instrumentation was compiled, not executed on a physical device. No model weights, personal PDFs, credentials or signing keys were uploaded. Debug is not final.
 
+
+
+## 2026-10-28 — Five-minute one-shot cloud-transfer consent (CI pending)
+
+- **Production change:** `CloudTransferConsent` grants now expire after five minutes using a monotonic clock. Both unsealed and evidence-sealed `permits`/`consume` paths reject expired grants; the exact question/chapter/page/evidence seal and one-use atomic claim remain required.
+- **UI:** the approval text states the one-request/five-minute limit. A lifecycle-aware timer clears a stale approval and the checkbox; the actual outbound click also fails closed if the grant expires or the request context changes.
+- **Regression:** `CloudTransferConsentTest.evidenceSealedApprovalExpiresAfterFiveMinutes` checks the boundary just before and at expiry with a deterministic clock. Existing transport tests already cover concurrent gateway calls opening at most one connection. No PDF, credential or model is used in these tests.
+- **CI:** push run [40667072623](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667072623) and PR run [40667083596](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667083596) are **IN PROGRESS** on source/test SHA `2614b4ba34143bb39daffde041e08218cc49e708`. No new APK or CI pass is claimed yet.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, two-page PDF page-2 citation round-trip, live HTTPS consent/denial, clinical review, RAM/thermal and final signing. The TTL is a privacy guard, not proof of model correctness. No main write or merge.
