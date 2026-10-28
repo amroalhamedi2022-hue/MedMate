@@ -11,13 +11,22 @@ assert "import androidx.lifecycle.compose.LocalLifecycleOwner" in brain
 assert 'var sessionToken by remember { mutableStateOf("") }' in brain, (
     "the bearer token must remain ordinary in-memory Compose state, not saved state"
 )
+consent = (root / "app/src/main/java/com/medmate/personal/brain/CloudTransferConsent.kt").read_text()
+revoke_start = consent.index("fun revoke()")
+revoke_end = consent.index("}", revoke_start)
+assert "consumed = true" in consent[revoke_start:revoke_end], "revocation must invalidate captured grant objects"
+helper_start = brain.index("fun revokeCloudConsent()")
+helper_end = brain.index("\n    }", helper_start)
+helper = brain[helper_start:helper_end]
+assert "cloudConsent?.revoke()" in helper
+assert "cloudConsent = null" in helper
 start = brain.index("val lifecycleOwner = LocalLifecycleOwner.current")
 end = brain.index("var lastQuestion", start)
 observer = brain[start:end]
 assert "DisposableEffect(lifecycleOwner)" in observer
 assert "Lifecycle.Event.ON_STOP" in observer
 for statement in (
-    "cloudConsent = null",
+    "revokeCloudConsent()",
     "explicitConsent = false",
     'sessionToken = ""',
     "cloudPreviewReviewed = false",
