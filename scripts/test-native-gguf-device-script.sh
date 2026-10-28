@@ -101,9 +101,15 @@ case "${1:-}" in
           case "${FAKE_INSTRUMENT_MODE:-pass}" in
             pass)
               printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\n'
-              printf 'INSTRUMENTATION_STATUS: test=realGgufPdfCitationRoundTrip\n'
+              printf 'INSTRUMENTATION_STATUS: test=realGgufLoadsAndPassesFreshSyntheticCalibration\n'
               printf 'INSTRUMENTATION_STATUS_CODE: 1\n'
               printf 'INSTRUMENTATION_RESULT: stream=\nTime: 0.01\nOK (1 test)\nINSTRUMENTATION_CODE: -1\n'
+              ;;
+            wrong-test)
+              printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\\n'
+              printf 'INSTRUMENTATION_STATUS: test=someUnrelatedPassingTest\\n'
+              printf 'INSTRUMENTATION_STATUS_CODE: 1\\n'
+              printf 'INSTRUMENTATION_RESULT: stream=\\nTime: 0.01\\nOK (1 test)\\nINSTRUMENTATION_CODE: -1\\n'
               ;;
             fail)
               printf 'INSTRUMENTATION_STATUS: class=com.medmate.personal.brain.NativeGgufDeviceAcceptanceTest\nFAILURES!!!\nTests run: 1, Failures: 1\nINSTRUMENTATION_CODE: -1\n'
@@ -180,6 +186,11 @@ run_case() {
   elif [[ "$expected" == instrument-incomplete ]]; then
     [[ "$status" == 5 ]] || { cat "$case_dir/output.log"; echo "FAIL: incomplete instrumentation output exited $status, expected 5" >&2; return 1; }
     grep -Fq 'missing a successful JUnit summary' "$case_dir/output.log"
+    grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
+    ! find "$case_dir/device-root" -type f -print -quit | grep -q .
+  elif [[ "$expected" == instrument-wrong-method ]]; then
+    [[ "$status" == 5 ]] || { cat "$case_dir/output.log"; echo "FAIL: unrelated passing test exited $status, expected 5" >&2; return 1; }
+    grep -Fq 'expected real GGUF/PDF acceptance test method was not reported' "$case_dir/output.log"
     grep -Fq 'INSTRUMENTED' "$case_dir/adb.log"
     ! find "$case_dir/device-root" -type f -print -quit | grep -q .
   elif [[ "$expected" == instrument-transport-failure ]]; then
@@ -268,6 +279,7 @@ run_case mismatched-digest mismatch 1 0 pass
 run_case interrupted-partial-push fail 0 1 pass
 run_case instrumentation-reported-failure instrument-failure 0 0 fail
 run_case instrumentation-missing-summary instrument-incomplete 0 0 incomplete
+run_case instrumentation-wrong-method instrument-wrong-method 0 0 wrong-test
 run_case instrumentation-transport-loss instrument-transport-failure 0 0 transport-failure
 run_case low-storage storage 0 0 pass 1000
 run_case unparseable-storage storage-unverifiable 0 0 pass 2000000 malformed
