@@ -48,7 +48,7 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
         synchronized(this) {
             if (this.requestEpoch != requestEpoch) return
         }
-        val textChars = pages.sumOf { it.text.length.toLong() }
+        val textChars = measureTextCharsIfCurrent(pages, requestEpoch) ?: return
         synchronized(this) {
             if (this.requestEpoch != requestEpoch) return@synchronized
             val current = cached
@@ -98,6 +98,31 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
 
     private fun currentEpoch(): Long = synchronized(this) { requestEpoch }
 
+    /**
+     * Measure only while this request remains current. A newer search can arrive
+     * while a very large PDF is being sized; stop before touching the next page
+     * instead of making the obsolete request traverse the rest of the document.
+     * Returning null means superseded; a value above maxCachedChars means the
+     * caller may take its uncached/eviction path after checking epoch ownership.
+     */
+    private fun measureTextCharsIfCurrent(
+        pages: List<PageSource>,
+        requestEpoch: Long
+    ): Long? {
+        if (!isCurrentRequest(requestEpoch)) return null
+        val size = pages.size
+        var total = 0L
+        for (index in 0 until size) {
+            if (!isCurrentRequest(requestEpoch)) return null
+            total += pages[index].text.length.toLong()
+            if (total > maxCachedChars) return total
+        }
+        return total
+    }
+
+    private fun isCurrentRequest(requestEpoch: Long): Boolean =
+        synchronized(this) { this.requestEpoch == requestEpoch }
+
     fun reusableIndex(
         chapterId: String,
         pages: List<PageSource>,
@@ -105,12 +130,9 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
     ): IndexedEvidenceRetriever? {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
         // A superseded query must not walk every page just to size or compare
-        // stale content. If it becomes stale during sizing, the final locked
-        // check below also prevents reuse or publication into shared state.
-        synchronized(this) {
-            if (this.requestEpoch != requestEpoch) return null
-        }
-        val textChars = pages.sumOf { it.text.length.toLong() }
+        // stale content. The measurement helper checks ownership before each
+        // page access; the final locked check still protects publication.
+        val textChars = measureTextCharsIfCurrent(pages, requestEpoch) ?: return null
         if (textChars > maxCachedChars) {
             // Oversized input uses uncached retrieval and cannot evict a newer request.
             synchronized(this) {
