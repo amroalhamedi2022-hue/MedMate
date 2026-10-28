@@ -223,4 +223,36 @@ class BrainRetrievalRegressionTest {
         assertEquals(0, StudyBrain.search("foreign", pages, "fracture", onlyPage = 1).excludedCorruptedPages)
     }
 
+    @Test fun supersededSearchStopsBeforeTraversingRemainingPdfPages() {
+        var reads = 0
+        var newerResult: BrainSearchResult? = null
+        val stalePages = object : AbstractList<PageSource>() {
+            override val size: Int get() = 100
+            override fun get(index: Int): PageSource {
+                reads += 1
+                if (index == 0) {
+                    // Starting a newer search while the old list is being read
+                    // advances the production request epoch.
+                    newerResult = StudyBrain.search(
+                        "newer-ortho",
+                        listOf(PageSource("newer-ortho", 0,
+                            "A fracture requires a careful neurovascular assessment.")),
+                        "fracture"
+                    )
+                }
+                if (index > 0) error("superseded search traversed stale PDF page $index")
+                return PageSource("older-ortho", 0,
+                    "Older fracture notes must not be scanned after supersession.")
+            }
+        }
+
+        val stale = StudyBrain.search("older-ortho", stalePages, "fracture")
+        assertEquals(BrainSearchStatus.FOUND, newerResult?.status)
+        assertEquals(BrainSearchStatus.SUPERSEDED, stale.status)
+        assertEquals(1, reads)
+        assertTrue(stale.evidence.isEmpty())
+        assertEquals(0, stale.shownPages)
+        assertNull(StudyBrain.prepareSourceOnly("older-ortho", "fracture", stale))
+    }
+
 }
