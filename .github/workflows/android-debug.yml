@@ -4,6 +4,9 @@ name: MedMate Android debug validation
 on:
   pull_request:
     paths-ignore: ['docs/**']
+  push:
+    branches: [automation/medmate-v091-source-tree-20261023]
+    paths-ignore: ['docs/**']
   workflow_dispatch:
 permissions:
   contents: read
