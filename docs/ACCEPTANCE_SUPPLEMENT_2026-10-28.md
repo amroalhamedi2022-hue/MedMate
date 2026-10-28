@@ -137,3 +137,10 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **PASS — independently recalculated APK SHA-256:** Device bundle Artifact [12814107080](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537/artifacts/12814107080): Debug APK **30,281,111 bytes**, SHA-256 `db5ccecb7e3b2223bcce8b007ebf3a6b2eb63b4e15ddeff0c1aca6cec6ed59bc`; AndroidTest APK **374,449 bytes**, SHA-256 `aa464fb0b0a6b19bc10d37e96413d050ea2addbd38ecbc4d3e14bc7762f98ffa`. Both were extracted from the downloaded artifact and independently hashed with `sha256sum`; both match `SHA256SUMS`.
 - **Artifacts:** Debug APK [12814376218](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537/artifacts/12814376218), reports [12814062096](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537/artifacts/12814062096). The APK contains ARM64 `libllama.so` and `libllama_jni.so`; no GGUF, PDF, credential or signing key is bundled.
 - **NOT TESTED:** physical Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, live PDF page-two grounding, real HTTPS consent/denial and interruption behavior, clinical review, RAM/thermal/latency and final signing. No GGUF weights, personal PDFs, credentials or signing keys were uploaded; no main write or merge.
+
+
+## 2026-10-28 — Brain panel disposal revokes retained cloud grant (CI NOT VERIFIED)
+
+- The Compose disposal path now calls the shared revocation helper, clears the session-only bearer token and resets the excerpt-review flags before detaching the lifecycle observer. This closes the navigation-disposal case where the Activity can remain resumed and a coroutine may retain the same grant object.
+- The committed lifecycle contract now checks the disposal block explicitly. Source SHA `67a99f559105e4eec6eddfffd73d7517b38af123`; guard SHA `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
+- **CI NOT VERIFIED** on the exact new head; previous successful run [40683081537](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537) predates this change. Physical device, actual GGUF/JNI inference and live HTTPS allow/deny remain **NOT TESTED**.
