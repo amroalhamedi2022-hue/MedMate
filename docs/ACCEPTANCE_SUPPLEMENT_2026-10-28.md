@@ -144,3 +144,12 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - The Compose disposal path now calls the shared revocation helper, clears the session-only bearer token and resets the excerpt-review flags before detaching the lifecycle observer. This closes the navigation-disposal case where the Activity can remain resumed and a coroutine may retain the same grant object.
 - The committed lifecycle contract now checks the disposal block explicitly. Source SHA `67a99f559105e4eec6eddfffd73d7517b38af123`; guard SHA `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
 - **CI NOT VERIFIED** on the exact new head; previous successful run [40683081537](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537) predates this change. Physical device, actual GGUF/JNI inference and live HTTPS allow/deny remain **NOT TESTED**.
+
+
+## 2026-10-28 — Disposal revocation CI and artifact verification (PASS)
+
+- Supersedes the pending note above for the Brain panel disposal cleanup. Run [40685194083](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083) passed on tested head `1af67a7197b61a9ddb97cefeb310905b62395ab5`.
+- **221 JVM/Robolectric tests PASS, 0 failures, 0 ignored**; disposal/lifecycle contract, safety guards, Lint, SQLite/migrations, Debug and AndroidTest packaging all passed.
+- Independent device-bundle re-hash: Debug APK `44fef2c64bb3c7fd4141fdddba9c9ee48bac0dca9c194c947c4e7ec84e11f316` (30,281,111 bytes); AndroidTest APK `cf524cfe68a7fec8e6b4f7c487880ad083ff5f3bc7f442cb140fa7d545e9eada` (374,449 bytes). Both match `SHA256SUMS`.
+- Device bundle Artifact **12814603154**, Debug APK Artifact **12814443511**, reports Artifact **12814722650**. ARM64 llama libraries are packaged; no model or PDF is bundled.
+- Physical Pad 5, real GGUF/JNI inference, PDF page-two grounding, live HTTPS consent/denial, clinical review, RAM/thermal and final signing remain **NOT TESTED**. Debug is not final.
