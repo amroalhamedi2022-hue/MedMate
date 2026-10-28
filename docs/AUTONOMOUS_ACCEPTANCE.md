@@ -1,11 +1,12 @@
 <!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
 
-## Latest source checkpoint — 2026-10-28 (BrainPanel cancellation propagation)
+## Latest source checkpoint — 2026-10-28 (safe local GGUF storage management)
 
-- **PASS source audit:** 13/13 `BrainPanel.kt` generic exception handlers now rethrow coroutine cancellation before handling ordinary failures.
-- **PASS Android CI:** [run 40670578586](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40670578586), PR merge SHA `c947e2eef766d5c5ab9b2e3dd8b44d9fdfda9f4a`; 216 JVM/Robolectric tests passed, 0 failed/ignored; Lint, APK and AndroidTest assembly and safety gates passed.
-- **PASS artifact integrity:** Debug SHA-256 `ab400a4eef525b7ac8178c3d73315625ac5aeb11fb9cb7a6f53841d4ba35c4ee`; AndroidTest SHA-256 `ffa765d7afd0c42bea1fb622f5934c3bb419677e52317da0535bd00cc7477922`. See dated supplement for exact sizes and artifact links.
-- **NOT TESTED:** physical Pad 5, genuine GGUF inference, PDF page-2 grounding with a real model, live cloud consent/denial, clinical accuracy and device RAM/thermal.
+- **PASS source changes committed:** the Brain panel now offers confirmed deletion for saved GGUF imports; if the selected model is active, the UI unloads it before deletion and clears model-derived transient state.
+- **Safety guard:** deletion refuses symlinks, files outside the app-private models directory, unrecognized/non-content-addressed names and a still-loaded model. Corrupted imported files can still be deleted safely to reclaim storage.
+- **Regression tests:** four new JUnit cases cover successful delete and three refusal classes.
+- **Exact functional/test head:** 6f283ea36463c1d88ed9dd45d072ed72eec2893a. Android CI run 40674500049 was queued at the last check; no pass or APK is claimed yet.
+- **NOT TESTED:** physical Pad 5, actual GGUF inference, native unload/delete behavior on-device, PDF page-two grounding, live cloud consent/denial, clinical review, RAM/thermal and final signing.
 
 
 ## Latest verified checkpoint — 2026-10-28
