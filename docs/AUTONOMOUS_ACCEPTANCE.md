@@ -1,5 +1,12 @@
 <!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
 
+## Latest verified checkpoint — 2026-10-28
+
+- **PASS — exact native instrumentation-method gate and Android CI:** source/test SHA `4348a90084d3726f3d0a9c3a6b8ab8536b6d4dd8`; push run [40659663974](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40659663974), PR run [40659672589](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40659672589). Full evidence and APK hashes are in [the dated acceptance supplement](ACCEPTANCE_SUPPLEMENT_2026-10-28.md).
+- **PASS — 215 JVM/Robolectric tests, 0 failures/ignored;** safety contracts, Lint, Debug/AndroidTest assembly and device bundle passed.
+- **PASS — independent APK SHA-256:** Debug `6eaf8dce1461ec2e373466f42d7385126d23525ecab82da5ae93cd8be3cffa05`; AndroidTest `2f8192fa9edd182ecb87b3abecfa83d891bdd13bb3f5def216d3aab845bf74cb`.
+- **NOT TESTED:** Xiaomi Pad 5 and real GGUF/JNI inference/PDF citation acceptance. CI compiled the device instrumentation but did not run it on a physical device. Do not treat the Debug APK as final.
+
 ## 2026-10-26 — Fail-closed Android instrumentation result gate
 
 - Hardened `scripts/run-native-gguf-device-test.sh`: ADB's shell exit code is no longer treated as proof that instrumentation passed. The runner captures and prints AndroidJUnitRunner output, requires the expected `NativeGgufDeviceAcceptanceTest` class and a nonzero JUnit `OK (N test[s])` summary, and rejects `FAILURES!!!`, `INSTRUMENTATION_FAILED` and `INSTRUMENTATION_ABORTED` even if ADB itself exits zero.
