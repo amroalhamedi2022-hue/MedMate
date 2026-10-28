@@ -1,0 +1,1393 @@
+<!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
+
+## 2026-10-28 — Superseded PDF search early-abort (source/test checkpoint)
+
+- **Production source:** StudyBrain.search now checks request-epoch ownership while traversing chapter pages, validating citation identities, filtering corrupted extraction, preparing the bounded index and before uncached segmentation. An obsolete request returns the explicit SUPERSEDED status instead of masquerading as a genuine no-match; the Compose UI displays that state honestly. Ambiguous-page cache invalidation remains conditional on ownership of the same request epoch.
+- **Regression:** BrainRetrievalRegressionTest.supersededSearchStopsBeforeTraversingRemainingPdfPages starts a newer real search while a synthetic older page list is being read and asserts the old request reads only one page, publishes no evidence and cannot prepare a model prompt. The CI source contract checks epoch allocation, fail-closed invalidation and UI handling.
+- **Source/test head:** e8c8a02f67960513acc9440b768232f6285b311b.
+- **Purposeful build question:** does the new cancellation-aware traversal compile with the production Kotlin/Compose UI, preserve citation/cache safety contracts, and pass the complete JVM/Robolectric suite? Source inspection cannot prove exhaustive enum handling or Gradle integration.
+- **Android CI:** [run 40738130980](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40738130980) is in progress. Do not claim a new APK until it finishes.
+- **NOT TESTED:** Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, real two-page PDF page-2 grounding, live cloud-consent allow/deny, clinical correctness, RAM/thermal/latency and stable signed upgrade. No personal PDF, GGUF weights, credentials or signing keys were added.
+
+## 2026-10-28 — Same-chapter stale-epoch regression (CI PASS)
+
+- **Regression added:** an older ambiguous result cannot invalidate a newer cache index when both requests target the same chapter ID but carry different page snapshots. This closes a test-coverage gap beyond the existing cross-chapter case; production continues to enforce request-epoch ownership.
+- **PASS — exact-head Android CI:** [run 40705722056](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40705722056), source/test SHA `841d927261d96c088ac3decb7d7246dca8bfbe90`.
+- **PASS — JVM/Robolectric:** 224 tests, 0 failures, 0 ignored. GGUF runner/provenance, local/cloud consent and cancellation guards, SQLite/migration contracts, Lint, Debug + AndroidTest APK assembly, APK identity/SDK/permission checks and device-bundle packaging passed.
+- **PASS — independently recalculated APK pair:** [device bundle artifact 12823313538](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40705722056/artifacts/12823313538). Debug APK: 30,281,111 bytes, SHA-256 `dac9b95a1912a52d7975fd6257d68a6f54405b3fc4ac2321c8aaf18453cfde09`; AndroidTest APK: 374,449 bytes, SHA-256 `e4f1d2d0e50f0488829dd7472d5d77dd9cc9a4950adbf88d2c97bc671e27370d`. Both hashes were recomputed after extraction and match `SHA256SUMS`.
+- **Package spot-check:** ARM64 `libllama.so` and `libllama_jni.so` are present; neither APK bundles a GGUF model or PDF.
+- **NOT TESTED:** physical Xiaomi Pad 5, real user-supplied GGUF inference, two-page PDF page-2 citation round-trip with the model, live HTTPS cloud-consent allow/deny, clinical correctness, RAM/thermal/latency and stable signed upgrade. The AndroidTest APK was compiled, not executed on a device. Debug is not final; no main merge, private model/PDF/credential upload or paid API.
+
+
+
+## Latest verified checkpoint — 2026-10-28 (v0.9.1 integration build)
+
+- **PASS Android CI:** [run 40690225963](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40690225963) on PR head `d5f379c1ec71c41658f2c3cf0becb14548a3a4a9`; all safety contracts, SQLite/migration checks, Lint and Debug/AndroidTest APK assembly passed.
+- **PASS JVM/Robolectric:** 223 tests, 0 failures, 0 ignored.
+- **PASS independent APK integrity:** Debug `97d330bc5badf00ded730e349032cb6ccdb05050b4e11c4768281082e870cc66` (30,281,111 bytes); AndroidTest `55bccae374baedd4dcb887a1203335ea37415da8e119960c3cac6fca3c89f68f` (374,449 bytes), both extracted and rehashed against the device-bundle `SHA256SUMS`.
+- **NOT TESTED:** Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, real PDF page-2 grounding, live cloud consent/denial, clinical accuracy, device RAM/thermal and stable signed upgrade. Debug is not final; no merge.
+
+## Latest source checkpoint — 2026-10-28 (safe local GGUF storage management)
+
+- **PASS production:** Brain panel now exposes confirmed deletion for saved GGUF imports; deleting the active model unloads the native session first and clears model-derived transient state.
+- **PASS safety:** deletion refuses symlinks, files outside the app-private model directory, non-GGUF/unrecognized filenames, and the still-loaded model. Corrupted imports can still be removed to reclaim storage.
+- **PASS Android CI:** [run 40674871704](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704), head SHA e1e37b5db7a18e837dde2c7c57c998e994d3212b containing functional/test commit 6f283ea36463c1d88ed9dd45d072ed72eec2893a. **220 JVM/Robolectric tests passed; 0 failures, 0 ignored.** LocalModelImportTest: 19/19 passed, including all four new deletion cases. Lint, safety contracts, Debug/AndroidTest assembly, package identity/permissions and artifact packaging passed.
+- **PASS independent artifact integrity:** Debug APK 30,281,111 bytes, SHA-256 a85277079b53682f06d108350120051ac83525548c3341a7ce6a6354985eea30; AndroidTest APK 374,449 bytes, SHA-256 49454063b6e72c4f220cf126b90a54975738960ed7f3492c1ebcfe02466fe68d. Both independently re-hashed from the device-test bundle and matched SHA256SUMS.
+- **Artifacts:** [device-test bundle 12809744923](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12809744923), [Debug APK 12810676126](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12810676126), [validation reports 12810970499](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12810970499).
+- **NOT TESTED:** physical Pad 5, real GGUF/llama.cpp/JNI inference, live model deletion on-device, PDF page-two grounding, live cloud consent/denial, clinical review, device storage/RAM/thermal and final signing. No model weights, personal PDF, credentials or signing keys were uploaded.
+
+
+## Latest verified checkpoint — 2026-10-28
+
+- **PASS — exact native instrumentation-method gate and Android CI:** source/test SHA `4348a90084d3726f3d0a9c3a6b8ab8536b6d4dd8`; push run [40659663974](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40659663974), PR run [40659672589](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40659672589). Full evidence and APK hashes are in [the dated acceptance supplement](ACCEPTANCE_SUPPLEMENT_2026-10-28.md).
+- **PASS — 215 JVM/Robolectric tests, 0 failures/ignored;** safety contracts, Lint, Debug/AndroidTest assembly and device bundle passed.
+- **PASS — independent APK SHA-256:** Debug `6eaf8dce1461ec2e373466f42d7385126d23525ecab82da5ae93cd8be3cffa05`; AndroidTest `2f8192fa9edd182ecb87b3abecfa83d891bdd13bb3f5def216d3aab845bf74cb`.
+- **NOT TESTED:** Xiaomi Pad 5 and real GGUF/JNI inference/PDF citation acceptance. CI compiled the device instrumentation but did not run it on a physical device. Do not treat the Debug APK as final.
+
+## 2026-10-26 — Fail-closed Android instrumentation result gate
+
+- Hardened `scripts/run-native-gguf-device-test.sh`: ADB's shell exit code is no longer treated as proof that instrumentation passed. The runner captures and prints AndroidJUnitRunner output, requires the expected `NativeGgufDeviceAcceptanceTest` class and a nonzero JUnit `OK (N test[s])` summary, and rejects `FAILURES!!!`, `INSTRUMENTATION_FAILED` and `INSTRUMENTATION_ABORTED` even if ADB itself exits zero.
+- Expanded the fake-ADB regression with a reported JUnit failure and incomplete output case. Both must exit 5 and trigger EXIT cleanup of the temporary GGUF. These are harness tests only; they do not run llama.cpp or validate a real model.
+- **Purposeful CI question:** does the real Bash runner fail closed on failure-shaped output, preserve cleanup, and still compile/test the Android app and instrumentation APK? Source inspection cannot prove the shell behavior; the wired CI run is required.
+- **CI: PENDING** for this functional commit. **NOT TESTED:** real Xiaomi Pad 5, GGUF inference, PDF citation accuracy, HTTPS consent/denial, clinical review, RAM/thermal and final signing.
+
+## 2026-10-26 — Local/cloud safety regression wired into CI
+
+- Updated `.github/workflows/android-debug.yml` so the build runs `python3 scripts/test-model-load-ui-contract.py` alongside the native GGUF/PDF contract checks.
+- **PASS — direct source-contract audit:** local explanation and local draft error regions contain no `CloudBrainGateway` call; cloud explanation/draft calls remain separate and the source retains `CloudTransferConsent` and `CloudEvidenceSeal`.
+- **CI:** NOT VERIFIED for workflow commit `95690ee82b0bd2c476d36f86f148607d6cbc8ea6`. The available GitHub workflow-run lookup returns no run/check for the new branch commits; do not infer a pass. The last confirmed CI run remains `40366568877`, which predates the latest source/guard changes.
+- **NOT TESTED:** real GGUF/JNI inference, two-page PDF round-trip on Xiaomi Pad 5, live HTTPS allow/deny, clinical review, RAM/thermal and final signing.
+
+## 2026-10-26 — Local-to-cloud fallback regression
+
+- Added a source-contract regression to `scripts/test-model-load-ui-contract.py`: local explanation errors and local draft-generation errors must not invoke `CloudBrainGateway`; the optional cloud actions remain separate and must retain `CloudTransferConsent` plus `CloudEvidenceSeal`.
+- **PASS — direct source-contract check:** inspected the current `BrainPanel.kt` call regions; neither local error path contains a cloud gateway call, and both explicit cloud actions and the evidence-bound consent types remain present.
+- **CI:** PENDING for commit `53292841d2578df1a893d626b10fbc08597b415c`. This source-string audit does not replace execution of the committed Python guard, Kotlin/JUnit, or Android build.
+- **NOT TESTED:** real GGUF/JNI inference, PDF page-2 round-trip on Xiaomi Pad 5, live HTTPS allow/deny, clinical correctness, RAM/thermal and final signing. No personal model, PDF, token or key uploaded.
+
+## 2026-10-26 — Native GGUF + two-page PDF acceptance contract hardened
+
+- Added 11 static wiring assertions around the device-only test: production `LlamaAndroidPort`, matching loaded-model SHA-256/byte count, native diagnostic PASS, fresh page-2 identifier, exactly `[S1]`, rejection of invented `[S2]`, page-index 1 in the prompt, no full excerpt echo, model identity cleared after unload, and cleanup of test-only imported model.
+- **PASS — direct source-contract audit:** all 11 new needles are present in both the committed static guard and the Android instrumentation test. This is source inspection only; the Python guard itself and Kotlin/Android integration still require CI.
+- **Purposeful CI question:** does the strengthened contract script pass with the 142-test JVM suite, lint, AndroidTest compilation, APK verification and exact APK-pair packaging? Source inspection cannot prove Python execution or Android compilation.
+- **CI:** PENDING for guard commit `1e59f94166d1eb5000dc36c285ea0d6118ff9fcb`. The earlier run `40366568877` passed 142 JVM tests and packaged the two-page fixture, but predates this additional guard.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDFBox-to-native page-2 round-trip, live HTTPS consent/denial, clinical review, RAM/thermal and final signing. No GGUF, personal PDF, credentials or signing keys uploaded.
+
+## 2026-10-25 — PDF citation uncertainty-preservation milestone
+- Production: `GeneratedStudyDrafts` now rejects a source quote that drops an adjacent uncertainty/possibility qualifier (e.g., **possible**, **may**, **cannot**, **ربما**, **احتمال**) within the existing six-word clause window. The previous negation guard remains, and separate sentences or contrastive clauses remain eligible. Original PDF text and page citations are unchanged; human review remains mandatory.
+- Regression: ten synthetic bilingual cases added to the actual Android JUnit suite: cropped vs faithful uncertainty, Arabic qualifiers, cannot-exclude, sentence and contrast boundaries.
+- **Purposeful CI question:** does the real Kotlin quote validator compile with all existing JUnit/Compose code, and do the ten bilingual uncertainty regression cases pass? Text inspection cannot establish Android/JVM compatibility. One targeted Android CI build is justified.
+
+- **PASS Android CI:** [run 40236667832](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40236667832) on functional source SHA `360901171b02a6342e1bfd94cdf57e25ab93807e`: Gradle JUnit, Android lint, Compose compilation and Debug APK assembly succeeded. Downloaded report artifact `12614419407` confirms **121 tests PASS, 0 failures, 0 ignored**, including the new uncertainty test (`GeneratedDraftsTest` 9/9 PASS).
+- **PASS independent APK checksum:** downloaded artifact `12615092525`, extracted 33,553,153-byte APK and independently SHA-256 `ebcf40139707582481d8fd3821a10f1040846b19bcdf2fecd1417aeb5e847dd0`, matching CI. ARM64 `libllama.so` and `libllama_jni.so` packaged; **no GGUF bundled and no real inference tested**.
+- **NOT TESTED:** actual GGUF model/JNI inference, Xiaomi Pad 5 medical PDF accuracy, live HTTPS consent, device RAM/thermal, signed final release. These source/CI PASS results are not clinical validation.
+- **Historical pending checkpoint (superseded by CI PASS above):** Kotlin JUnit, Android lint, APK compilation, independent checksum, device PDF flow, actual GGUF model, clinical accuracy and HTTPS consent on Xiaomi Pad 5. Lexical quote protection does **not** establish medical truth or inference.
+- Build rationale: Kotlin source/JUnit compatibility and Android compilation need one purposeful integration build, not repeated APK packaging after each small edit.
+- Draft PR only; no main merge, real PDF, model, secret, paid API, other repository or Library/Handoff changes.
+
+## 2026-10-25 — Cloud outbound payload byte cap (validated build)
+
+- **Production/test SHA:** `c0b0e6f8528543daa6500d114fdfb66839633249`, draft PR #1 only.
+- **Production:** `CloudBrainGateway` measures the exact UTF-8 serialized JSON body and rejects requests above 96 KiB **before consuming one-shot consent or opening a connection**. This protects against control-heavy input whose JSON escaping greatly expands its byte size; no prompt, PDF, credential or response is persisted.
+- **New Robolectric/JUnit cases:** a 17,000-NUL synthetic prompt is rejected before transport while leaving its grant unused; HTTP 302 fails closed without following a redirect, disconnects the connection and consumes the one-shot approval.
+- **PASS Android CI:** [run 40232014108](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40232014108) completed SUCCESS on source SHA `c0b0e6f8528543daa6500d114fdfb66839633249`; `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` all passed. Build took 4m 43s.
+- **Debug APK artifact:** `12613092336`; CI-calculated inner APK SHA-256 `3f189ca4b1a36db9007f19006ef48f14cb9a7d219c16597cefbcf3bd79348c5c`. Reports artifact `12612808136`. Independent APK re-hash NOT TESTED.
+- **NOT TESTED:** actual HTTPS/TLS and consent allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, medical accuracy, device RAM/thermal and final signed release. This Debug APK is not final.
+
+### Independent Debug APK verification — wrapped textbook MCQs
+- **PASS:** downloaded artifact **12610695015**, extracted 33,536,769-byte `app-debug.apk` and independently recalculated SHA-256 `606e42674fb21c89312f368af5db85d9022363c580a7079e172ca0beae13bb94`, matching CI `APK_SHA256.txt`. ARM64 `libllama.so` and `libllama_jni.so` packaged. This supersedes the earlier pending independent-hash line for this run.
+- **NOT TESTED:** actual GGUF inference, Pad 5 PDF/MCQ experience, live HTTPS consent, medical accuracy, device memory/thermal and final signed release. Native libraries in APK are **not** a successful model execution.
+
+## 2026-10-25 — Bounded wrapped PDF MCQ stem recovery (Arabic + English)
+- **Functional SHA:** `14c48bc8dbd7ec1b14fcf54225eaa33a89863987`, existing draft PR #1 only.
+- **Production:** `OfflineStudyDrafts` now reconstructs up to four short PDF-wrapped question-stem lines before the first printed option, for Arabic and English textbook questions. A fifth line or overlong stem aborts extraction rather than attaching unrelated page text. Correct answers still require one explicit printed same-page key; duplicate/conflicting keys remain rejected.
+- **New JUnit cases:** wrapped English and Arabic stems, original chapter/page anchors, excessive continuation rejection and duplicate-key fail-closed. No generated medical claims, private PDFs, keys or model weights.
+- **Build rationale:** the actual Kotlin regex/branch logic, JUnit suite, Android lint and APK integration cannot be established by source review alone; a targeted CI build was warranted.
+- **PASS (Android CI):** [run 40222490095](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40222490095) completed successfully on functional SHA: `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, including new tests. Debug Artifact **12610695015**, reports **12610330785**.
+- **PASS (CI-calculated APK SHA-256):** `606e42674fb21c89312f368af5db85d9022363c580a7079e172ca0beae13bb94`. Independent artifact download/re-hash **NOT TESTED**.
+- **NOT TESTED:** real Pad 5 PDF extraction and MCQ rendering, human medical QA, genuine GGUF/llama.cpp inference, real HTTPS cloud allow/deny, memory/thermal, final signed release. JUnit and packaging do **not** prove on-device model execution.
+- No merge, main write or unrelated repository/library modifications. Debug is not final.
+
+## 2026-10-25 — Offline Arabic textbook MCQ + definition extraction (functional milestone)
+
+- **Production:** `OfflineStudyDrafts` recognizes printed Arabic questions
+  (`سؤال ١٧`, `س ۲`), options `أ/ب/ج/د/هـ`, printed
+  `الإجابة/الإجابة الصحيحة/الجواب` keys, and
+  `التفسير/الشرح/التعليل`. Arabic definitions of the form
+  `نقص التروية هو ...` become source-quoted flashcard drafts. Existing
+  English Q/A-E extraction and source page anchors are preserved.
+- **Safety:** correct options are taken ONLY from a single explicit
+  printed answer key on the same PDF page; missing, conflicting or multi-answer
+  keys are rejected, not inferred. Cards are exact source quotes, not generated
+  clinical facts. Human page review remains required before saving.
+- **Regression:** four new Android JUnit cases for Arabic-Indic/Eastern digits,
+  four/five choices, duplicate/multi-key rejection, Arabic definition/page
+  source. Existing English tests preserved; offline Kotlin smoke expanded.
+- **Source SHA:** `b9cd9a1d7a1af78680f40d91739bcb1570141249`.
+  [Targeted Android CI 40217712273](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40217712273)
+  **PASS (completed)** on source SHA `b9cd9a1d7a1af78680f40d91739bcb1570141249`:
+  SQLite contracts, Android JUnit, lint and Debug APK assembly succeeded.
+  Debug artifact **12608059184**, reports **12608357767**;
+  CI-calculated inner APK SHA-256
+  `0c278b30c89c8a51883a50bb601b1bde614fdd8ffb2577b67f13907291a4b53a`.
+  **PASS independent artifact verification:** downloaded Debug Artifact **12608059184**, extracted 33,536,769-byte APK and independently recalculated SHA-256 `0c278b30c89c8a51883a50bb601b1bde614fdd8ffb2577b67f13907291a4b53a`, matching CI. ARM64 `libllama.so` and `libllama_jni.so` packaged, but **no GGUF model** and no proof of real inference. Downloaded report artifact **12608357767**: **112 JUnit tests PASS, 0 failures, 0 ignored**; `OfflineDraftsTest` 7/7 PASS (including four new Arabic cases). Physical Pad 5 and real model remain **NOT TESTED**. No claim of genuine GGUF
+  inference or medical accuracy.
+- **Purposeful build question:** does the real Kotlin parser compile with
+  Arabic Unicode regexes and does it pass all English and Arabic JUnit tests
+  before Android packaging? Source inspection cannot answer that.
+- **NOT TESTED:** genuine GGUF/llama.cpp inference, actual PDF extraction on
+  Xiaomi Pad 5, device memory/thermal, clinical accuracy, real cloud HTTPS
+  consent/denial, final signed APK and independently verified SHA-256.
+- Draft PR only, no `main` write/merge, personal PDF, GGUF, token,
+  paid API or Library/Handoff access.
+
+## 2026-10-25 — Cloud AI outbound transport consent integration milestone
+
+- **Production:** `CloudBrainGateway` now accepts an injectable HTTPS
+  connection factory for deterministic tests of the **actual outbound
+  boundary**; default production behavior still uses Android's
+  `HttpURLConnection`. Consent remains bound to the exact chapter,
+  question, PDF excerpt, page, prompt, HTTPS endpoint and model; a grant
+  is consumed once immediately before opening the connection.
+- **Regression:** `CloudGatewayTransportBoundaryTest.kt` exercises
+  the real gateway and in-memory HTTP connection with **synthetic**
+  non-medical text only: approved one-shot JSON payload and bearer header,
+  replay rejection, changed excerpt/prompt/page/endpoint/model fail-closed
+  before connection, invalid header token and unsealed legacy grant blocked,
+  and uncited cloud answer rejected even after a valid transport.
+  These are tests of client-side privacy behavior, not actual HTTPS/TLS
+  verification or medical correctness.
+- **Source SHA:** `1793e7b79590a3da417a04d2a1f840ebd95816e3`;
+  [Android CI 40203748330](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40203748330)
+  **IN PROGRESS at checkpoint**. Full JUnit/Compose/lint/Debug APK
+  remains **NOT TESTED** until CI reports a completed result.
+- **Purposeful build question:** do the injected Kotlin suspend transport,
+  Robolectric JSON/HTTP fake, production gateway and JUnit tests compile
+  and pass together? Static review cannot establish this.
+- **NOT TESTED:** real network/TLS/cloud transfer allow/deny on Pad 5,
+  actual native GGUF inference, model RAM/thermal, clinical correctness,
+  real PDF citations on device, independent APK hash and signed final
+  delivery. A fake connection is **not** a successful cloud transfer.
+- **Safety:** No real PDFs, model weights, private tokens or keys
+  committed; no paid APIs, main writes, PR merge or Library/Handoff changes.
+
+## 2026-10-25 — Randomized native GGUF challenge (functional milestone)
+
+- **Production:** `NativeInferenceProbe.run` now generates a fresh
+  48-bit synthetic challenge (`ORBIT-<12 hex digits>`) per diagnostic.
+  The expected answer must contain the **whole current challenge token**
+  and a valid source citation; stale hard-coded `ORBIT-27` answers
+  or longer lookalike tokens cannot pass the calibration-code flag.
+  Challenge injection is constrained to a strict ASCII format.
+- **Contract tests:** updated `NativeInferenceProbeTest.kt` with deterministic
+  challenge injection and new stale-answer, token-boundary and invalid-input
+  regressions. Fake-port tests are explicitly **NOT native inference**.
+- **PASS (isolated Kotlin/JVM):** 6 compiled/executed challenge regex,
+  token-boundary and randomness checks; **FAIL 0** in this isolated harness.
+- **PASS (Android CI):** [run 40198882489](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40198882489)
+  on production + JUnit source SHA `ab3a64e59c1bc03b5d23c8d7a159a46df9f28f54`:
+  SQLite schema/migrations, `testDebugUnitTest`, `lintDebug`,
+  `assembleDebug` and artifact upload succeeded.
+  Debug artifact **12601810746**, reports **12601106538**.
+  CI-calculated APK SHA-256:
+  `e973adec9ba052db3e352e23daa148083efc91a2dba27ec038e6e047fc388028`.
+- **NOT TESTED:** independent artifact download/rehash, a **real GGUF
+  model loaded and run through JNI** on Xiaomi Pad 5, real memory/thermal
+  metrics, medical factual grounding, actual cloud HTTPS consent denial,
+  final signed APK. Do not confuse CI and fake-port JUnit with actual GGUF.
+- **Build rationale:** changing a suspend Kotlin API used by Compose plus
+  its JUnit contract required real Gradle compilation; isolated regex checks
+  cannot establish Android integration. One purposeful CI build was used.
+- PR #1 remains Draft, no `main` writes or merge; no personal PDFs,
+  model weights, credentials or other repositories/Library were touched.
+
+## 2026-10-25 — Medical draft quote negation-scope safety milestone
+
+- **Production:** `GeneratedStudyDrafts` now conservatively rejects excerpts that drop a negation within the preceding six words of the same clause, not only the immediately adjacent word. This blocks misleading crops like `No radiographic evidence of infection` -> `infection is present`. English/Arabic hard sentence breaks are respected; commas preserve negation in symptom lists, but a contrastive `but/لكن` permits an independent positive clause. Quotes beginning with their own explicit negation remain eligible.
+- **Regression:** added eight bilingual positive/negative JUnit cases, plus comma-list cases. This is a **lexical safety filter**, not medical truth/clinical entailment verification; legitimate excerpts may require a longer faithful quote.
+- **PASS (isolated Kotlin/JVM):** compiled and executed eight algorithm checks with `kotlinc` and `java`; corrected comma-clause behavior after a failed local test. This isolated harness does **not** compile the complete Android project.
+- **NOT TESTED:** full JUnit/Android CI on current SHA, genuine llama.cpp/GGUF inference, clinical accuracy, HTTPS allow/deny on device, Pad 5 RAM/thermals and final signed release.
+- **Targeted build question:** do the real production Kotlin changes and committed JUnit tests compile and pass together with Compose, SQLite, lint and Android packaging? Isolated algorithm checks cannot answer this; one CI validation build is justified, not a routine per-line build.
+- **Status:** IN_PROGRESS; PR #1 Draft, no main merge, no PDFs, GGUF, private keys, paid API, or unrelated Library/Handoff changes.
+
+## 2026-10-25 — Cloud payload-bound consent + exact PDF preview
+- **Production:** `CloudEvidenceSeal.of` now fingerprints the entire reviewed explanation prompt in addition to question, chapter, page and exact excerpts; altered prompt text with unchanged excerpts cannot reuse a grant. Cloud study-draft generation validates the **original reviewed PreparedPrompt** and derives its JSON-only prompt deterministically from the same source excerpts, avoiding a mismatched consent seal.
+- **UI:** Cloud consent is disabled until the user opens a preview showing the exact bounded PDF excerpts (with [S#] page markers) and question. Preview-review state resets when the prepared question/PDF context changes; no PDF bytes, tokens or models are persisted/uploaded to GitHub.
+- **Tests committed:** JUnit regressions for changed prompt with unchanged source and deterministic draft-source consent, alongside prior one-shot/replay/mismatched chapter checks.
+- **PASS (source):** verified changed Kotlin source and UI integration paths against the same PR branch; previous cloud-citation CI run 40173779293 completed SUCCESS on older SHA `bb917c12`, **not** evidence for this batch.
+- **PASS (JUnit/Compose/Android CI):** [run 40177851929](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40177851929) on functional SHA `17c2434fd67531f02a1b1c6fe63217a9c1e84820`: SQLite contracts, `testDebugUnitTest`, `lintDebug`, `assembleDebug` all succeeded. Debug Artifact **12592627832**, validation reports **12592463544**.
+- **PASS (independent artifact rehash):** downloaded Debug Artifact and extracted `app-debug.apk` (33,536,769 bytes); SHA-256 `a4bbb9b347230c6e90870fc0f69531a3ffe014121295228a0378f73652b081c2` independently matches CI checksum. ARM64 `libllama.so` and `libllama_jni.so` packaged; no `.gguf` model included. This is NOT proof of native inference.
+- **NOT TESTED:** actual HTTPS allow/deny behavior on a device, real GGUF inference, Xiaomi Pad 5, clinical correctness and final signed release.
+- **Build question:** do new consent/JUnit contracts compile with the Compose preview and remain packaged without breaking the existing native llama binding? Source inspection cannot prove Kotlin/Compose compilation; one targeted CI run is justified.
+- **No final release:** PR #1 Draft; no `main` writes, no paid API, no Handoff/Library changes.
+
+## 2026-10-25 — Reject cloud explanations with missing/forged PDF citations
+- Production: `CitationValidator.requireGroundedCloudAnswer` rejects ungrounded or forged cloud explanation output; `CloudBrainGateway.explain` invokes it before returning any answer to the UI. An explicit evidence-insufficient abstention without a fake citation remains valid. Study-draft JSON uses its separate quote/source validation, unchanged.
+- Regression: four checks added to `scripts/brain/BrainPipelineSmoke.kt` and a new Android JUnit `CloudAnswerGateTest.kt` for valid source markers, unsupported claims, forged markers and abstention.
+- **PASS (source inspection):** production gateway calls the new guard; both source and test paths are committed. **NOT TESTED:** actual Kotlin/JUnit/Android CI on this SHA (pending), HTTPS request behavior, device cloud privacy, GGUF inference, medical correctness, and Pad 5 performance.
+- **Build question:** will the new Kotlin gateway wiring and JUnit test compile and pass in the real Android project? Static inspection alone cannot answer. A targeted CI build is justified; debug APK is not a final release.
+- **Status:** IN_PROGRESS; PR #1 Draft, no main write, no personal PDF/model/token upload or Handoff/Library access.
+
+# MedMate Personal — autonomous source patch 2026-10-23
+
+## 2026-10-24 — Harden source-grounded explanation question boundaries (source-only)
+- **Production commit:** `1305975a87163850546596638a49684fe57e8c76`; **JUnit regression:** `018bc4220c3704a232ecd115840f0fa96e5210bf`; **Kotlin smoke regression:** `5dd4997fd521c355b1df388f322e8a4afc6e0bd9` (draft PR #1 only).
+- **Fix:** `MedicalPromptBuilder.prepare` now flattens control/format/newline characters and caps the untrusted student question at 1,200 characters before inserting it into EXPLAIN prompts. The original question remains in `PreparedPrompt.question` for async request identity; citation and PDF page anchors remain unchanged. Invisible-only questions fail before model invocation. This reduces prompt-header spoofing, **not** semantic prompt-injection or clinical risk.
+- **PASS:** 4 isolated Kotlin/JVM checks of equivalent prompt-sanitization logic (forged headers, length bound, invisible-only input, ordinary question); inspected actual PR production source and regression tests for matching expressions and call sites. **FAIL:** 0 in the isolated checks.
+- **NOT TESTED:** Full committed `scripts/test-brain.sh`, actual production `BrainCore.kt` compilation, Gradle/JUnit/lint, cloud gateway, real GGUF/llama.cpp, clinical correctness, Pad 5/offline/performance, APK and SHA-256.
+- **Build policy:** all commits `[skip ci]`; no APK or Actions build requested, no `main` modification, no merge. Final build deferred.
+
+## 2026-10-24 — Bounded, single-line student topics in generated study prompts (source-only)
+- **Production commit:** `28da61ab8d244a7515c6be7afda12aabf4722a93`; **smoke commit:** `0cfdfc542654f6aa3458aa03a38e219f7ffdbec6`; **script commit:** `13964a2f1f87c0903f19b7228cb6d8c929976e81`; **JUnit commit:** `efacdd894ff5ad9a3e13bd4b5247dc06f5537bc9` (draft PR #1).
+- **Fix:** `StudyDraftPrompt.prepare` collapses control/format/newline characters from student questions into a single line and caps the inserted topic at 1,200 characters; retains the original question in `PreparedPrompt.question` for identity checking. Direct callers cannot pass more than 20,000 source text characters. This reduces prompt-section spoofing/context overflow but does **not** prove semantic prompt-injection resistance or clinical correctness.
+- **PASS:** Kotlin compiler + JVM executed 7 isolated checks using the production `StudyDraftPrompt.kt` copied from GitHub and minimal matching model stubs; checked forged newline section, source marker continuity, length cap and oversized evidence rejection. Added matching repository smoke/JUnit regressions; `scripts/test-drafts.sh` now compiles the actual prompt class.
+- **FAIL:** 0 in the 7 isolated checks. **NOT TESTED:** full committed `scripts/test-drafts.sh` and JUnit suite, Android Gradle/lint, cloud HTTPS gateway, actual llama.cpp/GGUF, clinical accuracy, Xiaomi Pad 5 RAM/thermal/performance, offline device testing, final APK and SHA-256.
+- **Build policy:** all commits `[skip ci]`, no APK/Actions build dispatched, `main` untouched. Full source and physical-device gates remain open.
+
+
+## 2026-10-24 — Preserve medical words at PDF segment boundaries (source-only)
+- **Production commit:** `7051c6b5cc3b1674b921f7348c7296d56c7aff0d`; **smoke regression:** `590d4c739a030a4aa00ffb9a01fa2b21ab8144d1`; **JUnit regression:** `21db0e2d417e57b77a8f9579bf7c4231814339ec` (MedMate PR #1 only).
+- **Fix:** PDF paragraph segmentation now prefers a whitespace boundary before the character cap so common medical terms are not silently split into unsearchable fragments. For very long unbroken tokens, it retains bounded, lossless hard splits; chapter/page anchors and 128–6000 character limits are unchanged.
+- **PASS:** Compiled and executed a standalone Kotlin/JVM reproduction of the modified production `PageSegmenter` algorithm with 3 assertions: multi-chunk bounds, exact paragraph reconstruction without invented mid-word spaces, and lossless hard-split fallback (5 ordinary chunks, 3 fallback chunks).
+- **NOT TESTED:** Running the newly committed smoke/JUnit tests against the complete source checkout, Android Gradle compilation, GGUF real model inference, clinical accuracy, device RAM/thermal/performance, offline device, APK and SHA-256. Standalone reproduction is not a full-project test.
+- **Build policy:** All commits `[skip ci]`; no Actions build dispatched; `main` unchanged. Single final APK build deferred.
+
+
+## 2026-10-24 — Unicode confusable citation spoof rejection (source-only)
+- **Production SHA:** `41edadce2621421118527211ab7250b7e4284861`; **test SHA:** `7a8a8ee8e263f33ebd442b4c4e39e390d5a053e3` (draft PR #1; no main write).
+- **Fix:** `CitationValidator` now rejects fullwidth and mathematical Unicode source-marker lookalikes (e.g. `[Ｓ1]`, `［Ｓ１］`, `[𝐒1]`) even when a genuine `[S1]` is present. NFKC is used only to **detect** spoofed markers; it does not convert them into accepted citations. Existing exact ASCII marker behavior and source-count validation remain.
+- **PASS:** Compiled and executed a standalone Kotlin/JVM smoke of the exact new regular-expression and NFKC detection logic using `kotlinc` + `java`: 10 malformed-marker cases rejected and 3 valid cases preserved. Fetched both updated repository files and statically verified the guard and regression cases are present.
+- **NOT TESTED:** Executing the committed `scripts/test-brain.sh` / JUnit suite in the complete project, Android Gradle compile/lint, APK, actual native GGUF inference, clinical grounding accuracy and Pad 5 memory/performance/offline behavior. A regex smoke is not proof of medical correctness.
+- **Build policy:** Both commits use `[skip ci]`; no Actions build or APK created. Continue until all source and device acceptance gates are complete.
+
+
+## 2026-10-24 — Unicode-invisible citation spoofing guard (source-only)
+- **Production SHA:** `9d5157388cbd3203d52d3ff86f1c33d6e0495b32`; **regression SHA:** `2de0bb4c17b8d0f56f5687051b73fb47919a9a9e`, draft PR #1; no base/default-branch changes.
+- **Fix:** `CitationValidator` now catches source-like markers with Unicode separators, zero-width spaces and word-joiner characters before `S`, e.g. `[NBSP S1]` and `[ZWSP S1]`. A separate valid `[S1]` no longer masks these visually misleading malformed markers. This validates citation syntax, **not medical truth**.
+- **PASS:** Compiled and executed an isolated Kotlin/JVM harness for the exact updated regex: 6 malformed-marker cases and 1 valid-marker case passed. Committed matching regression cases to `scripts/brain/BrainPipelineSmoke.kt`.
+- **NOT TESTED:** Compiling/running the committed full BrainCore and smoke suite, Android Gradle/lint, APK, genuine GGUF/llama.cpp on Xiaomi Pad 5, clinical grounding, offline device behavior and performance.
+- **Build policy:** `[skip ci]` commits; 0 PR-triggered workflow runs on regression SHA when checked. Final APK deferred until source/unit/static gates and device-readiness criteria are met.
+
+
+## 2026-10-24 — Untrusted PDF source-ID prompt-header hardening (source-only)
+- **Production SHA:** `60cc106695495afba8396a32f2b1b5ce4587fc7e`; **regression commits:** `5b725f5a0d2f3d12f6e41ac7603aaa79cb211c4c`, `8a0661879eec7eb02dadf9305b5e012b9bc971c4`; corrected Kotlin newline escapes `32ecdf5541bfd3db29f94f58561932c66073e2e6`, `1e3c9fc1c8f7537d81e8c838c4e7b2ec02c973c9` on PR #1. No base/main writes.
+- **Fix:** The prompt uses a bounded, single-line ASCII-safe display form of `Evidence.id`, so malicious chapter names cannot inject new prompt header lines or fake `[S999]` source labels. The original ID remains intact in `presentedEvidence` for PDF page navigation. Added Kotlin smoke/JUnit regressions and corrected existing bearer-token smoke cases to use actual CR/LF/TAB/NUL escape sequences instead of literal backslash letters.
+- **PASS:** Six isolated Kotlin/JVM checks of the exact new source-ID normalization logic; static source/test integration checks and escape-sequence inspection. **NOT TESTED:** Compilation/execution of the full committed `BrainCore.kt` and new smoke/JUnit tests, Gradle/lint, APK, native llama.cpp/GGUF, Pad 5, clinical correctness, cloud gateway and real device security tests.
+- **Build gate:** all writes `[skip ci]`; no APK or Actions dispatch. Final one-time APK build remains blocked on all remaining source/unit/static acceptance and actual device verification availability.
+
+## 2026-10-24 — PDF prompt excerpts end at word boundaries (source-only)
+- **Production commit:** `832c4b98f61ea0d5c23e1896738e867961f75c85`; **regression commit:** `3b6d52261695fc4e83be903fbb1b8227213efce9` on draft PR #1; no `main` writes.
+- **Fix:** `MedicalPromptBuilder.prepare` now truncates oversized PDF excerpts at whitespace, not in the middle of a medical term or negation. If no >=40-character safe excerpt fits, that excerpt is skipped and later evidence may still be cited as `[S1]`. This improves citation clarity but is **not** medical factual verification or AI inference.
+- **PASS (isolated only):** Kotlin/JVM compilation and execution of two cases using an extracted equivalent of the new prompt-boundary logic: normal truncation at whitespace, and skipping a long unbreakable excerpt while keeping later evidence. New regressions added to `scripts/brain/BrainPipelineSmoke.kt`.
+- **NOT TESTED:** Running the committed full Brain smoke script against the repository, Android Gradle compile/lint, APK, real llama.cpp/GGUF, device RAM/thermal, clinical grounding and physical Pad 5. No GitHub Actions build dispatched.
+- **Outstanding:** Real GGUF integration/device acceptance and independent recheck remain IN_PROGRESS.
+
+
+## 2026-10-24 — Source-only evidence continuity and Kotlin smoke repair
+- **Source + tests + scripts commit:** `80ca366bffdd6e6457d88bd38eec15d105916241` on draft PR #1. No base/default branch writes.
+- **Fix:** `MedicalPromptBuilder.prepare` now skips short/empty excerpts instead of aborting the entire evidence loop. Subsequent valid PDF pages retain contiguous `[S1]`, `[S2]` markers; the excerpt character budget includes the two trailing newlines. This fixes a potential false no-evidence response when a short retrieved fragment precedes a usable one.
+- **Regression added:** Kotlin smoke assertions and Android JUnit source tests cover later valid excerpts, marker numbering and source mapping.
+- **Smoke scripts repaired:** `test-brain.sh`, both `test-drafts.sh` compiler calls, `test-local-brain-v09.sh`, and `test-llama-adapter-contract.sh` now include `ClinicalTermNormalizer.kt`, which `BrainCore.kt` requires. Static inspection of all five compiler blocks: **PASS**.
+- **PASS:** Isolated Kotlin/JVM compilation and execution of the equivalent excerpt selection loop, including short-fragment skip, contiguous markers and bounded excerpt length. **NOT TESTED:** full production `BrainCore.kt` compilation, newly committed Kotlin smoke/JUnit tests, complete Android build, device runtime, medical accuracy, offline field tests and real GGUF inference. Isolated test is not proof of a working local generative model.
+- **CI policy:** `[skip ci]` commit; 0 PR workflow runs reported for this SHA when checked. No APK created or Actions build dispatched.
+- **Open:** real llama.cpp/GGUF integration, source-grounded study flow, final UI and independent device verification remain incomplete. No Library/Handoff access.
+
+
+AUTOMATION_COMPLETE: IN_PROGRESS
+
+## 2026-10-24 — Citation marker hardening (source-only)
+- **Production commit** `cf5d591b1a55bf1455efa9de435a0bd41e50c82e`; **test commit** `dd77392ea92c0e685b7b456bc2345b3ad49baa10` (draft PR #1, no main write).
+- **Fix:** `CitationValidator` now identifies all bracketed source-like markers (including malformed alphabetic `[Sfoo]`, negative `[S-1]`, colon `[S:2]`, whitespace `[ S1]` and incomplete `[S1`), so a valid `[S1]` elsewhere cannot conceal a forged citation. This is **syntax verification only**, not clinical claim verification.
+- **PASS:** 7 V8 regex-parity cases; additionally compiled and ran an **isolated Kotlin/JVM regex harness** with 12 malformed and 3 valid markers (15 checks, PASS). This verifies the regex on Kotlin/JVM but does not compile the Android project. New Kotlin project smoke assertions committed in `scripts/brain/BrainPipelineSmoke.kt`.
+- **NOT TESTED:** actual Kotlin compilation/smoke script, Gradle unit suite, GitHub CI, Android APK, real GGUF inference, PDF grounding/medical factual correctness on device and independent recheck. Do not treat JS regex parity as Kotlin test execution.
+- **Build policy:** `[skip ci]` on new commits; no build or workflow dispatch requested. No PR workflow run reported at test checkpoint `dd77392e`. Source-only development continues.
+
+
+## Scope and source
+- Starting point: Library `MedMate_Personal_v0.9.1_local_study_source.zip` (not a GitHub repository).
+- New source patch: `v0.9.1-local-import-stall-fix1`, **not an APK release**.
+- Production change: `LocalModelImport.kt` bounds consecutive zero-byte reads to eight while importing GGUF. Short pauses (three zero reads) are tolerated; an indefinitely stalled Android SAF provider aborts and deletes the partial `.part` file, preserving any valid previously imported model.
+- Test change: `scripts/brain/ModelAndTutorSmoke.kt` covers recovery, repeated-zero failure, and temporary-file cleanup.
+- This is a file-import safety fix, **not evidence of on-device generative inference**.
+
+## Reproducible tests (executed in this environment)
+- PASS `bash scripts/test-local-brain-v09.sh`: ExtractiveTutor 6 checks; LocalModelImport 12 checks including new pause/stall tests.
+- PASS `bash scripts/test-llama-adapter-contract.sh`: fake llama backend only, no actual GGUF model.
+- PASS `bash scripts/test-brain.sh`: 18 retrieval/prompt/security checks.
+- PASS `bash scripts/test-model-memory.sh`: 6 preflight memory checks.
+- PASS `python scripts/test-migrations.py`: simulated SQLite v1/v2 → v3 migrations.
+- PASS `python scripts/validate-merged-contracts.py`: static merged/security checks.
+- NOT TESTED `./gradlew :app:testDebugUnitTest :app:assembleDebug`: Android SDK/Gradle dependencies not provisioned in this environment; no APK produced.
+- NOT TESTED physical Xiaomi Pad 5, actual llama.cpp/third-party AAR GGUF loading, real medical PDF end-to-end correctness, source-citation clinical truth, model RAM/thermal/battery, backup restore on upgrade.
+
+## Outstanding acceptance
+- [ ] Import source into an independent **private** MedMate GitHub repo; keep signing keystore and personal PDF/model files private. Do not place it in StoryLens.
+- [ ] Verify third-party native llama-android AAR implementation/license and build Android ARM64 APK.
+- [ ] Run genuine GGUF inference on Xiaomi Pad 5 and inspect PDF-grounded explanations/High-Yield/MCQs with a medically reviewed test set.
+- [ ] Verify cloud AI only with explicit user consent, with no automatic PDF transfer.
+- [ ] Verify flashcards/SRS, Mistake Notebook, Exam Planner, backup/restore, and app UI on physical device.
+- [ ] Perform independent complete recheck after all requirements are met.
+
+## 2026-10-23 — MedMate public import readiness / citation safety
+- Production: `BrainCore.kt` CitationValidator now rejects a model response made only of source markers or punctuation, even if `[S1]` is in range. This is a structural minimum, **not medical factual verification**.
+- Regression: `scripts/brain/BrainPipelineSmoke.kt` now asserts citation-only and punctuation-only rejection; `bash scripts/test-brain.sh` **PASS (21 checks)**.
+- Production: `app/build.gradle.kts` now uses the Android Gradle Plugin's normal debug keystore when the private upgrade-continuity key is absent, instead of making a public-source build depend on a private signing file. An APK built with the default debug key **cannot upgrade the existing signed installation**; never overwrite without backup/signing review.
+- Public export guard: `scripts/test-public-source.py` checks signing fallback, `.gitignore` and absence of key/model files from a sanitized export.
+- Additional PASS: `scripts/test-local-brain-v09.sh` (6 tutor + 12 import checks), `scripts/test-llama-adapter-contract.sh` (fake backend only), `scripts/test-model-memory.sh` (6), `scripts/test-domain.sh`, `scripts/test-export.sh`, `scripts/test-drafts.sh`, `scripts/test-study-evidence.sh`, `scripts/test-study-filter.sh`, `scripts/test-backup-lines.sh`, `scripts/test-migrations.py`, `scripts/validate-merged-contracts.py`.
+- The aggregate `scripts/test-merged.sh` run exceeded the automation time limit after passing its first several subtests; individual scripts above were run separately. Do not claim aggregate PASS.
+- GitHub: confirmed `amroalhamedi2022-hue/MedMate` is Public and initially empty; staging branch `automation/medmate-safe-source-import-20261023` created with an introductory README. **Full source has not been uploaded to GitHub**; no `main` commit or PR exists. A sanitized local ZIP is prepared for subsequent import. No user PDF or private signing key should be uploaded.
+- NOT TESTED: Gradle Android APK, actual llama.cpp/GGUF inference on Xiaomi Pad 5, clinical truth of generated answers, physical device backup/upgrade, full UI.
+
+## 2026-10-23 — Local-only cloud-context safety (not yet uploaded to GitHub)
+- **Production:** `BrainPanel.kt` no longer promotes a paid OpenAI API shortcut; optional Cloud AI requires an explicitly supplied user-operated HTTPS endpoint and consent. Added `BrainRequestIdentity.kt` and guarded both delayed cloud explanation and generated-draft results against stale question/page/chapter context.
+- **Tests:** `bash scripts/test-brain-request-context.sh` checks seven identity cases plus both UI branches and absence of paid API promotion.
+- **NOT TESTED:** Android Gradle APK compilation, actual HTTPS endpoint, real Pad 5, live GGUF. This source change is **LOCAL ONLY**, not a GitHub commit or PR.
+- **Privacy:** no private signing key, personal PDF, or GGUF included in public-safe source.
+
+
+## 2026-10-23 — Full public-safe v0.9.1 source now in GitHub
+**Supersedes the older “GitHub source not uploaded” statement above.** This section records an actual **production source import**, not just documentation. Full source is present on `automation/medmate-v091-source-tree-20261023` since import commit `18df4d0d768146cefce33cd1f6f5ac864111f357`, 116 sanitized files from round-3 ZIP SHA-256 `07b5b5d11de5f0b5c8948a9a84c1e43017870615e84cb6ea0356765a10ac8b0d`. Earlier local fixes to `BrainCore.kt`, `BrainPanel.kt`, `BrainRequestIdentity.kt`, and their real tests are now committed in the GitHub source tree. No code was rewritten from scratch.
+
+| Gate | Status | Evidence |
+|---|---|---|
+| Import entire existing sanitized Android source, tests, Gradle wrapper | **PASS (source)** | 116 Git blobs; 6 sampled text/binary Git blob SHA-1 checks match local archive; import SHA above |
+| Private keystore/personal PDFs/GGUF/secret exclusion | **PASS (local export audit)** | `python scripts/test-public-source.py` PASS; ZIP only contains synthetic `four-pages.pdf` |
+| Cloud response source-context guard and opt-in self-hosted HTTPS | **PASS (local smoke/static)** | `bash scripts/test-brain-request-context.sh` 7 identity + UI checks; **NOT TESTED** live endpoint |
+| Brain pipeline, offline drafts, memory preflight, migration, backup, export, study filters | **PASS (local tests)** | Commands and details in `docs/IMPORT_STATUS_2026-10-23.md` |
+| Real native GGUF on-device | **NOT TESTED** | Fake Llama adapter tests are not model inference |
+| Android Gradle compile/lint/APK and GitHub Actions | **NOT TESTED** | No Android SDK/Gradle available in local runner; workflow is manual dispatch |
+| Xiaomi Pad 5 real PDF workflows, reading performance, clinical QA and upgrade | **NOT TESTED** | Needs actual device and independent recheck |
+
+**Next:** get Android CI running on exact imported SHA, fix any build errors without private assets, verify real native model integration, then device testing and second-pass acceptance. No auto-merge or release.
+
+- **GitHub Actions trigger caveat:** The imported `.github/workflows/android-debug.yml` has only `workflow_dispatch` and currently exists on the PR head, while the repository default/base branch is still docs-only. GitHub normally requires a manually dispatched workflow file to exist on the default branch. A PR alone will not run this workflow. An authorized, no-cost CI trigger/default-branch workflow setup is needed; do not bypass the no-main-write/no-workflow-edit rule silently.
+
+
+## 2026-10-23 — Cross-chapter study-draft evidence isolation (production + smoke)
+- **Production:** `GeneratedStudyDrafts.validate` rejects the entire candidate batch when supplied PDF evidence spans more than one chapter, even if a caller bypasses the prompt builder's chapter gate. Prevents accidental cross-book/page citation contamination at the untrusted model-output boundary. Deduplication now keys by **chapter ID + page index + kind + normalized prompt** rather than page alone.
+- **Production source SHA:** `2e1c970c03ad13fa0f8e31ce81fa370fbb758741`; regression test SHA `e7f4633b4cff9dbb765f4dfd14b3beeb3a495584` on draft PR #1 `automation/medmate-v091-source-tree-20261023`.
+- **PASS local** from a copy of the original sanitized v0.9.1 source with exact GitHub blob bytes (Git blob SHA verified for both files): `bash scripts/test-drafts.sh` (offline + generated), `bash scripts/test-brain.sh` (21 pipeline/security checks), `bash scripts/test-brain-request-context.sh` (7 context + UI guards). Kotlin source+smoke compiled with local `kotlinc` and executed successfully.
+- **NOT TESTED:** GitHub Android CI (the existing workflow remains manual dispatch only on non-default branch; no workflow changes made), Gradle Android compile/APK, real native GGUF, PDF-grounded clinical accuracy, Pad 5 and independent second-pass device recheck. No paid API, signing key, private PDF, GGUF or release was added.
+- **Next:** resolve authorized free CI trigger for the existing workflow and inspect build failures on its exact SHA; then real GGUF on-device and medical source QA. A Kotlin smoke pass is not an Android APK pass.
+
+
+## 2026-10-23 — PDF evidence quote normalization and boundary safety (production + tests)
+- **Production commit:** `0b6dfd9cadc58ffc3070074302270c37141a5f3f` changes `GeneratedStudyDrafts.kt`. Model-provided supporting quotes are still checked against the *actual selected Evidence text*, and the resulting page index/chapter ID still come only from Evidence, never from the model.
+- PDF source extraction often introduces Unicode ligatures (e.g. `ﬁ`) or a line-break hyphen splitting medical terms. Citation matching now normalizes NFKC, soft hyphens, and true line-wrap hyphenation for comparison while retaining the original quote and source page in the draft. New boundary checks reject substrings clipped inside a larger word; this is stricter than a plain `contains()`.
+- **Test commit:** `8c6215e788c9500c2f1699ffc556621a5b1e55d4` extends `GeneratedDraftSmoke.kt` with real-PDF-like ligature, split-word, correct page, and fabricated truncated-word cases.
+- **PASS local** using Kotlin source with production blob SHA `7e13a3a950b2d83d4942f4733c26ffc351e8fc20`: `bash scripts/test-drafts.sh` (offline and generated), `bash scripts/test-brain.sh` (21), `bash scripts/test-brain-request-context.sh` (7 + UI). The locally executed smoke additions exercise the same four cases; **GitHub-hosted Android Gradle CI has not run**.
+- **NOT TESTED:** Android compilation and APK, real on-device GGUF inference, clinical accuracy of quoted claims, scanned PDF OCR quality, physical Xiaomi Pad 5 and independent second-pass verification. This is citation-validation hardening, **not** a running generative Brain or proof of medical correctness.
+- **CI blocker:** the existing `.github/workflows/android-debug.yml` remains `workflow_dispatch` only on the PR head, absent from default branch; no unauthorized workflow/default-branch edits were made. **No MedMate APK artifact exists for this source SHA.**
+- **Next:** obtain explicitly authorized no-cost workflow trigger setup, compile the Android source, then verify real GGUF inference and grounded medical drafts on device.
+
+
+## 2026-10-23 — GGUF header sanity gate (production + regression, not inference)
+- **Production SHA:** `bc5fe551d39f3dcd30122355657ef868c76f8b57` updates `LocalModelImport.kt`: first 24 GGUF header bytes now include little-endian tensor and metadata counts, both required to be positive and within conservative sanity limits before the imported file is persisted. This rejects trivial fake headers and absurd counts without claiming full GGUF parsing or model compatibility.
+- **Regression SHA:** `d4c0aa51a35176137a861479faa8cf90d2c49bb9` adds synthetic zero-tensor, zero-metadata, absurd count and short-header negative cases to `ModelAndTutorSmoke.kt`; `da10bf9c3f1490d264748d4b57ffe657e137e83a` updates `LocalBrainV09Test.kt` fixtures and rejection assertions. Fake Llama adapter remains only a fake backend.
+- **Tests:** **NOT TESTED** Kotlin smoke execution and Android Gradle compile for these SHAs in this run (no repository checkout/Android SDK in execution environment; GitHub workflow remains `workflow_dispatch` on a non-default branch). Tests are added but not asserted PASS. **CI: NOT TESTED**, no MedMate Actions run/APK artifact.
+- **Remaining:** run `bash scripts/test-local-brain-v09.sh` and `./gradlew :app:testDebugUnitTest :app:assembleDebug` in authorized free runner; inspect real GGUF header compatibility and actual ARM64 llama.cpp inference on Xiaomi Pad 5; medical PDF citations, RAM/thermal and independent device recheck still **NOT TESTED**.
+- **Automation state:** `IN_PROGRESS`. No main write, paid API, private PDF, signing key, model weights, auto-merge or release.
+
+## 2026-10-23 — GGUF early header rejection (no APK build)
+- **Production changed: YES.** `LocalModelImport.import` now validates the first 24 GGUF bytes (magic, version and plausible tensor/metadata counts) immediately once available and **before writing the remainder of the stream**. Previously it copied up to 8 GiB and only rejected an invalid header at EOF. Supports short provider reads; keeps SHA-256 naming, temp cleanup, no overwrite and cancellation behavior.
+- **Regression added:** `ModelAndTutorSmoke.kt` uses a malicious 24-byte-only provider, asserts rejection after the first read, zero progress callbacks and no orphan `.part` file. Existing synthetic import/reuse/invalid-count tests remain.
+- **Verification:** static source inspection PASS; Kotlin smoke execution **NOT TESTED** in this run, Android Gradle/CI **NOT TESTED**. No APK or model was built, no paid API or personal PDF/GGUF/signing key uploaded. A valid synthetic header is not proof of real llama.cpp compatibility.
+- **Next:** run `bash scripts/test-local-brain-v09.sh` in a source-test-only environment, then finish real native GGUF integration and independent device QA before the single final APK build.
+
+- **Exact production/test commit:** `e6d6a219b9dae73189a814bba60e78067542b3b6` ([PR #1](https://github.com/amroalhamedi2022-hue/MedMate/pull/1)). Source-order static gate **PASS**; Kotlin smoke, Android CI, real GGUF and device **NOT TESTED**. No APK build requested.
+
+## 2026-10-23 — Safe no-evidence abstention in PDF-grounded Brain (source-only)
+- **Production changed: YES.** `CitationValidator.check` now accepts the exact Arabic insufficient-evidence response even when retrieved PDF excerpts exist but cannot answer the question. It allows harmless surrounding punctuation/spacing, while rejecting fabricated claims that merely append the abstention phrase and rejecting unknown citation markers. This prevents pressure to hallucinate a source marker; it is **not** clinical factual validation.
+- **Production SHA:** `22ff100f871f9590ad27c2145a3c7712bf805e51`; **regression SHA:** `7f38d409124b617543097b751db85fa83eb528fc` on existing draft PR #1.
+- **PASS (isolated Kotlin logic smoke):** `kotlinc /tmp/MedMateCitationSmoke.kt -include-runtime -d /tmp/medmate-citation-smoke.jar && java -jar /tmp/medmate-citation-smoke.jar` — 8 checks on a standalone copy of the changed validator logic (abstention, punctuation, fabricated claim, unknown citation, source-only, citation-only). `scripts/brain/BrainPipelineSmoke.kt` was extended with the corresponding source-level regressions.
+- **NOT TESTED:** full repository `bash scripts/test-brain.sh`, Gradle unit tests, Android compile, CI, real GGUF inference, medical PDF clinical accuracy, physical Pad 5 and independent recheck. **No APK or model was built**. Existing manual-only Android workflow was not dispatched.
+- **Next:** run complete source-only Kotlin smoke from a checkout when available; continue native GGUF integration, model/PDF citation QA, SRS/backup and security without an interim APK.
+
+
+## 2026-10-23 — Strict PDF source marker syntax / anti-citation-laundering (source-only)
+- **Production changed: YES.** `CitationValidator` now accepts only exact `[S1]`, `[S2]`, ... syntax and rejects malformed citation-like tokens (`[S01]`, `[s1]`, `[S 1]`, `[S1 extra]`, `[S1x]`, `[S]`, unclosed `[S1`) even if the same response also includes a legitimate source marker. The explicit insufficient-evidence abstention remains valid without fabricated citations. This is syntactic grounding protection, **not** clinical truth verification.
+- **Production + regression commit:** `8556bb11c80dbf3f7108bff4428a228a965554f2` on draft PR #1. `scripts/brain/BrainPipelineSmoke.kt` gains eight source-marker negative tests.
+- **PASS:** `kotlinc /tmp/CitationCheck.kt /tmp/CitationSmoke.kt -include-runtime -d /tmp/citation-smoke.jar && java -jar /tmp/citation-smoke.jar` — 14 checks of the identical extracted Kotlin validator implementation, including positive citations, malformed markers, overflow, abstention and citation-only rejection. **NOT TESTED:** complete `bash scripts/test-brain.sh` from the repository, full Android Gradle unit/lint/build, GitHub CI on this SHA, genuine GGUF model inference, real PDF clinical grounding, Xiaomi Pad 5, independent device recheck. The new repository smoke cases were authored but not executed here.
+- **CI:** existing workflow is manual-only; no build dispatched. **APK:** none for this SHA. No paid API, private PDF, signing key, model weights, main write, merge or public release. `AUTOMATION_COMPLETE: IN_PROGRESS`.
+- **Next:** full source-only tests, finish verified native GGUF lifecycle and PDF safety, SRS/backup QA, then one final APK build after requirements are complete.
+
+## 2026-10-24 — Citation-free evidence abstention (source-only)
+- **Production commit:** `b1d4518ace87114fc8eb394843ce46f7db3c7d0d` updates `CitationValidator`: the exact insufficient-evidence response is accepted only **without** source markers. Previously `المعلومة مش كافية بالنص الموجود [S1]` could pass, falsely suggesting a PDF citation supports missing evidence. Normal sourced explanations still require valid markers; citation-optional mode cannot attach a marker to abstention either.
+- **Regression commit:** `3266f65b0e608ff8517b14c61ecff71abc5186e9` adds two cases to `scripts/brain/BrainPipelineSmoke.kt`, covering normal and citation-optional modes.
+- **PASS (isolated Kotlin):** compiled an isolated copy of the changed validator logic with `kotlinc`, executed eight checks via `java -jar`: source-free abstention with/without excerpts, rejection of cited abstention in both modes, valid sourced explanation, unknown source, marker-only and malformed marker. This is **not** full-repository test execution.
+- **NOT TESTED:** full `bash scripts/test-brain.sh` from current checkout, Android Gradle/CI/APK, actual llama.cpp/GGUF, medical accuracy, physical Pad 5, clinical review and independent recheck. No new APK, private PDF, GGUF, secret, workflow or main change. `AUTOMATION_COMPLETE: IN_PROGRESS`.
+
+## 2026-10-24 — PDF retrieval performance and page-scope correction (source-only)
+- **Production commits:** `bb00169f6f0baebf50c909394f58b54f1dded258` replaces repeated full-token-list scans with a query-term-only frequency index in `EvidenceRetriever` while preserving the existing scoring/ranking formula; `f677106a62d685e11bcc280adc5daedba28b77a0` corrects `StudyBrain.search` so short questions count readable pages only from the selected chapter and optional page.
+- **Regression commits:** `3702dd380535ab70094db136e51ea07ba82d3efd` adds focused pipeline smoke checks; `226c22d95df7fff56278bed566f04803be54a7e5` adds `BrainRetrievalRegressionTest.kt` JUnit coverage for frequency ordering, page/chapter isolation and short queries.
+- **PASS:** source-level inspection of exact changes and preservation of scoring formula. **NOT TESTED:** execution of the new Kotlin smoke/JUnit tests, full Kotlin/Android build, GitHub CI, real GGUF inference, actual speed/RAM measurement, medical accuracy and physical device recheck. Optimization is not a measured performance improvement until benchmarked. No APK, paid API, personal PDFs, model weights, main write or auto-merge.
+- **Next:** run source-only Kotlin smoke/JUnit in an authorized environment, complete native GGUF model lifecycle and evidence-grounded study features, then single final APK and independent device recheck.
+
+
+## 2026-10-24 — source-only clinical English plural bridge
+- **Production:** new `ClinicalTermNormalizer.kt` maps 13 explicitly enumerated medical English plural forms to their singular canonical tokens (fractures/fracture, arteries/artery, injuries/injury etc.). `MedicalText.tokens` now canonicalizes PDF text, and `MedicalText.queryTokens` canonicalizes Arabic->English aliases as well. No general-purpose stemming or clinical claim generation; unknown terms like diagnoses/analysis remain unchanged. Existing chapter/page filtering and ranking formula are unchanged.
+- **Source commits:** normalizer `7028cf736033fe3ef463ef2dcd831b7050440dd3`, smoke source `d2a2a99f6b46b80a2fccebd725e25adb172e5460`, runner `6c77e3a8f6819f9e03f8dec50b98b9a2674a0557`, BrainCore integration `510d1ca1e0decf579105757000fe1bfd9414d5bd`.
+- **PASS:** compiled and executed the exact isolated `ClinicalTermNormalizer.kt` implementation using local `kotlinc`; 5 standalone canonicalization assertions passed. **NOT TESTED:** the new full 11-check `scripts/test-clinical-terms.sh` against integrated `BrainCore.kt`, Android Gradle/CI, true GGUF generation, Pad 5 and clinical correctness. Do not equate lexical plural matching with local AI inference.
+- **Privacy/build:** no keys, user PDFs, GGUF weights or APK added; no GitHub Actions run or interim APK requested. PR remains review-only, no main write or merge.
+
+## 2026-10-24 — Explicit Arabic surgical-term PDF retrieval bridge (source-only)
+- **Production SHA:** `eab579fb68904fe321cfa806ad607933dcdfc7fa`; **regression SHA:** `72c3858ecd66d9fae00a42569dd038c115fb3229` on draft PR #1.
+- **Production:** eight small, explicitly audited Arabic-to-English retrieval aliases for appendix/appendicitis, pancreas/pancreatitis, gallbladder/cholecystitis, obstruction, intestine/intestinal, peritoneum/peritonitis, ulcer and perforation. Existing Arabic normalization and chapter/page restrictions remain in force. These are search hints, **not diagnosis, clinical translation validation, or a generative model**.
+- **Tests authored:** ten new source smoke assertions in `scripts/brain/ClinicalTermsSmoke.kt` covering six Arabic surgical queries and four chapter/page isolation cases; total asserted checks becomes 21.
+- **PASS:** static review of production alias map and regression test source. **NOT TESTED:** actual Kotlin smoke execution, full Gradle/JUnit/Android CI, real GGUF model inference, PDF medical accuracy, Pad 5 performance and independent recheck. No APK build requested; commits use `[skip ci]`.
+- **Status:** IN_PROGRESS; native llama-android path is present but not yet validated with a real GGUF on a device. No private PDFs, keys, model weights or paid API.
+
+
+## 2026-10-24 — PDF extracted-term dehyphenation (source-only)
+- **Production commits:** `a2bdd79b78b83dcda26de3c4c8143a6282ab6184` and Kotlin escape correction `5044a6e6bf780a941d104eb7346cb03524b0da4c`. `MedicalText.normalize` now rejoins Latin medical words split by an end-of-line hyphen and removes discretionary U+00AD soft hyphens before tokenization. Normal hyphenated compounds and paragraph breaks remain distinct; no generative AI capability is implied.
+- **Regression commit:** `bcbcb899f1ea16977230d736ba04ad78c87bb227` adds six cases to `scripts/brain/ClinicalTermsSmoke.kt` including English PDF hyphenation and retrieval.
+- **PASS:** compiled and executed five **isolated Kotlin/JVM checks** of the same normalization expressions with `kotlinc` and `java -jar` (LF/CRLF wrapped words, soft hyphen, ordinary compound, paragraph boundary).
+- **NOT TESTED:** full repository `scripts/test-clinical-terms.sh`, Gradle tests, native GGUF inference, clinical correctness, Android build, offline/performance/Pad 5 and independent device recheck. No APK, workflow dispatch, paid API, private PDFs or model weights used. Status: **IN_PROGRESS**.
+
+
+## 2026-10-24 — Surgical plurals in PDF retrieval (source-only)
+- **Production commit:** `9ec00bc88db7ed39bc2aa8874226ab1ec2ea6645`; **smoke test:** `deb8b948dc7f9541ea84b1d45b12223b4f07bc97`; **JUnit regression:** `6565e5fe27c4115fedc87424e95eb7a79a7cea6a` on draft PR #1.
+- **Fix:** explicit English plural normalization for ulcers, perforations, obstructions, intestines, gallbladders, abscesses and adhesions. Query and PDF tokens already share the same canonicalizer; no general stemming, change to rank formula, page scope, or AI-generated clinical claims.
+- **PASS:** compiled and ran 9 isolated Kotlin/JVM assertions with `kotlinc` and `java -jar` against an equivalent standalone copy of the canonicalizer (7 surgical plurals plus two intentionally unchanged irregular words).
+- **NOT TESTED:** newly committed integrated ClinicalTermsSmoke/JUnit execution, full Android Gradle tests/lint, actual PDF corpus clinical relevance, GGUF/native inference, Pad 5 offline/RAM/performance and independent recheck. Isolated smoke is not proof of integration.
+- **Build:** no APK, no workflow dispatch, no merge, no paid API, no private medical data. Status: **IN_PROGRESS**.
+
+## 2026-10-24 — GGUF import/load UI state consistency (source-only)
+- **Production commit:** `cac30204d1548f4cdd6901e7b4eb0e68638b8811` updates `BrainPanel.kt`: after a successful local GGUF import, refresh the saved-model list **before** the RAM preflight/native activation; failed activation no longer hides an already-loaded native session. Saved-model activation failure also mirrors `onDevice.loadedModelName` instead of unconditionally clearing the UI label. No native backend/API/model weights changed.
+- **Regression commit:** `dbd09c710a0de1c28c8a5e5266290ec8ed787503` adds `scripts/test-model-load-ui-contract.py`, a source-only regression checking ordering and both error paths.
+- **PASS (static source checks):** four assertions against the exact current GitHub production/test blob verified list-refresh ordering, two failure paths, and presence of regression guards.
+- **NOT TESTED:** running the Python regression script from a repository checkout, Android Kotlin/Compose compilation, RAM failure on a physical device, actual llama.cpp/GGUF loading, medical accuracy, offline performance and independent device QA. No APK/Actions run, paid service, main write or merge. **IN_PROGRESS.**
+
+## 2026-10-24 — Ephemeral cloud bearer-header validation (source-only)
+- **Production:** `GatewayPolicy.kt` adds `validSessionToken` to enforce <=2048 printable ASCII characters (empty allowed for an unauthenticated personal relay), rejecting CR/LF/TAB/NUL and ambiguous Unicode before constructing the Authorization header. `CloudBrainGateway.kt` uses this shared policy instead of checking LF alone. No paid API, stored secret, cloud auto-fallback or gateway activation was introduced.
+- **Regression commit:** `009712764921b9b2f2469f1bc084183314242302` adds checks to `scripts/brain/BrainPipelineSmoke.kt`. Production integration commit: `380f5d60b1b5f8f3cbb7fb754e09c6bbaae8396e`; policy blob SHA `f5bf3ac09e1985774d4d7ce5a8b0ee21dd3ef09d`.
+- **PASS:** isolated `kotlinc` + `java -jar` compiled the current GatewayPolicy source in a temporary JVM harness and passed 10 checks (blank/normal/max-length accepted; CR/LF/TAB/NUL/Unicode/oversize rejected; HTTPS endpoint accepted). Ten source-contract assertions checked the exact committed gateway/policy/regression code. **This is not a full integrated smoke test.**
+- **NOT TESTED:** complete `scripts/test-brain.sh`, Gradle JUnit/lint, Android compile, real HTTPS relay, real GGUF/llama.cpp inference, PDF medical accuracy, Pad 5 RAM/thermal/offline/install tests.
+- **CI/APK:** no workflow dispatched or APK created. PR remains open/unmerged, `main` untouched. **Status:** IN_PROGRESS.
+
+
+## 2026-10-24 — Strict UTF-8 JSONL restore and CRLF boundary (source-only)
+- **Production commit:** `c23247b0a56041eec5d815a6b82c1fd4fc428715` in `BoundedLineReader.kt`. **JUnit regression commit:** `cd422cc2a0f53b7933dda24ebc2fd143f0a59f3c` on draft PR #1 (not main).
+- **Fix:** restore scanner now uses an explicit UTF-8 decoder with `CodingErrorAction.REPORT`; malformed byte sequences can no longer be silently replaced with U+FFFD in medical notes/study-card JSONL. CRLF's trailing CR is excluded from the record length bound so an exactly `maxChars`-long line remains valid; a bare CR still counts toward the limit. Existing line-size limits and JSONL schema are unchanged.
+- **PASS:** compiled the **same production Kotlin source** with local `kotlinc` and executed four JVM checks: Arabic/CRLF exact-limit reading, bare-CR length rejection, malformed UTF-8 rejection and oversized-line rejection. **FAIL:** none observed in these isolated checks.
+- **NOT TESTED:** committed JUnit tests in the full Gradle project, Android build/lint, full restore transaction on device, GGUF/llama.cpp inference, medical accuracy, Pad 5 offline/RAM/performance/install and final APK. A source-only Kotlin smoke is not proof of Android restore success.
+- **Build/merge:** no APK, no Actions dispatch, no main write, merge, paid service, private PDF/model weight or Library/Handoff. Status **IN_PROGRESS**; final APK build remains gated on full feature/source-test completion.
+
+
+### Independent Kotlin source/test replay (same batch)
+- **PASS:** additionally compiled the exact committed production blob `46818a192c56fe13e0b8e85050d2a5ebfbcb0737` and the exact committed JUnit test-source blob `b00d4758763a398f12e1e58de3c57f998aaa954d` with local `kotlinc`. Executed all five test methods with lightweight local JUnit assertion shims: **5/5 PASS**. The local `git hash-object` values matched both repository blobs byte-for-byte.
+- **NOT TESTED:** genuine JUnit/Gradle test runner and Android instrumentation/device. The assertion-shim replay validates test logic only; it is not a substitute for the full project test suite.
+
+## 2026-10-24 — Pre-inference study-draft evidence isolation and real LF test coverage
+- **Production SHA:** `481bcdaa987c4c8255f3ec7784ca5c2d960d439d`; **test SHAs:** `58d57c02d54c3e0b2d09e5db429f896c99c3db4a`, `ed56a583c13919cb494a9377390a557b400bb318`, `d45818f6ddceda171f8e7fac71cce748f7c5b7db`, `10ae693361be06c420b13845eb49b9a149bd455a`. `StudyDraftPrompt.prepare` now rejects mixed-chapter, blank, negative-page, and >20-source evidence **before** local inference or optional cloud transmission, rather than relying only on post-generation validation. Existing 20,000-character limit remains. Replaced test inputs/assertions using literal `\\n` with actual Kotlin newline escapes to test prompt-header spoofing properly.
+- **PASS (actual Kotlin source):** Git blob SHA `5934c0853d27c0927c137301c95c1e7bd3b4a6d0` matched the copied production `StudyDraftPrompt.kt` byte-for-byte; compiled with `kotlinc` and minimal model stubs and passed 12 JVM checks (including 20-source allowed, 21-source rejected, mixed chapters rejected, malformed source rejection and actual LF flattening). **FAIL:** first manual copy had incorrect regex escaping and did not compile; corrected copy matched the Git blob and compiled. This was a local transcription error, not a GitHub source failure.
+- **NOT TESTED:** repository Gradle/JUnit suite, complete Brain pipeline, cloud endpoint, Android APK, Pad 5, clinical correctness and real GGUF inference. Zero PR workflow runs reported for the latest test SHA. No APK created. The source gate does not prove a working on-device model.
+
+AUTOMATION_COMPLETE: IN_PROGRESS
+
+## 2026-10-24 — Generated study-draft source trust boundary (source milestone)
+- **Production:** `GeneratedStudyDrafts.validate` now rejects an entire generated draft batch when evidence is empty, exceeds 20 sources/20,000 characters, has an empty chapter, mixes chapters, contains negative page indices or blank excerpts. This independent output boundary matches `StudyDraftPrompt` input limits, preventing malformed PDF page anchors from being saved even if a caller bypasses prompt preparation. This does **not** establish medical correctness.
+- **PASS (actual production Kotlin):** Git blob `12e4c0add2d036a1006e9acf9730d00c428561e3` was reproduced byte-for-byte in an isolated Kotlin/JVM harness; compiled with `kotlinc` and ran **8 assertions**, including valid evidence and 7 invalid source batches. All passed. Added regression cases to `scripts/brain/GeneratedDraftSmoke.kt` and Android `GeneratedDraftsTest.kt`.
+- **NOT TESTED:** full committed `scripts/test-drafts.sh`, Gradle/JUnit, Android compilation/APK, real GGUF inference, device RAM/thermal/offline, cloud HTTPS consent path, medical claim accuracy and PDF-to-draft UI.
+- **Gate:** malformed-evidence rejection **PASS (isolated production source)** / **NOT TESTED (full suite/device)**. No fake backend test is claimed as real GGUF inference.
+- **Commit checkpoint:** `281514c49275026f25743afc0cd42d784494e6da` (production + smoke + JUnit, draft PR #1 only). No APK/Actions build, no merge/main write.
+
+
+## 2026-10-24 — Consent-bound cloud study requests (source milestone)
+- **Source checkpoint:** `ebdcfb437a31554f11d47b56141a200d8b9e7716` (before this ledger entry), draft PR #1 only; base/default branches untouched.
+- **Production:** `CloudTransferConsent` binds a one-use in-memory non-copyable approval to the canonical HTTPS gateway, model and exact indexed chapter/question/page identity. Both Cloud Explain and generated High-Yield/MCQ/Flashcard requests capture immutable endpoint/model/token at click, consume approval before dispatch, and enforce the same approval again inside `CloudBrainGateway.complete` before `openConnection`. Editing endpoint/model or starting a new search revokes approval. The gateway still disables redirects, has no default paid provider and never stores session tokens. This reduces accidental disclosure; it does not prove a live endpoint safe.
+- **PASS:** `kotlinc` + `java` executed **11 pure Kotlin checks** against the exact new production `CloudTransferConsent.kt` and `CloudConsentSmoke.kt` bytes (Git blob SHA matches `1d8f064b2be7f9e7466557c17589ca9b2c5eea5e` and `e50b9d2cf3ffd2347f16dd699adeb878a487dd1a`), with locally reproduced dependency logic. **13 additional source integration checks** fetched and inspected the real PR files: both UI paths, one-use reset, gateway enforcement, immutable request arguments, redirect disabled, and test script integration. New `scripts/test-cloud-consent.sh` included in aggregate test suite. Four Android JUnit regression methods added in `CloudTransferConsentTest.kt` (**NOT TESTED** under Gradle).
+- **NOT TESTED:** full Android Kotlin/Compose/Gradle compilation, actual HTTPS transmission/denial and TLS on device, full project smoke, native llama.cpp/GGUF generation, clinical citation correctness, RAM/thermal/offline Pad 5 testing, final APK. Fake Llama tests are not model inference.
+- **Build question:** Android compilation and actual consent/no-send behavior would be useful to verify, but MedMate's workflow is dispatch-only on a non-default PR branch and cannot be run from default without a separate authorized CI path; no default/main write or routine APK build was attempted.
+
+## 2026-10-24 — Cloud PDF-transfer consent is atomic and one-shot (source milestone)
+- **Production commits:** `b160ee81c1fa7a3265b7f44312523922e9582a8d` (grant) and `8bed2c6ee5f126e1649c59e9eff96234d64d353c` (outbound gateway); **JUnit regression:** `c365b4578863f7ffdb14c9bb4560110f114bf7b6`; **smoke regression:** `a127b1a2d56fcbc6ad21162c77e315404705a9d6`. Draft MedMate PR #1 only.
+- **Bug fixed:** The previous in-memory grant could be reused by a retained reference even though the Compose UI cleared its own pointer. `CloudTransferConsent.consume()` now claims approval atomically, at most once, and only for the same HTTPS endpoint/model/question/chapter/page. `CloudBrainGateway` claims it **after local validation but before opening the connection**; even an unsuccessful attempt requires fresh user approval. The UI still previews with the non-consuming `permits()` check.
+- **PASS (isolated Kotlin/JVM):** Compiled a local mirror of the changed consent logic with `kotlinc` and executed 8 assertions including mismatch rejection, successful first claim, replay refusal, and a **20-thread simultaneous claim race** with exactly one winner. **PASS (repository source inspection):** Seven assertions checked the committed production gate, its placement before `openConnection()`, and the presence of the JUnit and smoke regressions. Actual Git blob SHAs were inspected.
+- **FAIL:** None in executed checks. **NOT TESTED:** Native repository `scripts/test-cloud-consent.sh`, Gradle/JUnit test execution, compilation of the complete Android/CloudBrainGateway source, real HTTPS request or failure handling, actual PDF transfer refusal, Pad 5, llama.cpp/GGUF model inference, clinical accuracy, APK/SHA-256.
+- **CI:** Zero PR workflow runs reported at smoke SHA when checked; commits use `[skip ci]`. **Build decision:** no APK built in this round; atomic capability behavior was answerable with source/JVM checks, whereas real network, device permission and native model integration remain separate purposeful build/device gates. No private PDF, key or GGUF model uploaded. **Status:** IN_PROGRESS.
+
+
+## 2026-10-24 — GGUF saved-model preflight before native llama.cpp
+- **Production:** `LocalModelImport.validateForLoad` now checks a persisted GGUF file's app-local extension, 128-byte to 8-GiB size range, 24-byte magic/version/tensor/metadata header immediately before `LlamaAndroidPort` invokes native loading. This rejects obvious damaged/replaced models **before** evicting an already loaded native session. The real `Llama.loadModel` and `Llama.complete` path remains unchanged and requires real-device verification.
+- **Tests committed:** additional synthetic valid/damaged/truncated/version-invalid file cases in `ModelAndTutorSmoke.kt` and `LocalBrainV09Test.kt`. No private GGUF weights, medical PDF, secrets or signing keys committed.
+- **PASS (isolated Kotlin/JVM equivalent):** compiled and ran **9 synthetic preflight checks** in a local `kotlinc` harness using the same validation logic; valid header accepted, damaged magic/version/counts, truncated/incorrect-extension/small files rejected, previously valid file preserved. This is an **isolated reproduction**, not execution of the committed full test suite or actual llama.cpp.
+- **Research:** existing pinned `dev.ffmpegkit-maintained:llama-android:0.1.1` advertises MIT license, arm64-v8a and the exact `Llama.loadModel/complete/releaseModel` API. Sources: https://github.com/ffmpegkit-maintained/llama-android and https://github.com/ggml-org/ggml/blob/master/docs/gguf.md . This verifies documented compatibility only, not an Android integration PASS.
+- **FAIL:** none in the isolated 9 checks. **NOT TESTED:** full Kotlin smoke/JUnit, Android Compose/Gradle/lint, AAR resolution/ABI packaging, actual GGUF inference, PDF clinical grounding, physical Pad 5 RAM/thermal/offline, final APK and SHA-256.
+- **Purposeful build question (authorized 2026-10-24):** does the real Android Gradle project compile with the pinned native llama AAR and run its unit/lint gates? Isolated Kotlin cannot verify Android dependency resolution or Compose/ABI packaging. One targeted PR-branch CI build is justified, **not proof of GGUF inference or a final release**. Do not claim CI/artifact before observing it.
+- **Scope:** draft MedMate PR #1 only; no `main`, no auto-merge, no paid API, no Library/Handoff. **IN_PROGRESS.**
+
+
+### Targeted Android CI bootstrap failure and corrective run
+- **FAIL (CI environment, before source compilation):** run **40126814109**, source SHA `f394467fbfd0fb4273a4c9745ff61bd13429ae26`, https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40126814109 . The `android-actions/setup-android@v3` step invoked `sdkmanager tools`, but the removed legacy Android SDK `tools` package was unavailable. **No Kotlin/Gradle tests ran; no APK artifact.** This is not a model failure.
+- **Fix:** PR-branch workflow now uses the GitHub-hosted runner's existing Android SDK manager to install `platforms;android-36` and `build-tools;35.0.0`, matching the proven Storylens runner approach. Fix source SHA `07ad6f88355cdff22375d6fc0c779e832739265d`.
+- **Second purposeful CI:** run **40126898764**, https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40126898764 . The SDK step completed and Gradle `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` began; at the time of this checkpoint it was **IN_PROGRESS**, so unit/lint/compile/APK are **NOT TESTED / no result yet**. No private model, user PDF or key uploaded.
+- **Still NOT TESTED:** genuine GGUF inference, clinical PDF citations, real HTTPS consent/no-send, physical Pad 5, model RAM/thermal/offline and final release.
+
+
+## 2026-10-24 — Real CI closure and content-addressed GGUF integrity milestone
+- **Resolved prior CI checkpoint:** targeted Android run **40126898764** at source SHA `07ad6f88355cdff22375d6fc0c779e832739265d` finished **PASS** on 2026-10-24. Actual job completed SDK installation, SQLite migration checks, `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` and artifact upload. Real artifacts: `MedMate-validation-reports` ID **12573563298** (archive SHA-256 `9d5b5bc330a18412f2bdaea3b0f9c61a5418c22d2324aae7da8d48756d50d453`), `MedMate-debug-apk` ID **12573313606** (ZIP archive SHA-256 `d3f1136adb2c7f24166127a6c21afda3e6cc476e8a4cff913b569cdb7b48db0c`). **APK inner-file SHA-256 NOT TESTED**; archive hash must not be presented as APK hash. No Android device install, native GGUF inference or clinical accuracy test.
+- **New production milestone:** imported GGUF models are named after their SHA-256 at import, but the old native-load preflight only checked the first 24 bytes. `LocalModelImport.validateForLoad` now checks the complete saved file against its lowercase content-addressed filename before calling llama.cpp. It rejects a modified tensor body even when the GGUF header remains valid, and rejects unverified filenames that must be reimported. Streaming checksum callback permits cancellation; `LlamaAndroidPort` runs the scan on Dispatchers.IO **before** releasing a previously loaded native session. This improves integrity, not proof that the model is valid or clinically accurate.
+- **New regression source:** `LocalBrainV09Test.kt` and `ModelAndTutorSmoke.kt` cover body tampering, valid recheck, unverified filenames and cancellation with tiny synthetic GGUF headers. No model weights, personal PDFs or keys committed.
+- **PASS (source inspection):** production and tests are committed in draft PR #1. **NOT TESTED (new SHA):** Kotlin/JUnit execution and full Android compilation after this change, physical device performance and model inference.
+- **Purposeful build question:** Does the *modified* coroutine/IO cancellation path compile with the actual Android Kotlin dependencies, and do the new JUnit regression cases pass with the production import code? Static review and an isolated fake GGUF cannot prove the integrated Kotlin/Gradle result. **One targeted branch CI run is justified**; it is a Debug validation build, not a final APK or real GGUF inference.
+- **Scope:** only MedMate PR #1; no main/auto-merge/paid API or Library/Handoff. IN_PROGRESS.
+
+## 2026-10-25 — Printed PDF MCQ answer-key ambiguity guard
+- **Production SHA:** `fb2945e87f362d7faba090a73b36f37158933aef`; **smoke SHA:** `8e6c38016a889a9a5949ed0efb8de47a3e9c8ec8`; **JUnit SHA:** `2d29bbebeaedb4bed6322094a5a7a25eb99098dd`, PR #1 only.
+- The offline extractive PDF MCQ parser now rejects **the entire question** when multiple answer labels are printed (even duplicate same-letter keys), or when a malformed/ambiguous answer label follows a valid one. It never silently promotes the first key as certain. Added three negative cases to source smoke and JUnit.
+- **PASS:** Five **isolated Kotlin/JVM** answer-label checks (one valid and four invalid). This is a reproduction of the production parser's key-label logic, **not** the full compiled project or committed smoke script.
+- **New CI status:** **NOT TESTED** on the latest SHA. **Older CI baseline PASS:** GitHub Actions run `40126898764`, Android SDK, SQLite contracts, Gradle unit tests, lint, assembleDebug, artifact upload all successful; Debug APK artifact `12573313606` and validation report `12573563298` exist. These artifacts predate the new parser change; neither proves genuine GGUF inference or a device install.
+- **NOT TESTED:** full current JUnit/Gradle, actual PDF user flow, real llama.cpp/GGUF, clinical correctness, Pad 5 thermal/memory, cloud HTTPS, final APK/signature continuity.
+- No new APK built for this parser-only change; the prior successful Android CI already establishes a build baseline, while the new regression must still pass in full CI before acceptance.
+
+## 2026-10-25 — Bounded reusable PDF evidence index (source + targeted Android CI)
+- **Production SHA:** `e7d493680983d8c0ac0aed9ae3eb61c6340fe1ab` on MedMate draft PR #1, not main. Added `IndexedEvidenceRetriever.kt` with immutable per-evidence token frequencies and normalized phrase text, plus a one-chapter, **350,000-character bounded** reuse cache in `StudyBrain.kt`. Repeated questions can reuse lexical parsing; changing a chapter's indexed PDF text invalidates the cached index. Oversized chapters use the original uncached retrieval path. Exact BM25-like frequency scoring, page citations, chapter isolation and source-only behavior are retained. **This is not semantic AI or GGUF inference.**
+- **Regression:** new `IndexedSearchTest.kt` compares actual `StudyBrain.search` with the original `EvidenceRetriever` for multiple English/Arabic questions and page scopes, including PDF text replacement, cross-chapter isolation, unknown queries and scanned/empty pages. `scripts/test-brain.sh` now compiles the new production source. No user PDFs or model weights added.
+- **PASS local syntax/logic:** `kotlinc` compiled the new indexed retriever and StudyBrain source with minimal Kotlin stubs for existing BrainCore dependencies; four source-behavior checks passed. This is a **stubbed local smoke**, not the committed full BrainCore/JUnit or Android build.
+- **Purposeful build question:** Do the new production retriever and JUnit parity tests compile and pass against the actual Android/Kotlin/PDF dependency graph, and does a Debug APK still assemble? Local stub tests cannot answer this. GitHub Actions [run 40139831599](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40139831599) was triggered for that exact production SHA and was **IN_PROGRESS** during this checkpoint. Mark Android/JUnit/lint/artifact as **NOT TESTED pending completion**, not PASS.
+- **NOT TESTED:** measured PDF-search speed/RAM on Pad 5, real PDF citation truth, OCR for scanned books, native llama.cpp GGUF loading/inference, cloud endpoint and consent on device, clinical QA, upgrade-signature continuity and independent final acceptance. **IN_PROGRESS**, no final APK or release.
+- **Scope:** MedMate PR #1 only; no main, auto-merge, paid API, private PDF/keys/models, or ChatGPT Library/Handoff. Documentation-only `[skip ci]` commit avoids a redundant APK build; the source SHA above is the CI target.
+
+### CI completion for the indexed PDF milestone (supersedes pending status above)
+- **PASS:** [Android Actions run 40139831599](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40139831599) completed successfully on exact production SHA `e7d493680983d8c0ac0aed9ae3eb61c6340fe1ab`. The job reports PASS for SQLite contracts/migrations, Gradle `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`, and writing `APK_SHA256.txt`.
+- **Real artifacts:** Debug APK ZIP artifact **12578776127** (`MedMate-debug-apk`), validation report artifact **12578396535** (`MedMate-validation-reports`). Inner APK SHA-256 is present in the uploaded archive but was **not independently extracted or verified** in this run.
+- **NOT TESTED remains:** Xiaomi Pad 5 installation/performance, real PDF/clinical correctness, true GGUF/llama.cpp model inference, real cloud endpoint consent behavior, backup/restore on device, and final release-signature continuity. A successful Debug build does not satisfy these gates. No final APK delivery.
+
+### Independent Debug APK integrity/native-library inspection
+- Downloaded actual Actions artifact **12578776127**, extracted `app-debug.apk` (**33,504,001 bytes**), and independently computed SHA-256 **`4ea45ae9d9b8aa93a00445c1eba8202bfd7f0615121829203f0b79be4bc29bed`**, exactly matching its bundled `APK_SHA256.txt`. **PASS artifact integrity.**
+- The APK contains **`lib/arm64-v8a/libllama.so`** and **`lib/arm64-v8a/libllama_jni.so`** plus ARM64 GGML libraries. No `.gguf`, keystore/private-key file or PDF is packaged. **PASS native binary packaging inspection**, but **NOT TESTED real GGUF loading or token inference**, JNI runtime compatibility, Pad 5 memory/thermal or medical correctness. Debug build is not a final release.
+
+
+## 2026-10-25 — Native GGUF inference audit and stale PDF response isolation
+- **Production SHA:** `d85d122fdb1ed25f1cb80adc8b215dc8a8c239d7`; **JUnit test SHA:** `f6daba33807e1873b38028ff725e7cae184b60d7`, MedMate draft PR #1 only.
+- Added `LocalInferenceAudit.kt` to produce an in-memory, source-bound diagnostic **only after the actual `LlamaAndroidPort.generate` call returns**. It records the native loaded model name, measured wall-clock inference milliseconds, response length, PDF source page numbers and citation-syntax result. It explicitly does **not** prove clinical accuracy, GGUF inference in CI, or any device performance. No model weights, answer text, PDF excerpts or secrets are persisted in this audit.
+- `BrainPanel.kt` now shows the audit next to local PDF-grounded explanations and guards both local explanation and generated MCQ/flashcard draft results with the captured `BrainRequestIdentity` (chapter SHA, question, page-only flag and source page). Results from a changed source are discarded rather than presented as belonging to another PDF. Added four `LocalInferenceAuditTest` JUnit cases for valid/forged citations, missing native session, cross-chapter/negative clock rejection and stale question/page identity.
+- **Purposeful build question:** do the new Kotlin source and JUnit compile and pass against the actual Android/Compose/llama AAR graph, and can a Debug APK still assemble? Source-only checks cannot prove Compose Kotlin compilation or native dependency packaging. Target [Actions run 40147310046](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40147310046) was **IN_PROGRESS at documentation time**; mark latest CI/Gradle **NOT TESTED pending completion**.
+- **NOT TESTED:** genuine GGUF model import/load/generation on Xiaomi Pad 5, latency/RAM/thermal, clinical correctness, physical PDF citations, cloud HTTPS consent, and final device/signature acceptance. Existing tests cannot replace a real model. No main merge, release, paid API, personal PDFs or keys.
+
+
+## 2026-10-25 — Source-grounded PDF citation navigation for local/cloud answers
+- **Functional/CI SHA:** `b8e8c2ee2c8c240538d4ff7a7c11b8d5992ec7b5`, draft PR #1 only.
+- **Production:** new `SourceCitationLinks.kt` resolves exact `[S1]`/`[S2]` markers to the **specific `PreparedPrompt.presentedEvidence` page indices** used for that local llama.cpp or explicitly consented Cloud AI request. The Compose `BrainPanel` displays tappable PDF-page links alongside both answers. Never trusts model-supplied page numbers; never makes any citation tappable when the full `CitationValidator` rejects the response, even if one valid marker appears next to a forged one. Rejects mixed chapters, negative pages, empty evidence and citation-only answers. The existing stale-question/page/chapter response guard remains in front of link assignment.
+- **Tests:** committed `SourceCitationLinksTest.kt` covers exact/repeated markers, page mapping, malformed/Unicode/forged citations, cross-chapter and abstention. **PASS isolated Kotlin/JVM:** exact production `SourceCitationLinks.kt` Git blob `400cb3be516e709e0cf7d6eee00bf3bde2d9c64d` compiled with minimal stub `Evidence/CitationValidator`; three resolver checks PASS. **Important:** stubbed validator is not the full committed production validator or Gradle/JUnit.
+- **Purposeful Android CI question:** does the real Compose panel compile with new state/links and do JUnit tests pass against the full production `CitationValidator`, and can the native ARM64 APK still assemble? Isolated Kotlin cannot answer this. [Run 40151230089](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40151230089) was **IN_PROGRESS** when checked; **CI/Artifact: NOT TESTED pending completion**.
+- **NOT TESTED:** real GGUF inference, physical PDF tap navigation on Pad 5, medical truth of any answer, cloud HTTPS consent on device, model RAM/thermal, final signed APK. These are navigation improvements, **not evidence of model success**. No user PDFs/keys/models uploaded; no main merge, paid API or Library/Handoff edits. **IN_PROGRESS**.
+
+
+### Targeted CI completion for PDF citation navigation
+- **PASS** [GitHub Actions 40151230089](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40151230089) on exact functional source SHA `b8e8c2ee2c8c240538d4ff7a7c11b8d5992ec7b5`: SQLite schema/migration checks, full Android Gradle `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` **BUILD SUCCESSFUL in 4m 40s**. The newly committed `SourceCitationLinksTest.kt` is included in the project test suite; full JUnit/Compose compilation succeeded. This is not a real GGUF model test.
+- **Actual artifacts:** `MedMate-debug-apk` ID **12583085993**, `MedMate-validation-reports` ID **12582931184**. CI-calculated inner `app-debug.apk` SHA-256: **`469646c7def026f4d2198395903f3f1c972376572fef40e1ed6dc2870e11e1c8`**. **Independent artifact re-download/re-hash NOT TESTED**.
+- **NOT TESTED:** physically tapping cited PDF pages in the Android UI, real GGUF/llama.cpp inference, cloud HTTPS transfer/consent on device, medically verified source grounding, model memory/thermal, final release signing/upgrade. **IN_PROGRESS**; debug APK is not a final deliverable.
+
+
+## 2026-10-25 — Offline PDF extraction coverage + navigable OCR gaps
+
+- **Functional source SHA before evidence note:** `a9ebd0ab32672df14f1ec3c7a96eafce8341e745` on MedMate draft PR #1; `main` untouched.
+- **Production:** `PdfTextCoverage.kt` audits **the currently selected chapter only** and distinguishes pages not yet indexed, indexed-but-empty pages, suspiciously short extracted text, and sufficiently readable text. Keeps only bounded page indices/counts, never PDF excerpts, model weights, tokens or personal data. Rejects mixed-chapter, duplicate or out-of-range page anchors. Coverage is a diagnostic, **not OCR**, a clinical source-quality certification or a generative model.
+- **Integrated Compose UX:** `BrainPanel.kt` shows chapter-wide coverage without re-running PDFBox on each recomposition; offers an **explicit offline full-chapter indexing action**, progress and direct navigation to up to five pages needing review. Existing question search refreshes the report after indexing. Scanned PDFs are not falsely presented as searchable.
+- **Tests committed:** `PdfTextCoverageTest.kt` covers partial/empty/low-text/full coverage, page counts, 20,000-page bounded previews, source isolation and invalid anchors. Tests target actual production Kotlin through Gradle/JUnit, not FakeLlama. No new network, OCR dependency or personal PDF fixture.
+- **Purposeful Android build question:** Do the new Compose UI and coverage data types compile together with the existing Android/llama AAR, and do the new JUnit tests pass? Isolated Kotlin/source inspection cannot prove Android Compose compilation. [Actions 40155275698](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40155275698) **IN_PROGRESS at this checkpoint**; latest full Gradle/JUnit/lint/APK **NOT TESTED pending CI completion**.
+- **NOT TESTED:** physical PDF scan coverage and navigation on Xiaomi Pad 5, real OCR, real GGUF/llama.cpp model inference, clinical citation truth, cloud consent/HTTPS on device, memory/thermal/performance, final APK. **IN_PROGRESS**.
+- **CI economy:** development workflow cancels superseded intermediate builds; no `main` write, auto-merge, paid API, personal PDFs/GGUF/secrets or Library/Handoff access.
+
+
+### PDF coverage purposeful CI completion (supersedes pending status above)
+- **PASS:** [Actions 40155275698](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40155275698) on exact functional/workflow SHA `a9ebd0ab32672df14f1ec3c7a96eafce8341e745`: `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` **BUILD SUCCESSFUL in 3m 59s**. Newly committed `PdfTextCoverageTest.kt` is part of the JUnit source suite. Android Compose source compiles with the coverage panel.
+- **Real artifacts:** Debug APK ZIP **12583933773** and validation report ZIP **12584422909**. CI-calculated SHA-256 of inner `app-debug.apk`: **`cfebef7f8b3baf5e66e70c3acc090c03f83c64828bd87556ab89d6637074b1eb`**. Independent artifact re-download/re-hash **NOT TESTED**.
+- **NOT TESTED:** actual scanned medical PDFs on Xiaomi Pad 5, OCR, real GGUF inference, PDF clinical grounding, device performance, cloud HTTPS/consent, final signed upgrade and independent second-pass acceptance. Debug APK is not a final release; MedMate **IN_PROGRESS**.
+
+
+## 2026-10-25 — Corrupt PDF extraction quarantine (source-grounding safety)
+
+- **Production:** `PdfCoverageAudit.likelyCorruptedText` conservatively detects dense Unicode replacement glyphs or embedded NULs. The chapter coverage panel now counts these as **garbled** rather than readable and points users to the affected pages. `StudyBrain.search` excludes clearly damaged extracted pages from evidence retrieval before either local or cloud study explanations, preserving original PDFs and cross-chapter isolation. A single replacement glyph in otherwise good textbook text does **not** trigger quarantine. This is not OCR, medical fact-checking or model inference.
+- **Tests committed:** `PdfTextCoverageTest.kt` covers dense replacements, NULs, mixed good/garbled pages and conservative single-glyph behavior; `BrainRetrievalRegressionTest.kt` checks that corrupted pages never enter cited evidence, while valid pages remain searchable and selected corrupted-only pages report missing usable text.
+- **PASS source inspection:** verified production and test files are present on the MedMate PR branch with expected cross-file references; **NOT TESTED:** actual committed JUnit execution, Android Compose compilation/lint/APK for this source, real GGUF inference, OCR quality, actual PDF data, Pad 5, cloud HTTPS and clinical accuracy.
+- **Purposeful Android build question:** do the new Kotlin data field, Compose coverage warning, retrieval filter and committed JUnit tests compile and run together, and does an ARM64 Android APK assemble? Source inspection cannot establish this. Non-skip checkpoint requests branch CI; **CI/Artifact NOT TESTED until exact-SHA completed run is checked**. No paid API, personal PDF, GGUF, secrets, main write or merge.
+- **Acceptance:** local Brain is not certified as running a real model; MedMate remains **IN_PROGRESS** pending GGUF and independent device/medical recheck.
+
+
+### Corrupted-PDF grounding quarantine — targeted Android CI completion
+
+- **PASS:** [Actions 40159165080](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40159165080) completed successfully on exact functional/test SHA `1a54bc918c8e5d82619b009c9c166ac6dff8bc6c`. Android `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` **BUILD SUCCESSFUL in 4m 21s**, with the new PDF damage/grounding regression tests included in the Gradle JUnit suite. Compose source compiled and Debug APK assembled.
+- **Artifacts:** `MedMate-debug-apk` ID **12585684613** and `MedMate-validation-reports` ID **12586100304**. CI-calculated **inner** `app-debug.apk` SHA-256: `0f050337e013235331caf5eb71f5707cac8f08bdac46a4500e9dd9a74d3b9ae0`. Artifact ZIP checksum is different; **independent download/re-hash NOT TESTED**.
+- **NOT TESTED:** physical scanned PDF and tap-through review on Pad 5, real GGUF/llama.cpp inference, medical factuality, OCR, cloud HTTPS/consent on device, thermal/RAM, signing/upgrade and final independent acceptance. A successful Android build is not evidence of a working model. **IN_PROGRESS**.
+
+## 2026-10-25 — Corrupt-PDF vs scanned-PDF search status (source safety)
+- Production `StudyBrain.kt` SHA `ba1de65520f2cef820e0aa83a980cb12becee459` adds `CORRUPTED_PDF_TEXT` status and a chapter/page-scoped `excludedCorruptedPages` count. Dense damaged extraction still cannot be passed as LLM evidence or citation source; scanned/image-only PDFs keep their separate OCR guidance.
+- `BrainPanel.kt` SHA `d7eddf12e5478f91b63d2100faa539629e0adae8` displays a distinct corrupted-text warning and warns when only clean pages were searched, directing readers to the existing PDF coverage and page-navigation panel.
+- JUnit `BrainRetrievalRegressionTest.kt` SHA `59225162eb74502d8d21d53c62c12b11385cdac3` extends regression coverage: damaged-only page, blank scanned page, mixed clean/corrupt chapter, chapter isolation, source citation suppression and short queries. No personal PDFs/models/keys used.
+- **PASS (source inspection):** production and test paths updated on the existing draft PR branch, with scope/enum/UI/test consistency checked. **JUnit/Compose/Android CI: NOT TESTED** until a successful run on exact SHA is confirmed. A purposeful build is warranted: Compose's exhaustive `when` and JUnit need actual Kotlin/Gradle compilation; static source inspection cannot establish success. No new APK artifact/SHA claimed.
+- **GGUF on Pad 5 / PDF accuracy / real cloud HTTPS consent / independent device tests:** NOT TESTED. No fake llama claims, no paid API, no main merge, no final APK.
+- **2026-10-25 follow-up:** added `firstCorruptedPage` (bounded page index) and one-tap Compose jump from both damaged-only and mixed-source results. Latest functional JUnit SHA `fba2b9136664e48d4d6e3511eddcfbac0551f40d`. **PASS:** 12 static cross-file checks for enum, scope, source exclusion, navigation and regression assertions. **NOT TESTED:** Kotlin/JUnit/Compose CI on exact SHA, physical device and real GGUF; no APK claimed.
+
+
+## 2026-10-25 — PDF invisible-control quarantine and real JUnit regression repair
+- **Production:** `PdfCoverageAudit.likelyCorruptedText` now quarantines repeated unsafe C0 control characters (not only NUL or dense U+FFFD). Legitimate CR/LF/TAB/form-feed separators remain allowed. `StudyBrain` already excludes quarantined pages, so those damaged pages cannot be presented as PDF-grounded medical evidence or cited.
+- **Tests:** expanded `PdfTextCoverageTest.kt`, `BrainRetrievalRegressionTest.kt` and the source smoke with mixed clean/corrupt pages and page-only isolation. Fixed an older JUnit fixture that accidentally used the literal characters `\\uFFFD` rather than the actual replacement glyph; that caused the earlier [CI 40162925233](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40162925233) to fail at `BrainRetrievalRegressionTest.kt:144`. Repaired `scripts/test-brain.sh` to compile the `PdfTextCoverage.kt` dependency of `StudyBrain`.
+- **PASS:** static inspection of committed production/test wiring and exact fixture correction. **Full Kotlin/JUnit/Android:** [targeted run 40166527606](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40166527606) **IN_PROGRESS** on functional SHA `797249033d7e4df8fd40c68829186bbf1786a400`; no result, APK checksum or artifact claimed until it finishes. This build is justified to exercise Kotlin/JUnit, Compose, lint and actual Android packaging, which source inspection cannot prove.
+- **NOT TESTED:** medical truth, scanned/OCR accuracy, genuine GGUF model execution, HTTPS cloud consent on device, Xiaomi Pad 5 RAM/thermal/performance, signed final APK and independent acceptance. A PDF quarantine test is **not** an inference test. PR #1 stays Draft; no main merge, private PDF/model/key or Library/Handoff changes.
+
+
+### Invisible-control PDF quarantine — Android CI completed
+- **PASS:** [Actions 40166527606](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40166527606) on exact functional/test SHA `797249033d7e4df8fd40c68829186bbf1786a400`. SQLite contract/migrations, Android Gradle JUnit (including corrected damaged-text fixture and new C0-control tests), lint and Debug APK assembly all succeeded; **BUILD SUCCESSFUL in 2m 59s**.
+- **Artifacts:** `MedMate-debug-apk` ID **12587768948**; `MedMate-validation-reports` ID **12587918724**. CI-calculated **inner APK SHA-256** `36dd6daaab4ca05ce9aa966befbebc280d54127ec2366cd2fcabb148dfeb8113`; independent artifact re-hash **NOT TESTED**. Debug APK is **not** final.
+- **NOT TESTED:** real GGUF/llama.cpp inference, clinical correctness of PDF citations, real user PDFs, physical Pad 5, live HTTPS consent and transfer blocking, performance/thermal and final signed release. These tests do not certify the model.
+
+
+## 2026-10-25 — One-shot Cloud AI consent sealed to exact PDF excerpts
+- **Production + regression SHA:** `895708bfc97479450306506a16bb211690f56c96` on existing MedMate draft PR #1; no `main` write or merge.
+- **Production security:** `CloudEvidenceSeal.kt` validates the selected chapter SHA, exact question, optional selected PDF page, bounded source count/size, and presence of every excerpt in the outgoing prompt **before any network attempt**. It calculates a length-delimited SHA-256 fingerprint of the precise approved excerpt texts and source page IDs, without persisting excerpts or the digest. `CloudTransferConsent` now offers a sealed one-shot grant; `CloudBrainGateway` refuses unsealed grants, mismatched excerpts, replay, stale question/page or changed endpoint/model at the outbound boundary. Existing pure Kotlin legacy consent tests remain, but their unsealed grants cannot authorize the actual cloud gateway. Both explanation and generated-draft prompts share the same approved source fingerprint.
+- **UI integration:** the opt-in checkbox seals the currently displayed `PreparedPrompt`; both cloud action buttons recheck the seal. Changing evidence/question/page after consent requires a fresh explicit approval. No default provider, paid API, uploaded PDFs, user secrets or model weights added.
+- **New JUnit:** `CloudEvidenceSealTest.kt` covers exact one-shot approval, changed excerpt/question, cross-chapter/page mismatch, prompt omission and unsealed legacy grants. These are deterministic local source/consent tests; **not** a live HTTPS transfer.
+- **PASS** [GitHub Actions run 40169789382](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40169789382) on exact SHA: SQLite schema/migrations, Android Gradle `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` **BUILD SUCCESSFUL in 3m 21s**. Compose, new Kotlin guard and JUnit test source compiled; test task passed.
+- **Real artifacts:** `MedMate-debug-apk` ID **12589252899**, `MedMate-validation-reports` ID **12588904115**. CI-calculated inner `app-debug.apk` SHA-256 **`2751073121ea622008b2a0bb6cb280aa81b442229505a4ee70edb82e169ab1a1`**; independent re-download/re-hash **NOT TESTED**.
+- **NOT TESTED:** actual optional HTTPS endpoint and denied-transfer packet inspection on Pad 5, real GGUF/llama.cpp model loading and inference, medical correctness of generated claims, physical PDF citation taps, memory/thermal, final signing/upgrade and independent device QA. **IN_PROGRESS**; Debug APK is not a final release.
+
+
+## 2026-10-25 — Explicit synthetic native GGUF probe (real-device readiness)
+- Added `NativeInferenceProbe`: a user-initiated, **synthetic non-medical source** prompt through the *loaded* `OnDeviceLlmPort`, with model name, inference duration, answer size, separate calibration-code and citation-syntax results. No private PDF, token, model weights or generated answer is persisted or transmitted. Added a button in BrainPanel after model load.
+- **PASS (source inspection):** production UI invokes `NativeInferenceProbe.run(onDevice)`, where `onDevice` is `LlamaAndroidPort`, not `FakeLlama`; a model must be loaded before the probe. Three JUnit tests explicitly use a fake port and **do not count as native inference**.
+- **NOT TESTED:** execution of the new JUnit tests, Android Compose compile/lint/APK on latest head, actual llama.cpp/GGUF inference, device memory/thermal, clinical PDF grounding, cloud HTTPS and physical Pad 5. A successful diagnostic will only prove the synthetic inference request, not medical accuracy.
+- **Purposeful build question:** Does the new probe compile with the real Compose UI and pass the Android unit tests? Source inspection cannot establish Kotlin/Compose integration or packaging. One targeted CI build is warranted, not one build per edit.
+
+
+### Validation closure for synthetic native probe (2026-10-25)
+- **PASS:** [Android CI 40181545922](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40181545922), functional SHA `e341aac08de92f46c91113984064d9ee06ad23ef`: Android JUnit (fake probe contract only), SQLite, lint, Compose and APK.
+- **PASS:** independently extracted 33,536,769-byte `app-debug.apk` from GitHub Artifact **12594915191**, SHA-256 `b4046e53f73a7087513bf548ba94670397fe8d619e1c8b59db5eb836de941920` matches CI. Dex includes `NativeInferenceProbe`, `ORBIT-27`, and the synthetic source ID; ARM64 `libllama.so`/`libllama_jni.so` packaged. No GGUF/PDF/keystore packaged.
+- **NOT TESTED:** actual GGUF inference on Xiaomi Pad 5, device privacy/thermal, medical citation accuracy. A fake unit test or packaged library is not a real model execution. Debug APK is not final.
+
+
+## 2026-10-25 — Native GGUF probe memory snapshots milestone
+- Production: optional diagnostic now samples Android own-process PSS and system available RAM immediately before and after a synthetic **real LlamaAndroidPort.generate** call. UI labels the readings as two snapshots, **not peak RAM or model-only memory**, and warns when Android reports low memory. The model and synthetic prompt remain local; no user PDF, GGUF or secrets enter GitHub.
+- Contract-only JUnit: `NativeInferenceProbeTest` verifies exactly two samples, values and negative-input rejection using a clearly **fake** port. **NOT TESTED:** genuine model inference, on-device readings, medical correctness or cloud HTTPS.
+- **Purposeful Android build question:** Does the new Compose diagnostics panel compile against Android ActivityManager APIs, and do JUnit, lint and APK packaging pass? Source-only tests cannot validate Compose/Android API linkage. Build only after the milestone source/tests, not after every edit.
+- **Acceptance:** Kotlin/JUnit/CI PENDING; Xiaomi Pad 5 real GGUF, RAM/thermal and PDF citations NOT TESTED. Debug is not final. No main merge.
+
+### GGUF probe RAM snapshot CI and artifact evidence — 2026-10-25
+- **PASS Android CI:** [run 40185615010](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40185615010) on source SHA `fc649f9e36524f146be600253770a4c30c57d436`: JUnit including fake-port memory snapshot contract, SQLite, Android lint, Compose and Debug APK assembly.
+- **PASS independent artifact rehash:** artifact `12595688311`, `app-debug.apk` (33,536,769 bytes), SHA-256 `b86cad5bb4fc25d4e221f18b7ea8d3bcc50720dfb4f9b2f7c447a1dcbe49b6e4` independently extracted and matched `APK_SHA256.txt`. ARM64 `libllama.so` and `libllama_jni.so` present; no GGUF/PDF/keystore packaged.
+- **NOT TESTED:** physical Pad 5 actual GGUF inference, device PSS/available RAM snapshots, clinical correctness, HTTPS cloud consent/denial and final upgrade-signing compatibility. Fake-port JUnit and native libraries inside APK do **not** prove a model has run.
+
+
+## 2026-10-25 — Arabic PDF quote provenance and negation safety checkpoint
+- **Production/tests SHA:** `92ec45800dcf0e8faf6df2a73ba80e1a782bc667` on draft PR #1. No main changes.
+- **Production:** source-quote verification for generated High-yield/Flashcards/MCQs now folds Arabic vowel marks, tatweel and conservative alef/ya spelling variants for comparison only, preserving the original indexed PDF text/page. Rejects a model's partial quote when it omits an immediately preceding `no/not/without/لا/لم/لن/ليس` negation. This lexical guard is NOT semantic entailment or clinical correctness verification.
+- **Tests committed:** `GeneratedDraftsTest.kt` covers Arabic vocalized PDF text, correct page anchors, forged source IDs, unrelated PDF text, and adjacent negation omission in English/Arabic.
+- **NOT TESTED:** execution of new JUnit suite, Android CI/build on this SHA, actual PDF medical editorial validation, real GGUF/llama.cpp inference, cloud HTTPS allow/deny and Xiaomi Pad 5. No new verified APK or SHA-256.
+- **Next:** run JUnit/CI and investigate any failures; device/native-model and clinical review gates remain open.
+
+
+## 2026-10-25 — Fail-closed bounded cloud response streaming
+- **Production:** `CloudBrainGateway.limitedRead` now tolerates up to eight consecutive zero-byte reads from a broken HTTPS input stream, then aborts rather than spinning indefinitely on the IO dispatcher. A successful read resets the counter. Existing 200 KB response cap and one-shot consent are preserved.
+- **Tests committed:** three Robolectric/JUnit transport-boundary cases for stalled input (nine empty reads, disconnect and consumed approval), transient empty reads followed by a valid synthetic grounded response, and oversized response rejection with no consent replay. No personal PDF, model or token was uploaded.
+- **PASS (isolated Kotlin/JVM):** compiled and ran an equivalent read-loop harness with three scenarios: stalled stream rejected after nine reads; three empty reads recover; 200001-byte response rejected. This is NOT execution of the committed Android JUnit tests.
+- **PASS (older CI only):** previously pending [run 40203748330](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40203748330) now reports successful build job; it predates this stream-hardening change.
+- **NOT TESTED:** new JUnit suite, Android compilation/lint/CI at the current head, actual HTTPS transport on device, true GGUF/llama.cpp inference, clinical accuracy, Pad 5 RAM/thermal and final APK.
+- **Build question:** will the new Robolectric response-stream tests compile and pass with the production gateway and its coroutine dependencies? Source-only checks cannot answer; one targeted CI validation is warranted.
+- **Acceptance:** cloud safety improved at source level; no new device/model acceptance gate can be marked PASS.
+
+## 2026-10-25 — GGUF synthetic diagnostic echo gate (pending integration)
+- Production: NativeInferenceProbe now reports a **separate prompt/source-echo flag**; even if an echoed passage contains the correct random calibration code and [S1], the in-app diagnostic status must be FAIL. This prevents a simple false-positive from copying the prompt; it does **not** attest JNI execution or clinical grounding.
+- New Robolectric/JUnit contract cases use an explicitly fake port: whole-source echo and partial instruction echo. They are **not** genuine GGUF tests.
+- **PASS (source inspection):** new result property, UI gate and regression assertions are committed to the PR branch.
+- **NOT TESTED:** Gradle JUnit/Compose compilation and Android CI on the new SHA; real llama.cpp/GGUF inference, Pad 5 memory/thermal, PDF grounding, actual HTTPS/consent and medical accuracy.
+- **Purposeful Android build question:** do the updated Compose UI and Kotlin test suite compile and pass with the actual Android project? Isolated source review cannot answer that. Debug build is for integration only, not a final APK.
+
+
+## 2026-10-26 — Native inference diagnostic: fake-port separation gate
+- **Functional source SHA:** `d0952ef2d764f5dc8d09c0fac7fc7a7d7cb10e74`. `NativeProbeResult` now separates response-grounding checks from a full diagnostic pass; a pass requires the production `LlamaAndroidPort` implementation as well as a fresh challenge, valid citation syntax and no prompt/source echo. The Compose UI reports the backend gate separately from response checks.
+- Added `aPerfectFakeResponseNeverCountsAsNativeInference`: a fake port can pass response-format checks but must fail `nativeBackendConfirmed` and `diagnosticPassed`. Existing fake-port tests remain contract tests only, not native inference evidence.
+- **PASS Android CI:** [run 40242016531](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40242016531) on functional SHA `d0952ef2d764f5dc8d09c0fac7fc7a7d7cb10e74`: JUnit, Android Lint, Compose/Kotlin compilation and Debug APK assembly succeeded.
+- **PASS test report:** downloaded report artifact `12617825278` records **122 tests, 0 failures, 0 ignored**; the new fake-vs-native gate regression passed.
+- **PASS independent APK hash:** downloaded artifact `12617595782`, extracted the 33,553,153-byte `app-debug.apk` and independently recalculated SHA-256 `a4d201eea082a346aae4c2b673addb2c99b2c2a4d3dfbfd89af3753fb6b7e728`, matching `APK_SHA256.txt` from CI. ARM64 llama.cpp libraries are packaged; no GGUF weights or personal PDF are included.
+- **NOT TESTED:** genuine GGUF/JNI inference on a physical Xiaomi Pad 5, clinical accuracy, real HTTPS consent/denial, actual RAM/thermal behavior and signed final release. A production-port gate in source and passing fake-port tests do not substitute for running a real model on device.
+
+
+## 2026-10-26 — Local GGUF import/load path hardening (CI pending)
+- **Production change:** `LocalModelImport.validateForLoad` now rejects symbolic-link model paths before reading the GGUF header or hashing the file. This prevents a hash-shaped symlink from redirecting native loading to another target, even if the target bytes currently match the content-addressed filename.
+- **New Android JUnit suite:** `LocalModelImportTest` covers synthetic header magic/version/tensor/metadata rejection, content-addressed storage and duplicate reuse, corruption detected before load, non-hash filenames, hash-named symlink rejection, and bounded zero-byte stream reads with temp-file cleanup.
+- Fixtures are tiny synthetic byte arrays used only to test the import boundary; they are **not complete GGUF files** and do not count as native parsing/inference evidence. No model weights, private PDF or key is committed.
+- **Purposeful CI question:** does the Android/JVM runtime support the symlink guard and do the importer regressions pass alongside existing tests, lint and APK assembly? Static review cannot prove the Kotlin/Android API linkage or JUnit behavior; one targeted CI build is justified.
+- **CI / test count / APK:** PENDING. Real GGUF/JNI inference, Xiaomi Pad 5, PDF grounding, clinical accuracy, live HTTPS consent/denial and device RAM/thermal remain **NOT TESTED**.
+
+
+### Local GGUF import CI follow-up — 2026-10-26
+- **FAIL:** [Android CI 40246624901](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40246624901) compiled the changed source/test code, but JUnit rejected three expression-bodied test methods because their inferred return types were not `Unit`; the test class failed initialization before any of its cases ran. No Debug APK was produced. This was a test-harness declaration error, not a passing import-validation result.
+- **Repair:** declared the three affected tests as `Unit` and explicitly returned `Unit` from their temp-directory lambdas. Re-run is **PENDING**.
+
+
+## 2026-10-26 — Local GGUF probe bound to loaded model identity (validated source/CI; device pending)
+
+- **Functional/test source SHA:** 6350b1992f4ea20bd62edf53354d62d2a18d3dd1 on the existing MedMate PR #1 branch.
+- **Production:** LlamaAndroidPort records the content-addressed SHA-256 filename and exact on-disk byte size only after Llama.loadModel returns successfully; unload clears the identity. NativeInferenceProbe requires the production port plus a valid lowercase 64-hex SHA and plausible file size before the backend gate can pass.
+- **UI:** the diagnostic displays the loaded model's SHA-256 prefix and file size separately from RAM snapshots. File bytes are not described as RAM usage. Fake ports expose no native model identity and remain diagnostic FAIL even when synthetic response checks pass.
+- **Regression PASS:** 129 JUnit tests, 0 failures, 0 ignored. NativeInferenceProbeTest is 11/11 PASS, including valid/invalid model identity shapes and the rule that a perfect fake response carries no native model identity.
+- **PASS Android CI:** [run 40248705067](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40248705067) on the source SHA above; SQLite contracts, testDebugUnitTest, lintDebug, Compose compilation and assembleDebug succeeded in 4m 42s.
+- **Debug APK artifact:** [12619492566](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40248705067/artifacts/12619492566); test/lint reports artifact **12619512397**.
+- **PASS independent APK verification:** extracted 33,553,153-byte app-debug.apk and independently recalculated SHA-256 c14119ada16dbdcc6b54dc1102f0f19c98591cf83abffd14cf1d607ba50c371e, matching APK_SHA256.txt. ARM64 libllama.so and libllama_jni.so are packaged; no GGUF weights or personal PDFs are included.
+- **Purposeful build question answered:** Kotlin model-identity fields, production adapter, diagnostic result, Compose UI and JUnit checks compile and pass together. This is source/CI evidence only.
+- **NOT TESTED:** actual model import/load/inference through JNI on Xiaomi Pad 5, PDF-grounded answer quality, clinical accuracy, live HTTPS consent, peak RAM/thermal and final signed release. A real GGUF run remains required; this traceability gate is not native-inference proof. PR remains Draft; no main write, merge or unrelated repository/Library/Handoff change.
+
+
+### Native model identity race-guard CI checkpoint — 2026-10-26
+- Source/test changes are committed on the draft PR branch. The probe now snapshots model name, SHA-256 and byte size before inference and compares them after generation; a model switch or unload during result capture cannot be credited as the model that produced the answer. Identity fields are volatile-published.
+- Regression coverage checks stable identity and rejects changed model name, digest, byte size or missing identity. This is not a real-GGUF test.
+- **CI:** pending on current branch head; real GGUF/JNI on Xiaomi Pad 5, PDF grounding, medical correctness, cloud consent, RAM/thermal and final signing remain NOT TESTED.
+
+## 2026-10-26 — GGUF symlink-reuse hardening + bounded PDF fallback page isolation (validated)
+- Functional/test SHA: 813d2d9a67c548a62ddbb68fe2c417304bb74ec9 on the existing MedMate PR #1 branch.
+- Production: LocalModelImport now rejects a content-addressed target that is a symbolic link during duplicate reuse, including a dangling link, rather than reporting it as a reusable model. This complements the pre-load symlink guard and full digest check.
+- PDF retrieval regression: IndexedSearchTest forces StudyBrain above its 350,000-character cache ceiling with synthetic text, then verifies the uncached fallback still obeys selected-page and PDF/chapter boundaries. This is a lexical retrieval test, not native inference.
+- PASS Android CI: run 40253582479 completed SUCCESS; SQLite schema/migration contracts, Android JUnit, lint, Compose/Kotlin compilation and Debug APK assembly all passed.
+- PASS JUnit report artifact 12621786373: 132 tests PASS, 0 failures, 0 ignored. LocalModelImportTest 7/7 PASS, including hash-named symlink reuse rejection; IndexedSearchTest 3/3 PASS, including large-document selected-page isolation.
+- PASS independent APK verification: downloaded artifact 12622115456, extracted the 33,553,153-byte app-debug.apk and independently recalculated SHA-256 e8009f077c7e85edcbc0a831e01b5512e2a112fddda9bdf965ee8f1491d15d53, matching APK_SHA256.txt. ARM64 libllama.so and libllama_jni.so are packaged; no GGUF weights or PDF files are bundled. This is a Debug APK, not final delivery.
+- Purposeful build question answered: do the importer symlink-reuse guard and large-PDF page-scope fallback regression pass under the actual Android/JVM test suite and packaging? Yes at source/CI level.
+- NOT TESTED: genuine GGUF/JNI inference with a real model on Xiaomi Pad 5, PDF-grounded clinical correctness, live HTTPS consent/denial, physical-device RAM/thermal behavior and final signed release. The native model identity/race gate now has CI coverage but still does not prove real inference.
+- PR remains Draft; no main write/merge, no model weights, private PDF, secret, paid API, other repository or Library/Handoff change.
+
+
+## 2026-10-26 — Validate GGUF file identity across native load (CI pending)
+- `LocalModelImport.validateForLoad` now returns a snapshot containing the validated content-addressed SHA-256, exact byte count, canonical path and modification timestamp. It verifies the file metadata did not change while the pre-load digest was being computed.
+- `LlamaAndroidPort` rechecks the same non-symlink canonical file, byte count and timestamp after `Llama.loadModel` returns and before publishing model identity. If the file was replaced or changed during the native load window, the just-created session is released and the validation failure is preserved. The guard avoids a second full multi-GB hash pass; it is a metadata/path race guard, not cryptographic proof against same-size/same-timestamp mutation and not inference evidence.
+- Added three JUnit regressions: stable snapshot acceptance, changed-size rejection even when the old timestamp is restored, and symlink replacement rejection. Fixtures are tiny synthetic GGUF headers only; no real model weights, PDFs, secrets or paid services are used.
+- Purposeful CI question: do the new snapshot return type, native-load cleanup path and import regressions compile and pass in the actual Android/JVM suite? Source inspection alone cannot validate Kotlin API compatibility or native adapter compilation; a targeted CI build is justified.
+- CI, test count and APK artifact are pending. Real GGUF inference on Xiaomi Pad 5, PDF grounding/medical accuracy, HTTPS consent, device RAM/thermal and final signed release remain NOT TESTED.
+
+
+## 2026-10-26 — Native-load cancellation and session cleanup (validated)
+- **Production/test SHA:** `a62ba8c3b1a05b2adc0fa2b0fb831ce159964924` on the existing MedMate PR #1 branch. `LlamaAndroidPort` now checks coroutine cancellation after the full model digest, before unloading a prior session, and after `Llama.loadModel` returns. A just-created native session is released rather than published if cancellation or the existing model-file snapshot guard fails.
+- **PASS JUnit:** 137 tests, 0 failures, 0 ignored. Both new regressions passed: cancellation after simulated native load releases the unpublished session; post-load model-file mutation also releases it. The tests use synthetic sessions/headers and are lifecycle-contract tests, not genuine GGUF inference.
+- **PASS Android CI:** [run 40261137260](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40261137260) completed successfully; unit tests, Android Lint and Debug APK assembly passed.
+- **PASS independent APK verification:** Artifact [12624258365](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40261137260/artifacts/12624258365), extracted 33,553,153-byte APK, independently recalculated SHA-256 `e86047a58767c6fa659fd1db9dd18bc2bbb0ad86233bf7c1d84d7f6599da3a65`, matching `APK_SHA256.txt`. APK includes ARM64 llama.cpp/JNI libraries and contains no bundled GGUF or PDF.
+- Purposeful build question answered: the Kotlin native-load cancellation cleanup compiles against the pinned AAR and both cleanup regressions pass in Android/JVM tests. This still does **not** prove real model inference.
+- **NOT TESTED:** genuine GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, live HTTPS consent/denial, physical-device RAM/thermal behavior and final signed release. PR remains Draft; no main write/merge or unrelated repository/Library/Handoff changes.
+
+### Real-device GGUF candidate and acceptance protocol (model not bundled)
+- Candidate for the first physical-device run: official `Qwen/Qwen2.5-1.5B-Instruct-GGUF`, `Q4_K_M` quantization (about 1.12 GB) under Apache-2.0 according to its model page: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF. The pinned Android wrapper documents arm64-v8a CPU/NEON inference and notes that Q4_K_M needs model size plus additional working RAM: https://github.com/ffmpegkit-maintained/llama-android. This is a test candidate, not a claim of clinical adequacy; do not download or commit its weights into the public repository.
+- Pad 5 protocol: obtain the model directly into local/untracked device storage; record source revision, file size and independently calculated SHA-256; import it through the app; confirm the displayed digest matches; run the randomized synthetic calibration probe and record answer/citation checks, elapsed time and before/after process-memory snapshots; unload and confirm model identity clears. Repeat after a cold app start.
+- Grounding/privacy protocol: use a locally created non-sensitive PDF with a unique fact on a known page; require the generated draft to cite the exact source/page and to abstain when the fact is absent. Test cloud denial with no request/connection, then opt-in with a synthetic excerpt only; verify request-size cap, redirect refusal, and no PDF/model/key in logs. Record all physical-device results as PASS/FAIL/NOT TESTED; never treat synthetic-header tests as GGUF inference.
+
+
+## 2026-10-26 — Real GGUF instrumented acceptance harness (compile retry in progress)
+- Added a device-only AndroidJUnit test that requires a user-supplied GGUF path, imports it with the production content-addressed importer, checks available RAM, loads it through the actual `LlamaAndroidPort`/JNI adapter, and runs the fresh synthetic `NativeInferenceProbe`. It asserts native model identity, the random calibration code, citation syntax and no full prompt/source echo; no fake port can satisfy this test.
+- Added `scripts/run-native-gguf-device-test.sh` and `docs/DEVICE_GGUF_ACCEPTANCE.md`. The script never downloads model weights or uploads them; it installs both APKs before pushing the temporary external copy, then launches instrumentation directly and removes the external copy. The test preserves pre-existing imported models.
+- **Purposeful build question:** does the new instrumented test and AndroidX test-runner integration compile against the pinned llama AAR and Android project? CI will compile the test but will not execute it.
+- **NOT TESTED:** genuine GGUF/JNI inference on Xiaomi Pad 5, clinical accuracy, PDF-grounded answer quality, live HTTPS consent, device RAM/thermal under real inference, and final signed release. A CI compile is not a model-inference PASS.
+
+- **FAIL / fixed / retrying:** first instrumented compile attempt [run 40266014666](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40266014666) exposed a Kotlin type mismatch: Android `Debug.getPss()` returns `Long`, while the report stores bounded integer KB. The test now clamps/converts that value; follow-up CI [run 40266440353](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40266440353) completed **SUCCESS**; see the verified artifact record below. No model inference was run in either CI job.
+
+
+## 2026-10-26 — Native GGUF instrumented harness compile and APK verification
+
+- PASS Android CI: [run 40266440353](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40266440353) completed successfully on instrumented-harness source SHA ade04aefc9cbd8ccaa326f4ff2513276c914a38a. The AndroidTest APK compiled alongside the 137-test JUnit suite (137 PASS, 0 failures, 0 ignored), Android Lint and Debug APK assembly.
+- PASS independent APK verification: artifact [12626641546](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40266440353/artifacts/12626641546), extracted app-debug.apk (33,553,153 bytes) and independently recalculated SHA-256 122de3a86728b23f90b7b21c35d74aa8742f991dd87a04fd28aed9b635497f44, matching APK_SHA256.txt. ARM64 libllama.so and libllama_jni.so are packaged; no GGUF model or PDF is bundled.
+- Purposeful build question answered: the new AndroidX instrumented GGUF harness and runner integration compile with the pinned llama AAR and the existing Android app. This does not execute native inference or establish medical correctness.
+- Follow-up source change adds real-device assertions that loaded model identity clears after unload and test-only imported weights are removed. Its compile validation is pending on the next CI run.
+- NOT TESTED: genuine GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, live HTTPS consent/denial, physical-device RAM/thermal behavior and final signed release. PR remains Draft; no main write/merge, model weights, personal PDF, secrets, paid API, other repository or Library/Handoff changes.
+
+
+## 2026-10-26 — Native GGUF harness cleanup assertions (validated)
+- **Source SHA:** `384609fa7946dd5dfba94c1288dc162e1ec2416a` on the existing MedMate PR #1 branch. The device-only AndroidJUnit test now asserts that loaded model name/SHA/byte count are cleared after `unload()`, and that a model imported only for the probe is removed afterward while an already-imported model is preserved.
+- **PASS Android CI:** [run 40272196382](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40272196382) completed SUCCESS. The 137-test JVM suite, Android Lint, app Debug assembly and AndroidTest APK compilation passed. The device-only test was compiled, **not executed**, because CI has no attached Xiaomi Pad 5 or user-supplied GGUF.
+- **PASS independent APK verification:** downloaded artifact [12628968633](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40272196382/artifacts/12628968633); extracted `app-debug.apk` is 33,553,153 bytes with independently recomputed SHA-256 `daa2b9468909c45744750eca1e014420ecb051c795c0c008f629853e410adddc`, matching `APK_SHA256.txt`. ARM64 llama.cpp/JNI libraries are packaged; no GGUF or PDF is bundled.
+- **Purposeful build question answered:** does the device acceptance harness compile against the production JNI adapter, and do its cleanup assertions coexist with the app's unit tests and packaging? PASS at CI level.
+- **NOT TESTED:** real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded clinical accuracy, live HTTPS consent/denial, device RAM/thermal under real inference and final signed release. This is not an inference PASS or clinical validation.
+
+
+## 2026-10-26 — GGUF device-script cleanup fail-safe
+- Moved the EXIT cleanup trap before the temporary model directory creation and `adb push`, and added INT/TERM exit handlers. A failed or interrupted push now attempts to remove any partial device-side model file.
+- Added a shell contract regression and CI syntax check; this validates script ordering without requiring ADB, downloading weights, or pretending to run a real model.
+- **Purposeful CI question:** does the private model test harness fail closed and retain cleanup protection when pushing a large user-supplied GGUF fails midway? Source inspection alone is insufficient to prevent future ordering regressions; CI will run a static shell regression.
+- Physical-device GGUF inference remains **NOT TESTED** until a user-supplied model and Xiaomi Pad 5 are available. No model or personal PDF is uploaded.
+
+
+## GGUF test-harness cleanup verification — 2026-10-26
+- The EXIT cleanup trap is now installed **before** creating the temporary device directory or pushing the user-supplied model. INT/TERM handlers exit through the same cleanup path, so a partially written GGUF is best-effort removed if `adb push` fails or is interrupted.
+- The shell syntax/ordering regression passed in [Android debug CI run 40276893414](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40276893414). The run also passed SQLite migration contracts, Android compilation, lint and APK assembly; JUnit report confirms **137 tests, 0 failures, 0 ignored**.
+- Debug APK artifact: [12630408235](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40276893414/artifacts/12630408235), 33,553,153 bytes. SHA-256 independently recomputed after downloading/extracting the artifact: `05cdd6a854a64ee5fc83183c330cc0830092c62742714acd5e013f615fd57aa4`, matching the CI manifest.
+- APK inspection confirms ARM64 llama.cpp libraries are packaged (`libllama.so`, `libllama_jni.so`, `libggml*.so`) and no `.gguf` model or PDF is bundled. The artifact remains a **debug/test build**, not a final release.
+- **NOT TESTED:** physical Xiaomi Pad 5 inference with a real user-supplied GGUF, clinical correctness, PDF citation grounding, cloud consent over HTTPS, and device memory/thermal behaviour. CI did not download or upload model weights.
+
+
+## 2026-10-26 — Verify user-supplied GGUF transfer before native inference
+- The device harness now computes the local GGUF SHA-256 and byte count, pushes the file, then checks device-side `toybox sha256sum` and `toybox stat` **before instrumentation**. A mismatch fails closed; the EXIT cleanup trap remains installed before directory creation/push. No download or model upload is introduced.
+- Added a shell contract regression for host/device digest checks, byte-size check, fail-closed ordering, no model download, and cleanup-before-push.
+- **PASS (local static shell check):** `bash -n` and `scripts/test-native-gguf-device-script.sh` completed successfully using an isolated temporary copy of the current scripts; no ADB device or model was used.
+- **CI for head `9fc7de0effd47a51ee4cd67e2d4d184cb795bd53`: NOT VERIFIED.** Previous run `40276893414` validated the earlier cleanup-only contract, not this new host/device digest gate. No new APK is claimed; the change is in the test harness, not the app binary.
+- **NOT TESTED:** actual device-side checksum comparison, Xiaomi Pad 5 GGUF loading/inference, medical correctness, PDF citation grounding, cloud HTTPS/consent, memory/thermal behavior. Never use fake inference as evidence of real GGUF success.
+
+
+## 2026-10-26 — Behavioral GGUF transfer-gate tests (validated)
+
+- **Functional/test SHA:** `51ef85f7c6b39617583e58ffa5624d63367df506` on the existing MedMate PR #1 branch.
+- Replaced the static-only shell contract with isolated fake-ADB behavioral cases around the production `run-native-gguf-device-test.sh`. The fixture is a short synthetic file explicitly **not a GGUF model**.
+- **PASS:** matching host/device digest and byte count reaches the instrumentation invocation; a corrupted device copy exits with code 4 before instrumentation; a failed partial push exits non-zero and the EXIT trap removes the partial file. The test also guards against model-download commands.
+- **PASS Android CI:** [run 40287127756](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40287127756) completed successfully. The fake-ADB behavior test passed; Android unit tests, lint, AndroidTest compilation, and Debug APK assembly passed.
+- **PASS artifact verification:** [Debug APK artifact 12635280454](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40287127756/artifacts/12635280454). Extracted APK is **33,553,153 bytes**; independent SHA-256 is `8acae96fabc07009458f19bcded50f06016e0b01b29f933de2adc14c5bd80139`, matching the artifact manifest. ARM64 `libllama.so`, `libllama_jni.so`, and `libggml*.so` are present; no GGUF weights or PDF files are bundled.
+- **Purposeful test question answered:** does the transfer gate actually prevent inference after a mismatched copy and clean partial uploads, rather than merely containing the right strings? **PASS at isolated fake-ADB + CI level.**
+- **NOT TESTED:** real device-side checksum comparison, real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded answer correctness, clinical accuracy, live HTTPS consent/denial, and device RAM/thermal behavior. A fake-ADB test and CI compile are not real-model evidence. The APK is Debug/test only, not final delivery; PR remains Draft and unmerged.
+
+
+## 2026-10-26 — Verbatim-evidence gate for generated MCQs (validated)
+
+- **Functional/test SHA:** `07106f638228a9ef2c7576e27e740e19ad9d0e32`.
+- Production `GeneratedStudyDrafts.validate` now rejects a generated MCQ unless both its selected correct option and its explanation can be matched as word-bounded, verbatim excerpts from the same validated PDF evidence. Existing NFKC/line-wrap/Arabic spelling normalization is used only for comparison; the original citation text remains unchanged. The prompt now tells the model to skip MCQs when either element cannot be copied exactly. This deliberately favors fewer grounded drafts over plausible but unsupported medical explanations.
+- Added regression coverage for one source-anchored MCQ and rejection of an unsupported explanation or a correct option absent from the source. **PASS: 138 unit tests, 0 failures, 0 ignored.**
+- **PASS Android CI:** [run 40288326628](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40288326628): unit tests, lint, SQLite/migration contracts, AndroidTest compilation, and Debug APK build all succeeded.
+- **PASS artifact verification:** [Debug APK artifact 12634872842](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40288326628/artifacts/12634872842). APK size **33,553,153 bytes**; independent SHA-256 `28703738ad7a9fb74a985cf22ddeddef7598eb22927bc88198f9d834e21b0b02` matches the artifact manifest. ARM64 `libllama.so`, `libllama_jni.so`, and `libggml*.so` are present; no GGUF weights or PDF files are bundled.
+- **Purposeful test question answered:** can an MCQ's correct key and explanation pass merely because some other quote is valid? **No: both now need direct source anchors.**
+- **NOT TESTED:** real GGUF inference on Xiaomi Pad 5, clinical accuracy, live PDF citation taps, live HTTPS consent/denial, and device RAM/thermal performance. These gates reduce unsupported output but do not establish medical correctness. Debug APK only; PR remains Draft and unmerged.
+
+
+## 2026-10-26 — Prebuilt AndroidTest bundle for real GGUF device acceptance
+
+- **Production/test tooling SHA:** `37e011aaa33d96a6308d4067712a0ec71bc5b23a`.
+- The GGUF acceptance script now accepts `APP_APK` + `TEST_APK` together to install the exact CI-built pair without requiring a local Gradle rebuild; setting only one fails closed. Omitting both preserves the source-build path.
+- Behavioral fake-ADB contract now covers the prebuilt path as well as matching-digest instrumentation, device digest mismatch refusal, partial-push cleanup and no model download. **PASS** in the CI step `Validate GGUF device-test cleanup contract`; fake ADB remains script-contract evidence, not a device/model test.
+- **PASS Android CI:** [run 40296173616](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40296173616): 138 JUnit tests PASS, 0 failures, 0 ignored; lint, Compose/Kotlin compilation, AndroidTest APK assembly, app Debug APK assembly and artifact uploads all succeeded.
+- **PASS independent artifact verification:** [device bundle artifact 12639390452](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40296173616/artifacts/12639390452) contains `app-debug.apk` (33,553,153 bytes, SHA-256 `1180723b31b81ebe0f429851021a70723a92bf48004e1eff7f378ccf1a0c5388`) and `app-debug-androidTest.apk` (364,513 bytes, SHA-256 `09a5c446ec16829ae71ea221c3adfc6e3f36bf6fa83fd286c8f04c371dd41e2f`). Both hashes independently match `SHA256SUMS`; ARM64 llama.cpp/JNI libraries are present in the app APK.
+- **Privacy check PASS:** no GGUF, PDF, keystore or signing key embedded in the app APK. The bundle contains APKs and checksums only.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, real GGUF load/inference through JNI, medical PDF citations, clinical correctness, live HTTPS consent/denial, and device RAM/thermal behavior. The new bundle makes that real-device check easier but does not perform it.
+- No model weights, private PDFs or credentials committed; no `main` write or merge. Debug artifacts are not final releases.
+
+
+## 2026-10-26 — Fail-closed PDF citation navigation identity check
+- **Production change:** `SourceCitationLinks.resolve` now refuses to create tappable citation links if evidence rows have blank IDs/text, mixed chapters, invalid pages, or duplicate evidence IDs. This prevents ambiguous [S#] markers from silently resolving to an arbitrary excerpt/page.
+- Added regressions for duplicate IDs, blank identity and blank excerpt; existing valid source-order/page mapping and forged-marker tests remain in place.
+- **Purposeful CI question:** do the new fail-closed citation-link guards compile and preserve existing valid citation/page navigation? Source inspection alone cannot verify Kotlin compilation or the complete test suite; a targeted Android CI run is justified.
+- **PASS Android CI:** [run 40302580485](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40302580485) on source/test head `d945c07db1e3f33601fe5f3c90f608aa0af71656`: **139 unit tests PASS, 0 failures, 0 ignored**; Android Lint, Kotlin/Compose compilation, AndroidTest assembly, Debug APK assembly and artifact upload passed. Lint reports 18 pre-existing warnings (SDK/dependency currency), not errors.
+- **PASS independent artifact verification:** [device-test bundle artifact 12641651670](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40302580485/artifacts/12641651670) contains the exact APK pair. `app-debug.apk` is 33,553,153 bytes, SHA-256 `af107fee084a17b6d6c0886d90020910c84575bc5c7fdb84f1a301967cda3550`; `app-debug-androidTest.apk` is 364,513 bytes, SHA-256 `5bd00633b3f7885f6179728495812ebb70aecdf02c56c85a7480371f650b9d2e`. Both were independently recalculated and match `SHA256SUMS`.
+- **PASS privacy check:** bundle contains only APKs and checksums; no GGUF, PDF, key or signing secret.
+- This is a citation-navigation integrity gate, not a medical fact checker.
+- **NOT TESTED:** live PDF citation taps on Xiaomi Pad 5, real PDF OCR/grounding quality, clinical correctness, actual GGUF inference, live cloud HTTPS consent, device RAM/thermal and final signed release. No PDF/model/credential was added to the public repository.
+
+
+## 2026-10-26 — One-shot cloud consent under concurrent callers (validated)
+- **Production behavior under test:** the existing synchronized, evidence-sealed `CloudTransferConsent.consume` capability must allow at most one of many concurrent callers to claim the same reviewed PDF/question payload.
+- Added `oneShotConsentAllowsAtMostOneConcurrentConsumer`: 16 threads cross a start barrier and race the same exact endpoint/model/request/evidence seal. It asserts exactly one successful consume, all threads terminate, and the grant no longer permits reuse afterward. No network or real/private PDF is used.
+- **Purposeful build rationale:** a concurrency race cannot be established by reading the synchronized implementation alone; the real JVM/JUnit suite plus AndroidTest compilation and packaging are the appropriate integration gate.
+- **PASS Android CI:** [run 40305964124](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124) on test/source SHA `a1ecb7f7277e2ae75031a55f5276cac8a8a1aee5`. **140 tests PASS, 0 failures, 0 ignored**; lint, AndroidTest compilation, Debug APK assembly and device-bundle packaging passed.
+- **PASS independent APK verification:** artifact [12642516742](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40305964124/artifacts/12642516742) contains the exact app/test APK pair and `SHA256SUMS`. Independently recalculated hashes match the manifest: `app-debug.apk` 33,553,153 bytes, SHA-256 `e3c80cbf8f3190605fc9611ddacb9a82cebca3ab7a34f782ab9b08edc455217b`; `app-debug-androidTest.apk` 364,513 bytes, SHA-256 `434289f1baffbbaaaaebed3af6046e1982b948a70f3219e51e04d7f572015aac`.
+- **PASS privacy check:** bundle contains only APKs and checksums; no GGUF, PDF, keystore or signing key.
+- **NOT TESTED:** this proves one-shot grant concurrency only. Real GGUF/JNI inference on Xiaomi Pad 5, PDF citation taps/grounding, clinical correctness, live HTTPS consent/denial, device RAM/thermal and final signed release remain **NOT TESTED**. Debug only; no main write or merge.
+
+
+## 2026-10-26 — APK permission verifier aligned with optional cloud-AI contract
+
+- Latest CI [40310142232](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40310142232) **FAILED** at APK verification because the verifier prohibited `android.permission.INTERNET`, while the approved requirement includes optional user-configured cloud AI over HTTPS. The app manifest already declared the normal permission; this was a policy-check mismatch, not a reason to remove cloud functionality.
+- Correction: verifier requires the packaged INTERNET permission to match the source manifest, rejects broad-storage permissions, and verifies `android:usesCleartextTraffic="false"` in the source and compiled APK. The manifest explicitly disables cleartext.
+- Regressions cover the declared optional-cloud permission, missing permission, broad-storage permission and cleartext-enabled APK. The cloud gateway still requires a validated HTTPS endpoint and a one-shot grant sealed to the exact request/evidence; INTERNET permission alone is not consent.
+- **CI for this correction: NOT VERIFIED at commit time.** The next build must pass verifier regressions, unit tests, lint, AndroidTest compilation and APK assembly.
+- **NOT TESTED:** live HTTPS allow/deny on Xiaomi Pad 5, genuine GGUF/llama.cpp inference, PDF-grounded answer quality, clinical correctness and device memory/thermal. No model, PDF or credentials added.
+
+
+### APK verifier command correction — 2026-10-26
+
+- The first permission-policy correction build [40311869497](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40311869497) **FAILED** at the final APK inspection because `aapt dump xmltree` was invoked with an unsupported `--file AndroidManifest.xml` argument. The verifier unit regressions, including optional-cloud INTERNET, broad-storage and cleartext cases, passed before that step.
+- Corrected the invocation to the supported `aapt dump xmltree <apk>` form; the verifier searches the compiled manifest tree for the explicit cleartext-disabled attribute.
+- **CI for the command correction: NOT VERIFIED at commit time.** No APK from the failed run is accepted as verified.
+- **NOT TESTED:** live HTTPS consent/denial, genuine GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded answer quality, clinical correctness, and device memory/thermal.
+
+
+### Compiled-manifest inspection command correction — 2026-10-26
+
+- The follow-up [run 40312720170](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40312720170) again reached the final APK verifier and failed because `aapt dump xmltree` requires the APK path before the optional XML file argument; omitting the file caused a nonzero exit. Unit tests, lint, AndroidTest compilation and APK assembly all passed before this final gate.
+- Corrected the invocation to `aapt dump xmltree <apk> AndroidManifest.xml`, matching the documented positional syntax. The fake-aapt regression continues to exercise both cleartext-allowed rejection and cleartext-disabled acceptance.
+- **CI for this syntax correction: NOT VERIFIED at commit time.** No APK from the failed run is accepted as verified.
+- **NOT TESTED:** real GGUF inference, live HTTPS allow/deny, PDF-grounded medical quality, Xiaomi Pad 5 performance, and device RAM/thermal.
+
+## 2026-10-26 — Compiled-manifest verifier argument-order regression added
+
+- Latest known failed gate: [Android CI run 40312720170](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40312720170) reached the final APK verifier after unit tests, lint, AndroidTest compilation and APK assembly, then failed because the `aapt dump xmltree` invocation omitted the `AndroidManifest.xml` asset argument.
+- The production verifier now calls `aapt dump xmltree APK AndroidManifest.xml`. Added a behavioral fake-`aapt` regression in `scripts/test-verify-apk.py` that rejects a missing or misordered APK/manifest argument, so this specific integration failure cannot silently regress.
+- **Test change commit:** `3274f2367ba6ce37596526e409c82f02cb43c2ac` (branch `automation/medmate-v091-source-tree-20261023`).
+- **CI for this correction: NOT VERIFIED** at documentation time. Do not treat APKs from runs 40310142232, 40311869497 or 40312720170 as passing the final manifest verifier; each failed at that gate. A successful run must complete the real AAPT inspection and publish a fresh APK pair/checksum manifest.
+- **NOT TESTED:** real GGUF/JNI inference on Xiaomi Pad 5, PDF-grounded medical accuracy, live HTTPS consent/denial, device RAM/thermal and final signed release. No model, private PDF or credential was added.
+
+## 2026-10-26 — APK verifier closure and independently checked device-test pair
+
+- **PASS Android CI:** [run 40316476587](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40316476587) on source SHA `77c80b1321d8502bb84abc93f5670ab71a2e10dd`. The compiled AAPT manifest verifier passed after checking package/version/SDK, optional-cloud INTERNET permission consistency, explicit `usesCleartextTraffic=false`, and absence of broad-storage permissions. Unit tests, lint, SQLite migration contracts, APK verification, AndroidTest assembly and artifact packaging all completed successfully.
+- **PASS JUnit report inspection:** downloaded validation report artifact `12647371960`; the HTML summary reports **140 tests, 0 failures, 0 ignored, 100% successful**.
+- **PASS independent artifact verification:** downloaded device-test artifact `12646694745`; independently recomputed SHA-256 values match its `SHA256SUMS`:
+  - `app-debug.apk`: 33,553,165 bytes; SHA-256 `8630c6268704817b2aa7ba724fefa59f8e9d3399d03f6eec5635a7a90be4837f`.
+  - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `d92ffe3e826fca8181b5256c1068a79faf65eb5d74e7c0fefb8949a095c10a02`.
+- **PASS package safety inspection:** ARM64 `libllama.so` and `libllama_jni.so` are present; no `.gguf` or `.pdf` payload is bundled. This confirms native libraries are packaged, **not** that a real model has loaded or inferred.
+- **Device kit prepared locally:** exact CI APK pair, checksums and run instructions are available for a physical-device test. ADB/physical device was unavailable in this run, so Xiaomi Pad 5 installation and real GGUF/JNI inference remain **NOT TESTED**.
+- **Still NOT TESTED:** PDF-grounded clinical accuracy, actual HTTPS/cloud consent and denial on-device, RAM/thermal performance, signed-upgrade continuity and final release signing. Draft PR #1 only; no main write/merge, personal PDF/model/key upload, paid API or Library/Handoff access.
+
+
+## 2026-10-26 — Cloud gateway consent and cleanup regressions (CI VERIFIED)
+
+- **PASS — current head:** `77c46c0807caf7be5117505209ff1326ff87f474`.
+- **PASS — GitHub Actions:** [Run 40335885140](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40335885140), completed successfully on 2026-10-26.
+- **PASS — JVM tests:** 142 passed, 0 failures, 0 ignored; Gradle report duration 15.895 s. The report explicitly marks both `concurrentGatewayCallsConsumeOneConsentAndOpenAtMostOneConnection` and `connectionSetupFailureStillDisconnectsAndConsumesGrant` as passed.
+- **PASS — source/test contracts:** GGUF test-script cleanup and digest ordering; SQLite schema/migrations; APK metadata-drift regression suite.
+- **PASS — Android:** Gradle unit tests, Lint, Debug APK, AndroidTest APK, and APK manifest verifier. The verifier confirmed package/version/SDK consistency, optional-cloud INTERNET permission consistency, `usesCleartextTraffic=false`, and no broad-storage permissions.
+- **PASS — artifact pair:** [Device-test bundle 12655889546](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40335885140/artifacts/12655889546). Independent SHA-256 recomputation matched `SHA256SUMS`:
+  - `app-debug.apk` — 33,553,165 bytes — `cbba30f01eac856d2a8a04e78261aaa866c4e7d9bdb33d4c92ddca3c23986524`.
+  - `app-debug-androidTest.apk` — 364,513 bytes — `85e30936879a4f62da30ba847355a241239d48f92e1936635c0d72a06af9a9a9`.
+- **NOT TESTED:** real GGUF loading/inference through llama.cpp/JNI on Xiaomi Pad 5, PDF-grounded clinical accuracy/citations, live HTTPS approval/denial behavior, RAM/thermal performance, upgrade continuity, and final release signing. CI and APK packaging do not prove model inference.
+- No GGUF, personal PDF, credential, signing key, paid API, or user medical content was uploaded. PR #1 remains Draft; no main write or merge.
+
+
+## 2026-10-26 — Prebuilt APK integrity gate
+
+- **PASS — CI:** [run 40344711259](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40344711259), source/test commit `b6a70c15b548437e4a18d0ba744558c43498577f`.
+- **PASS — JVM:** 142 tests, 0 failures, 0 ignored (23.291 seconds).
+- **PASS — device-script contract:** correct prebuilt APK hashes proceed; a deliberately incorrect APK digest fails closed before install; GGUF digest mismatch and partial push fail closed and clean up; no model download; Gradle is skipped for a supplied prebuilt pair.
+- **PASS — Android source/packaging:** lint, Debug APK, AndroidTest APK, compiled-manifest identity/SDK/permission checks and the device-test bundle all completed successfully.
+- **Verified device-test bundle:** [artifact 12660049516](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40344711259/artifacts/12660049516).
+  - `app-debug.apk`: 33,553,165 bytes; SHA-256 `ef570a66a13045521fc63690cc4c759fc16cd29cc4d9d7f1b51ea33eb9a37b5c`.
+  - `app-debug-androidTest.apk`: 364,513 bytes; SHA-256 `100adcbe1dd6dba338a99bd60d3cccf127b7454d8079cfbd7fba578c5398ffbd`.
+- **NOT TESTED:** a physical ARM64 device with a user-supplied real GGUF; real llama.cpp/JNI inference; PDF citation accuracy; live HTTPS cloud-consent approval/denial; RAM/thermal behavior; final release signing. Fake ports remain contract-only and are not accepted as native inference evidence.
+
+
+## 2026-10-26 — End-to-end synthetic PDF → local GGUF device gate (checkpoint pending)
+
+- Extended the device-only acceptance test to generate a fresh synthetic PDF in app cache, extract it through production PDFBox, retrieve the exact page through StudyBrain, send the grounded prompt to the real LlamaAndroidPort/JNI session, and require the fresh identifier plus a valid [S1] link resolving to PDF page 1. The temporary synthetic PDF is deleted in finally; no user document/model is included or uploaded.
+- Added a static CI wiring guard for the real native port, PDFBox extraction, retrieval, citation validation, page mapping, and device runner. This guard is source-contract evidence only; it does not run Android instrumentation or prove model quality.
+- **Purposeful build question:** does the AndroidTest source compile against the production PDFBox API and actual JNI-backed LlamaAndroidPort, while preserving the existing device runner and cleanup contract? Source inspection alone cannot verify AndroidTest compilation/AAR API compatibility.
+- **PENDING:** Android CI/JUnit/lint/APK artifact and checksum for this new test. **NOT TESTED:** real GGUF execution on Xiaomi Pad 5, model answer/citation acceptance, PDFBox runtime extraction on device, cloud approval/denial, RAM/thermal behavior, and final release signing.
+
+
+## 2026-10-26 — Real GGUF + PDFBox physical-device acceptance gate (CI-prepared)
+
+- **Production/test SHA:** `ad3bf9832f95d116c37b933719c31bb4f77033a4`, existing draft PR #1 only.
+- **Device instrumentation added:** `NativeGgufDeviceAcceptanceTest.realGgufLoadsAndPassesFreshSyntheticCalibration` exercises the actual `LlamaAndroidPort`/JNI path; it refuses an absent/invalid GGUF, checks RAM eligibility and model SHA/byte identity, verifies native-backend confirmation and a fresh random calibration phrase, and unloads/cleans the imported test model.
+- **Real PDFBox round-trip added inside the device test:** creates a one-page synthetic PDF in app cache (no personal PDF), extracts it with `PdfTextExtractor`, retrieves its page evidence through `StudyBrain`, prepares the source-only prompt, calls the same real native port, validates `[S1]`, resolves the citation to PDF page 1, rejects full-excerpt echo, records only size/timing/memory measurements, and deletes the temporary PDF.
+- **Device runner hardening:** `scripts/run-native-gguf-device-test.sh` accepts a user-supplied local GGUF only; checks both prebuilt APK SHA-256 values before install, compares device-side model digest and byte count to the host, installs before model transfer, and removes the temporary device model through an EXIT cleanup trap. No model is downloaded or uploaded.
+- **Purposeful CI question:** does the real Android instrumentation source compile with PDFBox Android, Compose/application classes, native AAR and Gradle? Source inspection cannot establish this. One targeted CI build is justified; it assembles but does not execute device instrumentation.
+- **PASS Android CI:** [run 40350337643](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40350337643), head `ad3bf9832f95d116c37b933719c31bb4f77033a4`; `:app:testDebugUnitTest :app:lintDebug :app:assembleDebugAndroidTest :app:assembleDebug` all completed successfully.
+- **PASS JUnit:** downloaded report artifact [12662999000](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40350337643/artifacts/12662999000) confirms **142 tests, 0 failures, 0 ignored** (16.522 seconds recorded by Gradle).
+- **PASS APK checksum:** CI artifact [12662504614](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40350337643/artifacts/12662504614); independently downloaded device-test bundle [12662724422](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40350337643/artifacts/12662724422). SHA-256 of `app-debug.apk` independently recomputed as `028190f99bbd9d58d7d827a9d58d2e48011f97f6333bfcf21882a0eae5fb85ef`; SHA-256 of `app-debug-androidTest.apk` as `472408abe6d8f16b7840ab6fd2eb96c5fba7b174eba16740158bdfd5c2dcb534`; both match the bundle's `SHA256SUMS`.
+- **Strict distinction:** JUnit and APK/instrumentation compilation are PASS, but the Android instrumentation test was **NOT RUN** because no physical Android device/ADB was available in CI. Real GGUF inference, PDFBox-to-JNI citation round-trip, Pad 5 memory/thermal behavior, medical PDF correctness, live HTTPS cloud-consent allow/deny, and final release signing remain **NOT TESTED**. Native libraries or a compiled instrumentation test do not prove real model inference.
+- **Safety:** the bundle contains APKs and checksums only. No GGUF, PDF, key, user medical data, or signing key was committed or uploaded. Do not mark local-brain acceptance complete until the device test log demonstrates a real model SHA and the synthetic PDF citation round-trip.
+
+
+## 2026-10-26 — Two-page PDF citation gate: CI verified
+
+- **PASS Android CI:** [run 40366568877](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877) on source/test SHA baa6b7cff1939fe24d1448806514bde9071a667b. Gradle unit tests, lint, AndroidTest compilation, Debug APK assembly, compiled-manifest verification and device-runner contract all passed.
+- **PASS JUnit:** validation report artifact [12671365988](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877/artifacts/12671365988) confirms **142 tests, 0 failures, 0 ignored**.
+- **PASS APK pair integrity:** device-test bundle [12670667759](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40366568877/artifacts/12670667759). Independently downloaded and recomputed SHA-256 values match the bundle manifest:
+  - app-debug.apk — 33,553,165 bytes; ee0b6682a44c12bda76e8cd9fcb8b17cde2fc8b8893efa42ff54e58ac434c715
+  - app-debug-androidTest.apk — 372,149 bytes; 48ab3f98f59ee83ccbeb2ab81c0c8d3056b6316352ff8bc76d24e8321f3b0652
+- The AndroidTest fixture now creates a two-page synthetic PDF, keeps the random calibration identifier only on page 2, retrieves only zero-based page index 1, and requires [S1] to resolve to human-facing PDF page 2 through the real LlamaAndroidPort path.
+- **Strict status:** instrumentation was compiled, not executed. Real GGUF/JNI inference, PDFBox-to-native page-2 round-trip, Xiaomi Pad 5 behavior, clinical correctness, live HTTPS consent/denial, RAM/thermal and final signing remain **NOT TESTED**. No model weights, personal PDF, provider key or signing key is included.
+
+## 2026-10-26 — Local-first routing and cloud-boundary source audit
+
+- **PASS — source audit:** `BrainPanel` constructs the production `LlamaAndroidPort` for local inference. Local generation errors are shown as local errors; the failure handler does not invoke `CloudBrainGateway` or retry through the network.
+- **PASS — explicit cloud path:** cloud actions require the reviewed prepared excerpts, a one-time `CloudTransferConsent` sealed to the exact prompt/source identity, and a second check at the `CloudBrainGateway` outbound boundary. The transport disables redirects and disconnects in `finally`.
+- **PASS — CI boundary tests:** run 40366568877 confirms the 142-test suite, lint, APK pair, and device-runner contract. These tests use an in-memory transport and synthetic text; they are not live HTTPS/device proof.
+- **NOT TESTED:** actual network capture on Xiaomi Pad 5, real GGUF inference, the two-page PDFBox-to-native citation round-trip, clinical factual review, RAM/thermal measurements, and final signing. Do not mark local-brain acceptance complete until the physical-device runner emits a passing log with the real model SHA-256 and page-2 citation result.
+
+
+## 2026-10-26 — Exact PDF page-2 citation and cleanup gate (source checkpoint)
+- Strengthened `NativeGgufDeviceAcceptanceTest` so its **real llama.cpp/JNI** path must return the sole allowed `[S1]` marker, map it exactly to human-facing PDF page 2 (zero-based index 1), reject page-1 links, and remove the generated synthetic PDF from app cache after the round-trip.
+- Strengthened the static wiring guard to require these assertions. This is a meaningful test-hardening change because a broad “any S1 maps to page 2” check could otherwise miss extra or wrong-page links.
+- **CI for this new source SHA: PENDING**. Android instrumentation is a device-only test and is not considered executed by unit tests or APK assembly.
+- **NOT TESTED:** real GGUF/JNI inference, the synthetic PDF→PDFBox→native model round-trip, Xiaomi Pad 5, clinical accuracy, live HTTPS cloud-consent allow/deny, RAM/thermal behavior and final signing. No GGUF, personal PDF, key or medical data was uploaded.
+## 2026-10-26 — Fail-closed native GGUF device harness: CI PASS
+
+- **PASS — Android CI:** [run 40390430350](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40390430350), commit `e4e6b4880b4854eb3c0ffde33810be4fd86b5209`. The workflow passed Bash syntax and fake-ADB regression tests (including reported JUnit failure and incomplete-output cases), native GGUF/PDF source-contract guards, local/cloud fallback guard, SQLite schema/migration checks, APK verifier tests, Android unit tests, lint, AndroidTest APK assembly, Debug APK assembly, manifest verification and exact APK-pair packaging.
+- **PASS — test report:** downloaded report artifact `12683826629`; Gradle report shows **142 tests, 0 failures, 0 ignored**.
+- **PASS — independently re-hashed CI device-test bundle:** [artifact 12683001262](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40390430350/artifacts/12683001262), containing the exact APK pair and `SHA256SUMS`.
+  - `app-debug.apk`: 33,553,165 bytes; SHA-256 `9982973d7e55f3e0fa27c5a6b4848472bc925ec27bb426f957de82a8b4a651ef`.
+  - `app-debug-androidTest.apk`: 373,377 bytes; SHA-256 `f8edcd49e6c994bcf129cd7d95e6abfeac435f697793d4f20d65b3bc31145855`.
+- **Important boundary:** the fake-ADB tests prove the host runner fails closed on digest/instrumentation failures and cleans up synthetic files. They do not run llama.cpp or prove a real model works. No GGUF, personal PDF, credential or signing key is included in the artifact.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 citation round-trip on-device, live HTTPS consent/denial, clinical review, RAM/thermal profiling and final signing.
+
+## 2026-10-26 — Page-scoped PDF leakage sentinel (CI pending)
+
+- **Production/device-test change:** the synthetic two-page PDF now places a unique `PAGE1-EXCLUDE-<random-id>` sentinel only on page 1 while the requested question retrieves page 2. The real `LlamaAndroidPort` instrumentation asserts the sentinel exists in extracted page 1 but is absent from both the prepared native prompt and the presented evidence; the fresh calibration identifier remains exclusive to page 2 and the citation must resolve to human-facing page 2.
+- **Guard:** `scripts/test-native-gguf-pdf-acceptance-contract.py` now requires the fixture and both negative assertions, so a future test edit cannot silently remove the page-isolation check.
+- **Purposeful build question:** does the strengthened instrumentation compile against the current PDFBox/StudyBrain/JNI APIs, and do the static guards pass? Source inspection alone cannot establish AndroidTest compilation.
+- **CI/APK:** PENDING at this source checkpoint. No older APK is counted as evidence for this change.
+- **NOT TESTED:** physical Xiaomi Pad 5 execution, actual GGUF/JNI inference, PDFBox-to-page-2 native round trip, live HTTPS consent/denial, clinical accuracy, RAM/thermal and final signing. Fake ports and compiled instrumentation are not real inference evidence. No GGUF, personal PDF, credentials or signing key uploaded.
+
+## 2026-10-26 — HTTPS destination and redirect boundary regressions (CI pending)
+
+- Added a JVM/Robolectric regression that refuses cleartext HTTP, URL user-info credentials, query-string tokens, and non-chat-completions paths before any connection can be opened.
+- The successful fake-transport case now explicitly asserts that redirect following is disabled, preventing a consented PDF prompt or bearer token from being forwarded by an automatic redirect.
+- **PASS source:** test and production policy wiring inspected. **CI for the new source head: PENDING**; do not count the previous 142-test report as evidence for this test.
+- **NOT TESTED:** real TLS/network capture, physical Pad 5 consent/denial, real GGUF inference, PDF page-2 citation round-trip, clinical accuracy, RAM/thermal and final signing. Fake transport is not live HTTPS proof.
+
+### Exact checkpoint record — 2026-10-26
+
+- Functional source commit: `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f` (HTTPS-only destination/redirect regression; follows the page-1 exclusion-sentinel instrumentation and static guard).
+- Direct source-contract audit: **PASS** for the page-1 sentinel fixture and its exclusion from both prompt and evidence, guard wiring, HTTPS-only endpoint policy and redirects disabled.
+- GitHub Actions run/check and APK artifact for this functional SHA: **NOT VERIFIED** by the available run/status lookup. The earlier 142-test/ APK report is a baseline only and does not cover these changes.
+- Real GGUF/JNI inference, PDFBox page-2 round trip, live HTTPS consent/denial, Pad 5, clinical review, RAM/thermal and final signing: **NOT TESTED**.
+
+## CI result — 2026-10-26, source SHA `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f`
+
+- **PASS:** [Android debug validation run 40403719873](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873).
+- **143 JVM tests PASS, 0 failures, 0 ignored**; includes the new HTTPS-only destination/redirect regression. The source-contract step passed the page-1 exclusion-sentinel requirements and local/cloud boundary checks.
+- **PASS:** SQLite migration/schema guards, APK verifier drift tests, Android Lint, Debug APK and AndroidTest APK assembly, manifest/SDK/permissions checks and device-test bundle packaging.
+- Exact bundle: [Artifact 12691305315](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40403719873/artifacts/12691305315). Independently re-hashed after download:
+  - `app-debug.apk` — 33,553,165 bytes, SHA-256 `f5d57bcea4ea860fa592ede9b2c5fee3d79d5f0fc838666d586098f568229f2f`.
+  - `app-debug-androidTest.apk` — 373,777 bytes, SHA-256 `fc3aecddec322aaa4a8e61e331198e85e9ed689b2b72ec9111aadba641a3cf3c`.
+- **Scope limit:** this proves source/JVM/Android compilation and artifact integrity, not execution of the instrumentation test. Real GGUF/JNI inference, PDFBox-to-page-2 native round trip, live HTTPS consent/denial, Xiaomi Pad 5, clinical review, RAM/thermal and final signing remain **NOT TESTED**.
+
+
+## 2026-10-26 — Bounded PDF coverage audit and report invariants (CI pending)
+
+- **Production source:** `PdfCoverageAudit.inspect` now rejects pathological page counts above 100,000 before allocating per-page state, preventing an untrusted PDF page count from causing a large audit allocation. `PdfTextCoverage` now rejects impossible count combinations, out-of-range/duplicate navigation preview indices, and zero/oversized page totals.
+- **Regression coverage:** added tests for the pre-allocation page-count guard and invalid report construction. Existing 20,000-page sparse-index test remains within the safe bound and confirms the navigation preview stays capped.
+- **Functional commits:** audit guard `d0181cccec572ef71c0566f04358d36aaff3e378`; tests `e9718622a2ef02847b05b2c0498ee327b9bc88e5`; final invariant hardening `d59d3eb3d56d84b9f259b857ee3a437927fcff40`.
+- **CI/APK for this source head:** NOT VERIFIED in the available workflow-status lookup. The earlier successful run 40403719873 is a baseline at `2f9a0686f2b730c742e6a7015a9cb4ead6f6cf6f` and does not include these PDF coverage changes.
+- **NOT TESTED:** real GGUF/JNI inference, PDFBox page-2 native round trip, live HTTPS consent/denial, Xiaomi Pad 5, clinical review, RAM/thermal, and final signing. No model, PDF, credential or signing key was added to the repository.
+
+
+## 2026-10-27 — PDF import/index page-count boundary
+
+- Added one shared `PdfCoverageAudit.requireSafePageCount` contract (1..100,000 pages), used by both PDF import and text re-indexing. Import rejects unsupported page counts before the file is moved into permanent app storage; re-indexing rejects legacy/tampered metadata before PDFBox opens the document.
+- The public coverage report now requires its bounded navigation preview to be distinct, in-range and ascending in document order.
+- Added two JVM tests (inclusive maximum / invalid counts, and unsorted preview rejection) plus `scripts/test-pdf-page-limit-contract.py` to verify both production call sites and ordering.
+- Commit `ecaff9fb57431206539097a3a2cb732d6d1ccbd9`; source-guard range fix `9bde03a6a30ad464911469aade6c94f7ae065b9c`.
+- Initial CI run `40415014034` exposed a test-harness slice bug (the guard referenced a nonexistent method name); the guard was corrected in `9bde03a6a30ad464911469aade6c94f7ae065b9c`. CI run `40415248660` completed successfully on 2026-10-26: `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebugAndroidTest`, and `:app:assembleDebug` all PASS. The JUnit HTML report records **147 tests, 0 failures, 0 ignored**. The new page-limit source guard also PASS. The initial harness failure is not counted as an application-test failure.
+- **Verified artifacts:** Device-test bundle `12695946600`; debug APK artifact `12695976587`; validation reports `12695556546`. Debug APK SHA-256 `e6c9eca71342bb40cb279c3d0e88374b306b15569405ae315e8ab80b7e5e82e6` (33,553,165 bytes). AndroidTest APK SHA-256 `45021669120c53c1be3883fdc63526f9d45c5e402aa2373be448ef40cd1fb297` (373,777 bytes). Independently recalculated hashes matched both artifact manifests.
+
+
+## 2026-10-27 — Device runner safety milestone
+
+- **PASS — source/CI:** GGUF runner checks target free storage before model push and fails closed with a 64 MiB reserve; Fake ADB low-space test proves no push or inference attempt occurs. Run 40418534168 passed 147 unit tests, lint, APK assembly, offline-permission/SDK checks and artifact packaging.
+- **PASS — artifact integrity:** Debug SHA-256 `1be41039e845b3ddf620c93a304f50e09a0d983a54d4af3b2e308e1b9bbb711a`; AndroidTest SHA-256 `1d178f4091f6e7e6111026b41afd773d0e237d992e643450e17f76bf7fb8f725`; independently recalculated from the downloaded device-test bundle.
+- **NOT TESTED — real device/model:** Xiaomi Pad 5, real GGUF/llama.cpp inference, real PDF citation [S1], network-level cloud consent, performance/thermal behavior, and independent medical review. Fake ADB and source contracts are not evidence of real model inference.
+- Run: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168 — Device bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40418534168/artifacts/12697601058
+
+
+## 2026-10-27 — GGUF input header preflight (CI pending)
+
+- **Change:** reject wrong-magic and shorter-than-24-byte `.gguf` inputs before invoking ADB, installing APKs, starting Gradle, or transferring bytes.
+- **Tests:** fake-ADB script contract adds wrong-magic and truncated-header cases and verifies the ADB log remains empty; existing low-storage, host/device digest mismatch, partial push cleanup, instrumentation failure, and prebuilt APK hash gates remain enabled.
+- **Purposeful build question:** does the new early-rejection guard pass its shell contract tests while the Android debug/instrumentation artifacts still assemble cleanly? A targeted CI run is justified to execute the host-side safety contract and keep the exact APK pair available for a later real-device run.
+- **CI/APK:** PENDING for this change. Any artifact from an earlier source checkpoint is not evidence for this guard.
+- **NOT TESTED:** actual GGUF loading/inference, PDF page-2 citation round-trip, cloud consent/denial over a live network, Xiaomi Pad 5 performance, clinical review. The header check is not model validation; synthetic fixtures are not GGUF models.
+
+
+## 2026-10-27 — PDFBox/Bouncy Castle dependency security follow-up (CI pending)
+
+- **Finding:** the prior successful build had 18 lint warnings and no lint errors. Three `TrustAllX509TrustManager` warnings were located in cached transitive Bouncy Castle 1.72 JARs pulled by PDFBox-Android 2.0.27.0, not in MedMate Kotlin source. The PDFBox-Android upstream issue tracker records this known warning.
+- **Change:** align `bcprov-jdk15to18`, `bcpkix-jdk15to18`, and `bcutil-jdk15to18` to official Bouncy Castle Java 1.86 rather than mixing the transitive 1.72 modules.
+- **Purposeful build question:** does the current PDFBox-based extraction/citation test suite and Android build remain compatible with the aligned cryptography modules, and does lint still report the dependency trust-manager pattern? A CI build is justified because source-only inspection cannot validate Maven resolution, DEX packaging or runtime PDF parsing compatibility.
+- **CI/APK:** PENDING for the dependency alignment; the previous APK is not evidence for this dependency change.
+- **NOT TESTED:** real PDFBox/native GGUF citation round-trip on ARM64, live cloud consent/denial, clinical review, Xiaomi Pad 5 performance. Do not suppress or describe the lint warning as fixed unless the new report confirms it.
+
+
+## 2026-10-27 — Malformed device-storage report regression
+
+- **Change:** extended the fake-ADB runner contract with an unparseable `toybox df -k` available-space field. The test expects exit 6, no GGUF push, no instrumentation, and no leftover temporary model. This exercises the existing fail-closed production preflight; it does not claim device storage or native inference was tested.
+- **Test commits:** `c2744c3b4e54181e57e8b1c642a035fb0e29f20c` added the case; `68a75e750a3fbf68a85764f80054223b45f2413b` corrected the shell continuation in its environment setup.
+- **Dependency follow-up:** Bouncy Castle modules remain aligned at 1.86 on this branch, but Maven resolution, PDFBox runtime compatibility and the updated lint report still require a fresh Android CI result.
+- **CI:** NOT VERIFIED for the latest test/source head. The last previously verified APK pair predates the GGUF header preflight and dependency alignment; do not reuse it as proof for these changes.
+- **NOT TESTED:** real Xiaomi Pad 5, valid GGUF inference through llama.cpp/JNI, PDF page-2 citation round-trip, live cloud-consent/denial, clinical review, RAM/thermal and final signing.
+
+
+## 2026-10-27 — Explicit fail-closed result for unreadable device storage
+
+- The corrected Fake ADB fixture now emits actual line breaks in its `toybox df -k` output, so both numeric and `Available=unknown` cases exercise the production parser rather than a malformed one-line string.
+- The malformed-storage case exposed a production-shell issue: with `set -e`, an `awk` status 1 inside command substitution terminated the runner before its intended diagnostic/exit code. The runner now catches that parse failure, clears the value, and reaches the explicit fail-closed exit **6** before GGUF push or instrumentation.
+- **PASS — runner contract in CI:** run 40427400685, source SHA `02b576147d9bb3ae1d3d4fe73b5fb33fb8a80def`; the GGUF/device/cloud safety-contract step passed, including bad/short header, digest mismatch, low storage, unparseable storage, partial transfer cleanup and instrumentation-result checks.
+- **Android tests/Lint/APK:** still in progress at this checkpoint; no APK from this source is claimed until the full workflow finishes. The prior artifact is not proof for the current source.
+- **NOT TESTED:** physical Xiaomi Pad 5, actual GGUF/llama.cpp inference, PDF page-2 citation round-trip, live cloud-consent/denial, RAM/thermal and clinical review.
+
+
+## 2026-10-27 — Fail-closed runtime dependency gate and candidate build
+
+- Tested source commit: `aba9018577ccd69ecde2a919b73330ab3839b343`.
+- CI run: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40438093932 — **PASS**.
+- Added a dedicated parser for Gradle's resolved `debugRuntimeClasspath`; the gate now fails if `bcprov-jdk15to18`, `bcpkix-jdk15to18`, or `bcutil-jdk15to18` is missing or resolves to anything other than **1.86**. A requested 1.72 that Gradle resolves to 1.86 is accepted; a mixed or unresolved legacy version is rejected.
+- Dependency-gate fixture tests: **5 PASS**. Existing GGUF safety/source-contract tests, SQLite/migration contracts, APK verifier regressions, Android unit tests, Lint, Debug APK and AndroidTest APK assembly: CI **PASS**.
+- APK verifier: package identity/version/SDK match Gradle; optional-cloud INTERNET permission matches the manifest; cleartext traffic is disabled; no broad-storage permissions.
+- Device-test Artifact: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40438093932/artifacts/12705630481.
+- Recomputed SHA-256 from the downloaded artifact ZIP and matched its `SHA256SUMS`:
+  - `app-debug.apk`: `9a65b3fe162b12a5399d19bea146a584d69100d82ad44f1ee827fd0ba8a167fd`
+  - `app-debug-androidTest.apk`: `33e383e33feb00ef80358e4bc3a28d23f7f90fd5f63c71493901af0f0190fb34`
+- **NOT TESTED:** physical Xiaomi Pad 5; real GGUF/JNI inference; real two-page PDF page-2 citation; live HTTPS consent/denial; memory/thermal/latency; independent medical review. The artifact contains no GGUF model, personal PDF, or provider key.
+
+
+## 2026-10-27 — PDFBox page-scope test compile fix and validated candidate
+
+- **Source/test commit:** `66f4c88e28ce18d6196388ee177c4ad32eb807b3`.
+- The preceding CI failure was a test-only Kotlin compile error: Robolectric's `RuntimeEnvironment.getApplication()` is non-generic in the resolved version. Updated `PdfTextExtractorTest` to use the current API with an explicit `Application` type.
+- **PASS — CI Run 40445019588:** `:app:testDebugUnitTest`, `lintDebug`, `assembleDebugAndroidTest`, and `assembleDebug` completed successfully. Test report: **148 tests, 0 failures, 0 ignored**. The synthetic two-page PDFBox test confirms page-1/page-2 text isolation and rejects out-of-range page navigation; this is JVM extraction evidence, not real-model evidence.
+- **PASS — cryptography dependency gate:** resolved `bcprov`, `bcpkix`, and `bcutil` all at **1.86**.
+- **PASS — APK verifier:** Gradle package/version/SDK match, optional-cloud INTERNET declaration matches the APK, cleartext is disabled, and no broad-storage permission is present.
+- Device bundle Artifact **12707718539**. Independent re-hash of downloaded APKs matched `SHA256SUMS`:
+  - Debug APK: 30,248,343 bytes; SHA-256 `836d72b5472a1c5a513606935508ebbea079363a43011701ed8335eeeb11d9fc`.
+  - AndroidTest APK: 373,777 bytes; SHA-256 `c4a0921f3f963658de65beb070f031252437947e0c0e96e746137384d6ff3629`.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588
+- Artifact: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40445019588/artifacts/12707718539
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, actual GGUF/llama.cpp/JNI inference, real PDF-grounded answer and page-2 citation, live HTTPS cloud-consent/denial, RAM/thermal/latency, and independent medical review. The artifact contains APKs/checksums only; no GGUF, personal PDF, or key.
+
+
+## 2026-10-27 — Backup archive size bounds (CI PASS; device NOT TESTED)
+
+- Added `BackupArchiveLimits`: each restored/exported PDF must be 5 bytes–512 MiB; aggregate declared PDF payload per backup is capped at 2 GiB. Restore validates individual and aggregate manifest sizes before staging any document bytes; export uses the same limits so the app does not create a backup it would later refuse to restore.
+- **PASS:** five pure Kotlin boundary tests cover empty input, exact per-file/aggregate boundaries, tiny/negative/oversized declarations and overflow-sized values. The Robolectric backup round-trip suite now includes `oversizedPdfDeclarationIsRejectedBeforeAnyRestoreWrites`, which verifies a manifest declaring a 512 MiB + 1 byte PDF is rejected before document staging and before database rows are added.
+- **PASS — CI Run 40448427007** on source commit `d6f39a9ae5987682488aaa12cbeca2294fed0d26`: **154 unit tests, 0 failures, 0 ignored**; Gradle unit tests, lint, Debug APK and AndroidTest APK assembly, APK identity/SDK/offline-permission verification, SQLite migration checks, and resolved Bouncy Castle `bcprov`/`bcpkix`/`bcutil` alignment at **1.86** passed. Lint emitted existing non-fatal warnings.
+- **Purposeful build question:** do the new Kotlin restore/export limits compile and pass the actual backup-restore unit path, and does the resulting APK pass the manifest/permission verifier? Source inspection alone cannot establish Kotlin compilation or prove the restore path rejects the malicious manifest before writes.
+- **PASS — independently re-hashed APK pair:** Debug APK 30,248,343 bytes; SHA-256 `72afb68223c02863fc946f453130cb29aa601dd959358520bc874ea4345bc6d2`. AndroidTest APK 373,777 bytes; SHA-256 `05d503ea528e66e07e25b7c43173e2e84f69f969f2b60b95ceee53092a50a69f`. Both match `SHA256SUMS` in device-test bundle Artifact **12709208494**.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709208494
+- Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40448427007/artifacts/12709597321
+- **NOT TESTED:** physical Xiaomi Pad 5 install/import flow, real GGUF/llama.cpp/JNI inference, real two-page PDF page-2 citations with model output, live HTTPS cloud-consent/denial, RAM/thermal/latency and independent medical review. The artifact contains no GGUF model, personal PDF, provider key or session token.
+
+
+## 2026-10-27 — Cloud outbound privacy boundary (CI pending; live network NOT TESTED)
+
+- **Production change:** the optional cloud gateway disables `HttpURLConnection` caching, sends `Cache-Control: no-store, no-cache, max-age=0` and `Pragma: no-cache`, and rejects response media types other than `application/json` or `+json` before reading/parsing the response body.
+- **Regression coverage:** added in-memory transport tests for the exact no-cache headers, rejecting a `text/html` response and preventing consent replay after that failure, and accepting a vendor `+json` media type. Existing evidence-sealed, one-shot consent, HTTPS-only endpoint, redirect denial, bounded payload/response and disconnect tests remain in place.
+- **Purposeful build question:** do the production Kotlin gateway and Robolectric boundary tests compile and prove these outbound behaviors? Source inspection alone cannot establish resolved Android/Robolectric API compatibility or execute the boundary test.
+- **CI:** PASS run `40451798717` on source/test head `33076ff62664a50e4a071f250fa74486b30467c0`. The Android unit-test report contains **156 tests, 0 failures, 0 ignored**; Lint and debug APK assembly completed successfully. Lint reports 17 non-blocking findings; the `TrustAllX509TrustManager` warning points into the resolved Bouncy Castle 1.86 dependency JAR, not a MedMate source file.
+- **Debug APK:** 30,248,343 bytes; SHA-256 `7f489adede365811ce0ef5b60173e610bc808bffc2241a1eec3cb30af21183fc`. Recomputed independently from the downloaded artifact and matched `APK_SHA256.txt`. Artifact: `12709814695`; device-test bundle with APK pair and checksums: `12710139297`; reports: `12710314088`.
+- **NOT TESTED:** live HTTPS endpoint, physical Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, real PDF-grounded answer/page-2 citation, network consent/denial on device, RAM/thermal/latency, and independent medical review. Tests use synthetic evidence and an in-memory fake transport; no PDF, GGUF model, provider key or user data is uploaded.
+
+## 2026-10-27 — PDFBox → grounded prompt → page-two citation integration (CI PASS; native model NOT TESTED)
+
+- Extended PdfTextExtractorTest with a synthetic two-page PDF whose second page contains a unique marker. The test now follows the production path from PDFBox page-scoped extraction through MedicalPromptBuilder.prepare into SourceCitationLinks.resolve, asserting that [S1] still navigates to human-facing page 2 and that page-one text is not injected.
+- **PASS — CI run 40453735256**, source/test SHA `716ea0019c7dfbb88767ed141bcac73068e11903`: 156 JVM/Robolectric tests passed, 0 failures, 0 ignored; Lint and Debug/AndroidTest APK assembly passed; package ID, SDK, optional-cloud INTERNET declaration, cleartext policy and broad-storage permission checks passed.
+- **PASS — independently re-hashed CI APK pair:** app-debug.apk 30,248,343 bytes, SHA-256 `74eae731cd290612c611b8cb26a06e239a16b0b209e82668def58d9a870fd8fc`; app-debug-androidTest.apk 373,777 bytes, SHA-256 `8f09542f6dd6528f5e88c7e51347c75c59427a27fb8ad43a50c1ced803a20fb4`. Both match SHA256SUMS in device-test bundle Artifact **12711812350**.
+- Validation reports: Artifact **12711542738**. The new test is real PDFBox extraction plus the production citation-link projection, but uses a synthetic PDF and no model-generated answer.
+- **NOT TESTED:** physical Xiaomi Pad 5, a user-supplied GGUF through real llama.cpp/JNI inference, citation accuracy on a real textbook, live HTTPS consent/denial, RAM/thermal, clinical review and final signing. The bundle contains no model weights, personal PDFs or credentials.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40453735256/artifacts/12711812350
+
+
+## 2026-10-27 — ARM64 preflight for native GGUF acceptance (CI PASS; real device NOT TESTED)
+
+- Hardened `scripts/run-native-gguf-device-test.sh` to inspect `ro.product.cpu.abilist64` and require the exact `arm64-v8a` ABI before Gradle, APK installation, or GGUF transfer. Unsupported devices exit **7** without installing or pushing anything.
+- Added fake-ADB regression coverage for an `x86_64`-only device; the test proves rejection occurs before Gradle, either APK install, model push, or instrumentation. This is a harness test only, not real GGUF inference.
+- **PASS — CI Run 40456263759**, source/test SHA `f681e164e5889221d51f549fd40bab5ba25c2168`: **156 JVM/Robolectric tests passed, 0 failures, 0 ignored**; Lint, Debug APK + AndroidTest APK assembly, package ID/SDK/permission verification, and device-bundle packaging passed.
+- **PASS — independently re-hashed APK pair:** Debug APK **30,248,343 bytes**, SHA-256 `67ab92e265fbb64456aef3988164cc71320b5557b0ec09f0062771b35eb0f975`; AndroidTest APK **373,777 bytes**, SHA-256 `e233423db2da80deca4f88ad8a51e56e91be763414dc89903549c2d3349e647c`. Both match `SHA256SUMS` in Artifact **12712412873**.
+- APK inspection confirms packaged `arm64-v8a` `libllama.so`, `libllama_jni.so`, and `libggml*.so`; the APK and device-test bundle contain no `.gguf` model or PDF. Validation reports: Artifact **12712447566**.
+- Lint produced **16 non-blocking warnings**. The `TrustAllX509TrustManager` finding points into the resolved Bouncy Castle 1.86 dependency JAR, not a MedMate source file; retain it for dependency review rather than suppressing it.
+- **NOT TESTED:** Xiaomi Pad 5 installation, actual user-supplied GGUF/llama.cpp/JNI inference, model-backed PDF page-two answer, live HTTPS consent/denial, RAM/thermal/latency and independent medical review. Do not treat this CI pass or the synthetic harness as model acceptance.
+- CI: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759
+- Device-test bundle: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712412873
+- Validation reports: https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40456263759/artifacts/12712447566
+
+
+## 2026-10-27 — Collision-safe GGUF device-test temporary file (CI PASS; device NOT TESTED)
+
+- The runner now pushes the user-supplied GGUF to a unique app-specific remote path using the current Bash PID plus two random values. Cleanup removes only that exact per-run path, rather than a fixed `medmate-acceptance.gguf` that could overwrite or delete a pre-existing user file.
+- Added a Fake ADB regression that seeds the old fixed path with a sentinel, runs the harness with a synthetic 24-byte GGUF header, asserts the sentinel remains unchanged, and verifies the new temporary file is removed after simulated instrumentation. This validates harness file safety only; the synthetic header is not a model and never establishes native inference.
+- The first two attempts exposed test-harness construction issues (shell continuation escaping and synthetic-header escaping); these were corrected before the successful run.
+- **PASS — CI run 40468626666** on source/test SHA `9e2b91bcc10b4c36c3def0d6bea89ffd1ef7945c`: fake-ADB GGUF contract suite, SQLite/migration and dependency guards, Gradle unit tests, Lint, Debug APK and AndroidTest APK assembly all completed successfully.
+- CI-calculated Debug APK SHA-256: `a14191fec0a0ec14a2914d7e118df543b0f54b7af22ec4a51b3959bfbc418421`. Debug APK Artifact **12718415174**; device-test APK-pair bundle Artifact **12717803444**; validation reports Artifact **12717642389**. Independent download/re-hash of this run's APK is **NOT TESTED**.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, actual GGUF/llama.cpp/JNI inference, real-model PDF citation round-trip, live HTTPS consent/denial, RAM/thermal/latency and clinical review. No model weights, personal PDFs, credentials or signing keys are included.
+
+
+## 2026-10-27 — Ambiguous PDF citation identity fails closed (CI PASS; real model/device NOT TESTED)
+
+- **Production:** `CloudEvidenceSeal.of` now rejects blank or duplicate `Evidence.id` values before a sealed cloud-consent grant can be claimed or an HTTP connection opened. Citation markers `[S1]`, `[S2]` are positional; duplicated source identities could otherwise make two visible markers point at an ambiguous underlying PDF chunk/page.
+- **Regression coverage:** `CloudEvidenceSealTest` now proves duplicate and blank IDs cannot be sealed (7/7 tests PASS). `CloudTransferConsentTest` now stresses the actual evidence-sealed one-shot overload with 16 concurrent callers; exactly one claim may succeed (8/8 tests PASS).
+- **PASS — Android CI:** [run 40476354499](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40476354499), source/test head `d3de8bb98bb2749944bafa2b0325ff526f138bb6`. **164 JVM/Robolectric tests passed, 0 failures, 0 ignored**; the GGUF/PDF/local-cloud safety contracts, SQLite/migration checks, dependency alignment, Lint, Debug + AndroidTest APK assembly, and APK identity/permission gates passed.
+- **PASS — independent APK-pair SHA-256 verification:** downloaded device-test bundle Artifact **12721167670** and independently recalculated both inner APK hashes; both match its `SHA256SUMS`.
+  - `app-debug.apk`: 30,248,343 bytes; SHA-256 `9db509c6dcd6016fde9fb2e40d8d53b0f3a99440032c63d3e95558f3f3ea3ad8`.
+  - `app-debug-androidTest.apk`: 373,785 bytes; SHA-256 `2b2fdd227da5aff2ceeb732557eeb42ded16a4d3bbb18b9583d37de9c1c1d969`.
+  - Debug APK Artifact **12721117413**; validation reports Artifact **12721526615**.
+- **NOT TESTED:** physical Xiaomi Pad 5 installation, user-supplied GGUF with real llama.cpp/JNI inference, model-backed two-page PDF answer, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. The test bundle contains no GGUF weights, PDF or credentials. CI/Mock transport is not clinical validation; Debug is not final.
+
+
+## 2026-10-27 — Canonical PDF evidence identities before cloud consent (CI in progress)
+
+- **Production:** CloudEvidenceSeal now accepts only canonical source IDs of 1–160 characters with no whitespace, control characters or Unicode format characters, and still rejects duplicate IDs. This prevents padded or invisible IDs from making PDF citation provenance ambiguous before the one-shot cloud-consent seal is created.
+- **Regression:** added cases for leading/trailing whitespace, newline, zero-width format character, overlong ID, blank ID and duplicate ID. The tests use synthetic source text only; no PDF, model weights or credentials were added.
+- **Purposeful build question:** do the new Kotlin validation gate and regression tests compile and pass with the Android/JUnit suite and APK packaging? Static review alone cannot establish Kotlin/Gradle integration.
+- **PASS — Android CI:** [run 40482189945](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40482189945) on source/test SHA `e6e7c1a649d31304e346f8f18ffcec4e54cf012b`: **165 JVM/Robolectric tests passed, 0 failures, 0 ignored**; the new canonical-ID regression passed in CloudEvidenceSealTest (8/8), along with cloud-consent concurrency, GGUF/PDF contracts, SQLite/migration checks, Lint and Debug + AndroidTest APK assembly/identity verification. Lint reports 17 non-blocking warnings, including the existing dependency trust-manager finding; no warning was suppressed.
+- **PASS — independently re-hashed APK pair:** device-test Artifact **12723218705** downloaded and both hashes recalculated; each matches its SHA256SUMS. Debug APK **30,248,343 bytes**, SHA-256 `119090062d425a984a83ef942f2ce1322e1396baf93f205ee1dd77c535a0f5a4`; AndroidTest APK **373,785 bytes**, SHA-256 `6338ec83fdfae8d2384bf085dd9153528d033797a20bdba4cee4bc3072da9f66`. ARM64 llama.cpp/JNI libraries are packaged; the APK pair and bundle contain no GGUF weights or PDFs.
+- **NOT TESTED:** Xiaomi Pad 5 installation, real GGUF/llama.cpp/JNI inference, model-backed PDF page-two citations, live HTTPS consent/denial, device RAM/thermal/latency and independent clinical review. Debug is not final.
+
+
+## 2026-10-27 — Ambiguous PDF page identities fail closed (CI pending at checkpoint)
+
+- **Production:** `StudyBrain.search` now rejects a full-chapter retrieval scope with duplicate page indices, and rejects a page-scoped query if that selected page has duplicate or negative anchors. It returns `AMBIGUOUS_PAGE_IDENTITIES` with no evidence, so `prepareSourceOnly` cannot create a grounded prompt. The UI explains that re-indexing is required rather than showing a potentially ambiguous citation.
+- **Regression:** `BrainRetrievalRegressionTest` covers duplicate anchors blocking full-chapter retrieval, duplicate selected-page anchors, a unique page-scoped query, empty evidence, and the no-prompt gate.
+- **Purposeful build question:** does the new fail-closed status compile through Compose's exhaustive status rendering and do the retrieval regressions pass alongside the complete Android suite? Source review alone cannot establish that integration.
+- **CI attempt 40490771150 — FAIL (test-fixture issue):** the initial test attempted to construct `PageSource(pageIndex = -1)`, but the production value object correctly rejects negative indices in its constructor. Removed that impossible fixture; duplicate-page behavior is the meaningful reachable regression.
+- **PASS — Android CI:** run [40491432503](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40491432503) completed successfully on source/test head `c31c3205ef8ae0957887afb89f3c3cd7eec52a27`. The build, unit tests, Lint, APK identity/permission verification and device-test bundle packaging passed. CI-calculated Debug APK SHA-256: `9facb0c81b2500713dca3c343bf6a7fdbd53554dce5c0f6361e6ea3a99e5cc1a`; Debug Artifact `12728549133`, device-test bundle `12727649271`, validation reports `12729003984`. Independent re-hash and physical-device/model acceptance are **NOT TESTED**. This run predates the later branch-head commit `4f57a75a404cbbd065d9ab19e7206fe6d519122f`; it does not validate that later change.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF citations, live HTTPS consent/denial, device RAM/thermal/latency and independent clinical review. No GGUF, personal PDF, credential or signing key was added.
+
+
+## 2026-10-27 — Fail-closed display gate for local GGUF explanations (CI pending)
+
+- **Production:** introduced `LocalAnswerGate`, which returns the model's explanation text to the UI only if `CitationValidator` accepts its source markers against the exact prepared PDF evidence list, or if the output is the explicit source-insufficient abstention. Missing, malformed and out-of-range markers now cause the generated local text to be withheld; the UI shows a short diagnostic without exposing the rejected answer or creating citation links.
+- **Regression:** `LocalInferenceAuditTest` covers a valid [S1] answer, missing citations, a forged [S9] marker alongside a valid marker, and the approved source-free abstention.
+- **Purposeful build question:** does the new local-answer gate compile through the Compose result flow and pass the full JVM/Robolectric suite and APK verifier? Source inspection alone cannot establish Kotlin integration or UI branch compilation.
+- **CI:** pending for the next targeted Android workflow run. This is a citation-syntax/provenance gate, not clinical accuracy validation and not proof that a real GGUF model ran on a physical device.
+- **NOT TESTED:** Xiaomi Pad 5 installation, genuine GGUF/llama.cpp/JNI inference, real textbook page-two answer, live HTTPS consent/denial, RAM/thermal/latency and independent medical review.
+
+
+## 2026-10-27 — Native local-answer display gate regression (CI PASS; device NOT TESTED)
+
+- Added `app/src/test/java/com/medmate/personal/brain/LocalAnswerGateTest.kt` with four JUnit cases against production `LocalAnswerGate`: valid cited answer is trimmed and displayable; missing/out-of-range/Unicode-lookalike citations return no displayable answer; citation-only output is rejected while the explicit evidence-insufficient abstention remains valid; study-draft tasks cannot enter the EXPLAIN-only gate.
+- The test validates citation/provenance syntax only; it does **not** establish clinical truth or run a model.
+- **PASS — Android CI run 40505639432** on source/test SHA `662e6235351b2845265827088d8f2944eceef18d`: repository safety/schema guards, Gradle JVM/Robolectric tests, Lint, Debug + AndroidTest APK assembly, APK metadata verification and device-test bundle packaging passed.
+- CI-calculated Debug APK SHA-256 `c3568e55eb4be70782bb8b3044dee77027e9c54ee0080e8366eb04ccda43b43d`; Debug APK Artifact **12734927494**. Device-test bundle Artifact **12734723114**. **PASS — independent artifact verification:** downloaded device-test bundle Artifact **12734723114** and recalculated both APK hashes; both match `SHA256SUMS`: Debug APK (30,264,727 bytes) `c3568e55eb4be70782bb8b3044dee77027e9c54ee0080e8366eb04ccda43b43d`; AndroidTest APK (373,785 bytes) `34fedba413ff27f70393b5fa1e45b52264f96fa7d8aaf4ba4d1cabc796a2841b`.
+- The APK includes ARM64 llama.cpp/JNI libraries; no GGUF, private PDF, token, key or signing secret is bundled.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-2 citation accuracy, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. Debug is not final; no main write or merge.
+
+
+## 2026-10-27 — Collision-safe prompt source labels (targeted CI pending)
+
+- **Production:** `MedicalPromptBuilder` now assigns unique prompt-safe display labels when distinct evidence IDs normalize to the same visible label (for example `book/a` and `book_a`). Original evidence IDs and positional `[S#]` citation mapping remain unchanged; a collision is suffixed deterministically in evidence order.
+- **Regression:** `BrainRetrievalRegressionTest` covers a collision chain including `book/a`, `book_a`, and `book_a_2`, verifying that the prompt headers remain distinct while original IDs remain intact.
+- **Purposeful build question:** does the Kotlin change compile with the real Android/JUnit suite and does the prompt-injection/source-grounding regression remain green? Static review cannot establish Gradle integration.
+- **Current CI:** [run 40510912718](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40510912718) on test-bearing commit `006b0580461c907b4d4bdaba50fe28192514ff7a` is **IN PROGRESS**. Repository safety, native GGUF/PDF contracts, SQLite/migration checks, wrapper validation and runtime dependency alignment have passed; JVM/Robolectric + Lint + APK assembly are still running. Do not record overall CI PASS until the run concludes.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-two citation, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No GGUF, personal PDF, credential or signing key was added.
+
+
+## 2026-10-27 — Latest-context guard for asynchronous local/cloud results (CI PASS; model/device NOT TESTED)
+
+- **Production:** BrainPanel now uses rememberUpdatedState snapshots for the latest chapter SHA, question, page-only mode and current PDF page. After each long-running request, local explanations, local study drafts, cloud explanations and cloud study drafts compare their captured BrainRequestIdentity against those current values before publishing output. This avoids trusting click-time chapter/page parameters captured by an old Compose callback.
+- **Regression:** scripts/test-model-load-ui-contract.py now requires all four snapshots and exactly four latest-state identity checks; the identity smoke label now accurately covers local and cloud asynchronous results. This is a source/UI wiring contract, not a physical timing test.
+- **Purposeful build question:** does the Compose change compile and does the updated source-contract gate pass alongside the complete JVM/Robolectric suite, Lint, APK metadata/permission checks and exact device-bundle packaging? Source inspection alone cannot establish Android integration.
+- **PASS — Android CI:** [run 40533697210](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40533697210) on source/test head bdcc6855a11207fc49197f095e9ebcd63d778a46. **179 JVM/Robolectric tests passed, 0 failures, 0 ignored**; the source-contract gates, Lint, Debug + AndroidTest APK assembly, package/SDK/permission verification and device-test bundle packaging passed.
+- **PASS — independent APK-pair SHA-256:** downloaded device-test bundle Artifact **12748740398** and recomputed both hashes; both match SHA256SUMS. Debug APK (30,264,727 bytes) SHA-256 f0229958978dc3d46d2635a007533c7c0eceaf1f7f931e65173e893260e5eace; AndroidTest APK (374,045 bytes) SHA-256 1fa5e1773a47ccf5205449f2868e5e946cbac78efe160c77958694fd68aae297. Debug APK Artifact **12747791765**; reports Artifact **12748920142**.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, model-backed two-page PDF citation round-trip, live HTTPS consent/denial, RAM/thermal/latency and independent medical review. No GGUF weights, personal PDF, credential or signing key is included. Debug is not final; no merge/release.
+
+
+## 2026-10-27 — Symmetric async-question identity normalization
+
+- **Production:** `BrainRequestIdentity` now normalizes both the captured question and the live question using the same outer-whitespace rule before deciding whether an asynchronous result is stale. Chapter identity and page-only/page-index checks remain strict; a full-chapter request is still valid when only the viewport page changes.
+- **Regression:** added four Android/JUnit tests for symmetric whitespace normalization, changed chapter rejection, page-only/page-mode mismatch, and full-chapter viewport-page changes. These tests exercise the production identity class; they do not execute a model.
+- **Source/test head:** `659bb7806ef54350a8a48cb3ba7ba8ca6625d8b0`.
+- **CI:** **NOT VERIFIED** for this exact head in this checkpoint; no PASS is inferred from source inspection. The branch workflow is push-triggered, but the connected status lookup did not expose the resulting run.
+- **NOT TESTED:** Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, real PDF page-two citations, live HTTPS consent/denial, device RAM/thermal/latency, and independent clinical review. No model, personal PDF, credential, or signing key was added.
+
+
+## 2026-10-27 — Invalid page-scoped identity and instrumentation transport regression (CI pending)
+
+- **Production:** `BrainRequestIdentity.matches` now fails closed when either the captured or current page index is negative for a page-only request. Zero remains a valid zero-based page index; full-chapter requests continue to ignore viewport-page movement.
+- **JUnit regression:** added cases for a negative captured page, negative current page, and valid page zero.
+- **Device harness regression:** the fake-ADB suite now simulates `am instrument` emitting diagnostic output and exiting non-zero. The runner must print that output, report the transport exit status, reject acceptance, and remove the temporary model. This covers a previously untested non-zero transport path; it does not run a model.
+- **Purposeful CI question:** do the production identity guard, JVM/Robolectric suite, Android Lint/APK assembly, and fake-ADB fail-closed/cleanup cases pass together? Source inspection alone cannot establish the Kotlin/Gradle integration or Bash exit-path behavior.
+- **CI:** **NOT VERIFIED** for source/test head `f56a48b8502b84c332af6b5108d3738668d00485`; the available status adapter returned no run/status rows, which does not prove Actions failed to run. The Kotlin/JUnit and fake-ADB regressions are present in source, but no PASS is claimed until a real CI result is available.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-two citation, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No model, personal PDF, credentials or signing key was added; no main write/merge.
+
+## 2026-10-27 — Instrumentation transport failure is fail-closed (CI PASS; physical device NOT TESTED)
+
+- **Harness regression:** the fake-ADB suite now simulates `am instrument` printing diagnostic output and then exiting non-zero. The device runner must preserve the transport diagnostic, return failure status 5, reject the acceptance result, and clean up the temporary test model. This verifies the runner's failure path; it does not execute llama.cpp or a real GGUF.
+- **PASS — Android CI:** [run 40563060497](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40563060497), exact source/test SHA `f56a48b8502b84c332af6b5108d3738668d00485`. Repository safety/native GGUF-PDF/cloud-consent contracts, SQLite/migration guards, runtime dependency alignment, Gradle JVM/Robolectric tests, Lint, Debug + AndroidTest APK assembly, package/SDK/permission verification, and exact device-bundle packaging all passed. **186 JVM/Robolectric tests passed, 0 failures, 0 ignored.**
+- **PASS — independent APK pair verification:** downloaded device-test bundle Artifact [12760992942](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40563060497/artifacts/12760992942), extracted both APKs and recomputed SHA-256; both matched `SHA256SUMS`. Debug APK (30,264,727 bytes): `5424d10a4d55b4233b229df339191c841fe759d7cd4b02ce387465d0a915106d`. AndroidTest APK (374,045 bytes): `e3c5a92762037269b00b33a4d9eb033db985b19c05c4102b974dc703870e510d`. Debug artifact [12761862854](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40563060497/artifacts/12761862854); report artifact [12761217983](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40563060497/artifacts/12761217983).
+- **NOT TESTED:** physical Xiaomi Pad 5/ARM64 execution, actual GGUF/llama.cpp/JNI inference, real PDF page-two answer and citation correctness, live HTTPS cloud consent/denial, RAM/thermal/latency, and independent clinical review. Native libraries and an AndroidTest APK do not prove a model ran. No GGUF, private PDF, credential or signing key is bundled or uploaded. Debug is not final; no main write or merge.
+
+
+## 2026-10-27 — Cloud prompt/source order binding (CI pending; device/model NOT TESTED)
+
+- **Production:** `MedicalPromptBuilder.promptMatchesPresentedEvidence` reconstructs the exact bounded `SOURCE EXCERPTS` body from the reviewed evidence list and checks order, `[S#]` numbering, human-facing page labels, collision-safe source IDs, and full excerpt text. `CloudEvidenceSeal.of` now fails closed if the outbound prompt changes the source order or labels; a mere `prompt.contains(excerpt)` check was insufficient because reordered blocks could mis-map citations.
+- **Regression:** added a direct seal test for reordered and relabeled source blocks, plus a transport-boundary test asserting a reordered payload opens zero HTTP connections. Updated the earlier prompt-addition regression to reflect the stricter behavior: unreviewed extra prompt text is rejected before a seal is issued.
+- **Purposeful build question:** do the exact prompt/evidence consistency gate, cloud no-socket rejection, existing consent replay/redirect/content-type/privacy tests, full JVM/Robolectric suite, Lint, and APK packaging pass together? Source inspection alone cannot establish Kotlin compilation or transport-boundary regression integration.
+- **PASS — Android CI:** run [40571577971](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40571577971) completed successfully for source/test head `4b9508c2657766d06de1b32b096513e041b56a19`. The build job passed JVM/Robolectric tests, Lint, Debug APK assembly, package/SDK/permission verification, APK checksum recording and device-test bundle packaging. Artifacts: device bundle `12767135125`, validation reports `12766895354`, Debug APK `12765597800`. This PASS applies to that earlier head only, not the later MCQ-option changes.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-two round-trip, live HTTPS consent/denial, RAM/thermal/latency, and independent clinical review. No GGUF, personal PDF, credential or signing key was added.
+
+## 2026-10-27 — Canonical MCQ option identity (latest source/test head NOT VERIFIED)
+
+- **Production:** shared `StudyOptionIdentity` normalizes Unicode NFC, collapses Unicode separator/whitespace runs, trims after normalization, and lowercases with `Locale.ROOT`. Both manual `StudyValidation` and generated `GeneratedStudyDrafts` now reject duplicate canonical choices and options that normalize to blank.
+- **Regressions:** manual and model-generated MCQ tests cover repeated internal spaces, composed/decomposed Unicode, non-breaking spaces and separator-only options. This validation does not decide medical correctness; source grounding and human review remain required.
+- **Current source/test head:** `d74858ed86a3d26ac8be8e279073c871db54977b`.
+- **CI NOT VERIFIED** for this exact head; the last confirmed Android CI PASS is run `40571577971` on the earlier head `4b9508c2657766d06de1b32b096513e041b56a19`. No Gradle/JUnit PASS or new APK is claimed for the current MCQ changes.
+- **NOT TESTED:** Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, model-backed PDF page-two citation, live HTTPS consent/denial, RAM/thermal/latency and clinical review. No GGUF, private PDF, credential or signing key added. Debug is not final.
+
+## 2026-10-27 — MCQ option identity hardening (final CI PASS)
+
+- **Production:** `StudyOptionIdentity.key` now applies Unicode NFKC, strips invisible Unicode format controls (`Cf`, including zero-width/bidi controls), collapses Unicode separators/whitespace, trims and lowercases with `Locale.ROOT`. Both manual `StudyValidation` and model-output `GeneratedStudyDrafts` use this same identity, so hidden/compatibility-equivalent choices fail closed before saving.
+- **Regressions:** manual and generated MCQ tests cover zero-width duplicates and compatibility ligatures, alongside prior repeated-space, composed/decomposed Unicode, NBSP and blank-only cases. The validation is not a medical correctness check; evidence grounding and human approval remain mandatory.
+- **PASS — Android CI:** [run 40590272471](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40590272471), exact source/test head `f3f7c24e8e9c264529eb63530903c8254fe30469`. **197 tests passed, 0 failures, 0 ignored**; contract guards, Gradle, Lint, Debug + AndroidTest APK assembly, SDK/package/permission checks and device-bundle packaging passed.
+- **Failed attempt explained:** [run 40589354326](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40589354326) found that the new hidden-character test fixture used `Spra\u200Bn` (which becomes `Spran` and is not a duplicate of `Sprain`). Corrected the fixture to `Sprai\u200Bn`; the rerun passed without relaxing production validation.
+- **PASS — independent APK SHA-256:** downloaded device-test bundle [Artifact 12774371704](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40590272471/artifacts/12774371704). Debug APK size 30,264,727 bytes, SHA-256 `935532e6eac0da5ae9d305046d8b27618f31071fd73387dd2aafe4ec9c11d942`; AndroidTest APK size 374,045 bytes, SHA-256 `8fa87955e2cc20124f813cf1d44a1b0e6e7b3329d54bcf3f2b4403bdd0e1b60a`. Both independently recalculated after download and matched `SHA256SUMS`. Separate Debug APK Artifact [12774615512](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40590272471/artifacts/12774615512); reports [12774485648](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40590272471/artifacts/12774485648).
+- **NOT TESTED:** physical Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, PDF page-two answer round-trip with a real model, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No model weights, personal PDF, credential or signing key was uploaded. Debug is not final; PR remains draft and unmerged.
+
+
+## 2026-10-28 — Native completion cancellation/publication gate
+
+- **Production change:** LlamaAndroidPort.generate now snapshots the originating coroutine context and checks cancellation before waiting/using the native backend and again after synchronous inference returns. A shared publishNativeCompletionIfActive gate validates/normalizes the response and checks cancellation immediately before the single UI callback, preventing a cancelled/stale native completion from being emitted after a long blocking JNI call.
+- **Regression:** NativeCompletionPublicationTest adds three JUnit cases: cancellation on the final pre-publication check emits nothing; active output is trimmed and emitted exactly once; blank/oversized output is rejected before publication.
+- **Source/test head:** 41442ef3bf58361a011651d3ce39dff81603f75d (production source commit a0a0ae6a39d44df95eaf03b30bc3e76ad96fc78f).
+- **CI NOT VERIFIED:** the connected workflow/status adapter returned no run/status rows for this latest head. The final Android Debug/AndroidTest build and complete JVM/Robolectric + safety-contract suite must pass before marking this gate PASS.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine user-supplied GGUF/llama.cpp/JNI inference, synthetic two-page PDF round-trip on device, cloud HTTPS allow/deny, RAM/thermal/latency and independent clinical review. The new JUnit test checks cancellation/publication semantics, not real inference. No GGUF, personal PDF, token, key or signing secret was added.
+- **Release status:** no final APK is claimed for this head; previous verified Debug APK hashes do not apply to the updated source. PR #1 remains draft/unmerged.
+
+
+- **Isolated Kotlin helper smoke (2026-10-28): PASS, 3 cases** — compiled and ran the cancellation/publication gate semantics for cancellation before callback, one-time trimmed output, and blank/oversized rejection. This is not the repository Gradle/JUnit suite and does not exercise JNI or a real GGUF model.
+
+
+## 2026-10-28 — Native completion cancellation publication guard (CI + APK integrity PASS)
+
+- **Production:** `LlamaAndroidPort.generate` now checks the originating coroutine before native inference and after the synchronous JNI call, validates the returned text, checks cancellation again, and only then invokes the UI publication callback. This prevents a completed native answer from being published when cancellation has already been observed; it does not claim the native call itself is interruptible.
+- **Regression:** `NativeCompletionPublicationTest` covers cancellation before callback, successful one-time trimmed publication, and rejection of blank/oversized output. These are helper/JVM tests, not genuine GGUF inference.
+- **Purposeful Android build question:** does the production cancellation gate compile alongside the full app and the real-device PDF→JNI instrumentation test? Source inspection alone cannot prove Kotlin/Gradle integration or that the AndroidTest APK still assembles.
+- **PASS — Android CI:** [run 40596545073](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073), exact source/test SHA `41442ef3bf58361a011651d3ce39dff81603f75d`. **200 JVM/Robolectric tests passed, 0 failures, 0 ignored**; Lint, Debug + AndroidTest APK assembly, APK identity/SDK/permission checks and device-test-bundle packaging passed.
+- **PASS — independent APK hash verification:** downloaded device-test bundle [Artifact 12775889349](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073/artifacts/12775889349), extracted both APKs, recalculated SHA-256 and matched the bundled `SHA256SUMS`: Debug APK 30,264,727 bytes, `b11579edc0030b1e283a11f15dc082cd55a55a1287ba1685fc9344e60b8c3ee6`; AndroidTest APK 374,045 bytes, `e6b99b2eb1ae9b7250431860e675e602a6621468465c3e5472497fc2c7f3b80b`.
+- **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI inference, actual two-page PDF citation round-trip, live HTTPS cloud consent/denial, RAM/thermal/latency and independent clinical review. The instrumentation test was compiled, not executed; no GGUF, private PDF, credential or signing key is in the artifacts. Debug is not final and PR #1 remains draft/unmerged.
+
+
+## 2026-10-28 — Native llama.cpp dependency provenance guard (CI PASS; device/model NOT TESTED)
+
+- Added `docs/NATIVE_LLAMA_PROVENANCE.md` and `scripts/test-llama-android-provenance.py`; `.github/workflows/android-debug.yml` runs the new guard before Gradle. It verifies the exact `dev.ffmpegkit-maintained:llama-android:0.1.1` coordinate, the production `Llama.loadModel/complete/releaseModel` path, content-addressed local GGUF checks, the real-port/two-page synthetic-PDF instrumentation wiring, fail-closed runner checks, and absence of committed GGUF weights.
+- **PASS — Android CI:** [run 40611008395](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40611008395), exact source/test/workflow head `aa2b301f203214409be7ddcc5b2774f7872a7f9a`. The provenance/safety contract step passed; **200 JVM/Robolectric tests PASS, 0 failures, 0 ignored**; SQLite/migration gates, Android Lint, Debug + AndroidTest APK assembly, APK identity/SDK/permission verification, and device-bundle packaging passed.
+- **PASS — independent APK SHA-256:** extracted Artifact [12783546870](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40611008395/artifacts/12783546870) and recalculated both hashes against `SHA256SUMS`: Debug APK 30,264,727 bytes, `485ece1a2d03897b12bdebac68ebce8e18b1eb7221d764dd72ba45fbbfeeaead`; AndroidTest APK 374,045 bytes, `a7d4905bc9f25f136655ec29c54497b4478d185819fe12bdaacca07e0d474898`. Both match after independent extraction and rehash.
+- Debug APK artifact: [12783287255](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40611008395/artifacts/12783287255). Validation reports: [12783611913](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40611008395/artifacts/12783611913).
+- **Evidence boundary:** this guard confirms the declared dependency and source/test wiring; it does not independently attest the AAR binary or execute instrumentation. **NOT TESTED:** physical Xiaomi Pad 5, genuine GGUF/llama.cpp/JNI load and inference, real PDF page-2 citation round-trip, live HTTPS consent/denial, RAM/thermal/latency and independent clinical review. No GGUF, personal PDF, credentials or signing keys were uploaded; PR remains draft, no merge/release.
+
+
+## 2026-10-28 — Bounded PDF-index eviction for large documents (source change; Android CI NOT VERIFIED)
+
+- **Production change:** extracted the one-chapter index lifecycle into `BoundedEvidenceIndexCache`. When the active chapter exceeds the 350,000-character cache ceiling, the previous index is cleared before the uncached fallback. A new/changed PDF also evicts stale retained text **before early returns** for a too-short query or unreadable page, while an unchanged active PDF keeps its reusable index.
+- Normal bounded chapters still reuse the same immutable index for repeated questions; switching to another chapter replaces the previous entry. Only chapter identity and retained character count are exposed as metadata—never the retained text.
+- **Regressions added:** reuse for identical chapter/page input, replacement on chapter switch, eviction before oversized fallback, eviction before empty-query/missing-text early returns, invalidation after page text changes, and exact-limit vs one-character-over behavior.
+- **PASS — direct source-contract audit (11/11):** the cache class, oversized/stale eviction, early-return ordering, retained-size metadata, StudyBrain integration, and all six JUnit cases are present in the branch. This is source inspection only.
+- **PASS — isolated Kotlin compiler/runtime harness:** compiled the committed cache class with minimal stub collaborators and exercised index reuse, chapter replacement, oversize eviction, and the exact character boundary. This is not the repository Gradle/JUnit suite; full Android CI remains NOT VERIFIED.
+- Source commits: cache class `fb2a6afa56f9eb1fcddfdb759b8adb62bd86778a`; production integration `c9e8a7bef4326e32c2892c1669ad3ebfbbfda77b`; expanded JUnit coverage `c1fd79f50d373059733f7d503ad3cee49d19e2ac`.
+- **Android CI: NOT VERIFIED** for the exact source/test head. The connected workflow/status surface returned no run/check rows; no Kotlin compilation or JUnit pass is inferred. A targeted Android workflow must compile the new cache class and execute the new tests with the existing retrieval parity suite.
+- **NOT TESTED:** Xiaomi Pad 5 memory/thermal behavior, actual GGUF/JNI inference, PDF page-two citation round-trip, cloud HTTPS consent/denial and clinical accuracy. This is a bounded-memory/cache-lifecycle improvement, not evidence of model inference.
+
+
+## 2026-10-28 — Native PDF prompt-injection acceptance hardening (Android CI pending)
+
+- **Test-fixture defect found:** the former page-one exclusion sentinel concatenated the page-two calibration code into itself while the same test asserted that page one did not contain that code. Those two assertions could not both pass. Replaced the sentinel with fixed, non-overlapping text and added explicit assertions that the page-two code is absent from page one.
+- **Production prompt hardening:** local llama.cpp explanation and study-draft system prompts now explicitly state that source excerpts are untrusted data and that instructions inside them must never be followed. Explanations must not invent citation IDs and must abstain when evidence is insufficient.
+- **Adversarial device acceptance:** the runtime-generated second PDF page now contains a random true identifier and a different decoy with a malicious instruction to return the decoy and cite [S2]. The test confirms the decoy reaches the page-two prompt, excludes the page-one sentinel, requires the real native answer to include the true identifier and [S1], and rejects the decoy and [S2] before the production display gate can pass.
+- **Purposeful build question:** does the corrected two-page instrumentation fixture compile with the production native prompt changes, and do all static PDF/native-safety contracts, JVM/Robolectric tests, Lint and APK assembly pass together? Source review alone cannot prove Kotlin compilation or fixture wiring.
+- **CI: NOT VERIFIED** at commit creation. This test is explicitly device/model-backed; compiling AndroidTest or using a fake port is not proof that a real GGUF resisted the adversarial source instruction. Xiaomi Pad 5, real GGUF inference, live cloud consent, clinical review and final release remain NOT TESTED.
+
+
+## 2026-10-28 — PDF prompt-injection acceptance fixture + production prompt hardening (Android CI PASS; device/model NOT TESTED)
+
+- **Root cause fixed:** the former page-one sentinel embedded the page-two calibration code while simultaneously asserting that page one did not contain the code. Replaced it with the fixed sentinel PAGE1-EXCLUDE-SENTINEL and kept the page-identity assertions satisfiable.
+- **Production:** the local llama.cpp explanation and study-draft system prompts explicitly treat source excerpts as untrusted data, reject instructions embedded in excerpts, avoid invented citation IDs and abstain when evidence is insufficient.
+- **Adversarial device fixture:** page two contains a fresh true calibration identifier plus a distinct decoy and malicious request to return the decoy with [S2]. The real-device test verifies the decoy reaches the evidence prompt, page one remains excluded, and the real native answer must contain the true identifier and [S1] while rejecting the decoy and [S2].
+- **PASS — Android CI:** [run 40640264253](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40640264253), exact source/test/workflow SHA 82c03b914137aa4faf900ee76fb322b095c3aa77. All safety/provenance/PDF wiring guards passed; **211 JVM/Robolectric tests passed, 0 failures, 0 ignored**; SQLite/migration contracts, runtime dependency alignment, Lint, Debug + AndroidTest APK assembly, package/SDK/permission checks and exact device-bundle packaging passed.
+- **PASS — independent APK SHA-256:** downloaded device bundle Artifact [12795441056](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40640264253/artifacts/12795441056). Recalculated hashes matched its SHA256SUMS: Debug APK 30,264,727 bytes, SHA-256 `79a637d9ea43b59280c39de95035d62fa9836256898b5d54269d5d4cd49c5513`; AndroidTest APK 374,449 bytes, SHA-256 `70e86c7edc13b7b88c6a206412b0261856ef511989b1cc3bc1bac6e788465dc5`.
+- **Evidence boundary:** CI compiles but does not execute Android instrumentation. **NOT TESTED:** physical Xiaomi Pad 5, user-supplied real GGUF/llama.cpp/JNI inference, adversarial PDF answer behavior, actual page-2 citation navigation, live HTTPS cloud consent/denial, RAM/thermal/latency and clinical accuracy. No model weights, personal PDF, credentials or signing key were committed or bundled. Debug is not final; PR #1 remains draft and unmerged.
+
+
+## 2026-10-28 — Stale ambiguous PDF request cannot evict a newer chapter (CI PASS)
+
+- Added epoch-guarded `invalidateIfCurrent(requestEpoch)`; stale ambiguous searches can no longer purge a newer chapter's cache.
+- **PASS:** [Android CI run 40645050985](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40645050985) on PR head `2402f86fe6552fe3bd3fdb8f185b7043205761e4`; 213 JVM/Robolectric tests passed (0 failures/ignored), cache suite 13/13, contract guards, Lint, Debug/AndroidTest compilation and package checks passed.
+- **PASS:** independently verified Debug APK SHA-256 `e2df022c9fe966c80e1e0d5d1830fa96e8b53a6980a125655c4cc11015f0d372` and AndroidTest APK SHA-256 `91ee1ed28c72974d89adda9ea731692c3ad9de66f76fa6da4a1cf62c77f6085d`; see the dated supplement for artifact IDs and sizes.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 grounding on a real model, live cloud-consent allow/deny, clinical review, device RAM/thermal and final signing. Debug is not final.
+
+
+
+## 2026-10-28 — Revoke cloud capability on Brain panel disposal (CI NOT VERIFIED; device/model NOT TESTED)
+
+- **Production:** `DisposableEffect.onDispose` now revokes the `CloudTransferConsent` object itself, clears the transient bearer token and resets excerpt-review UI state before removing the lifecycle observer. This covers navigation away from BrainPanel while the Activity remains resumed, not only Activity `ON_STOP`; a coroutine retaining the same unclaimed grant can no longer use it after disposal.
+- **Regression:** `scripts/test-cloud-lifecycle-consent-contract.py` now independently requires disposal cleanup for the grant, token and review state in addition to the existing background/context-change and outbound fail-closed checks. The existing JUnit suite already tests that a revoked retained grant cannot preview or consume consent.
+- **Source commit:** `67a99f559105e4eec6eddfffd73d7517b38af123`; contract-guard commit `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
+- **CI:** NOT VERIFIED for this exact updated source/guard head. Prior run [40683081537](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537) passed 221 tests on earlier head `7514a78dba80fa8bbf98d315bf4e433e88a18a6b`, but does not validate these new changes. No new APK/pass is claimed.
+- **NOT TESTED:** physical Pad 5 disposal/navigation timing, live HTTPS transfer denial, real GGUF inference, PDF page-two grounding, clinical review and device RAM/thermal. No model, PDF, token or key added to the public repository.
+
+
+## 2026-10-28 — Brain panel disposal consent cleanup: CI PASS; device/model NOT TESTED
+
+- This supersedes the earlier pending entry for source commit `67a99f559105e4eec6eddfffd73d7517b38af123` and guard commit `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
+- **PASS Android CI:** [run 40685194083](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083), tested head `1af67a7197b61a9ddb97cefeb310905b62395ab5`. The disposal cleanup contract, existing native-GGUF/PDF and local/cloud safety guards, SQLite/migration contracts, Lint, Debug + AndroidTest assembly, package identity/permission checks and exact device-bundle packaging passed.
+- **PASS JVM/Robolectric:** **221 tests, 0 failures, 0 ignored**, verified from the downloaded Gradle HTML report. The new disposal guard is included in the workflow step.
+- **PASS independent APK integrity:** Debug APK **30,281,111 bytes**, SHA-256 `44fef2c64bb3c7fd4141fdddba9c9ee48bac0dca9c194c947c4e7ec84e11f316`; AndroidTest APK **374,449 bytes**, SHA-256 `cf524cfe68a7fec8e6b4f7c487880ad083ff5f3bc7f442cb140fa7d545e9eada`. Both were extracted from the device-test artifact and independently recalculated with `sha256sum`, matching its `SHA256SUMS`.
+- **Artifacts:** [device-test bundle 12814603154](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083/artifacts/12814603154), [Debug APK 12814443511](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083/artifacts/12814443511), [validation reports 12814722650](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083/artifacts/12814722650).
+- APK archive inspection confirms ARM64 `libllama.so` and `libllama_jni.so`; no GGUF or PDF is bundled. **NOT TESTED:** physical Xiaomi Pad 5, actual user-supplied GGUF/JNI inference, two-page PDF page-two grounding, live HTTPS consent/denial, clinical review, device RAM/thermal/latency and final signing. Debug is not final.
