@@ -832,7 +832,11 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val consent = cloudConsent ?: return@OutlinedButton
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
                     if (!consent.permits(endpoint, selectedModel, requestIdentity,
-                        CloudEvidenceSeal.of(p, requestIdentity))) return@OutlinedButton
+                        CloudEvidenceSeal.of(p, requestIdentity))) {
+                        revokeCloudConsent()
+                        error = "انتهت صلاحية الموافقة أو تغيّر السؤال/المصدر؛ راجع المقاطع ووافق من جديد."
+                        return@OutlinedButton
+                    }
                     // Keep the object reachable until the request claims it or finishes,
                     // so ON_STOP/context changes can revoke a grant captured by this coroutine.
                     explicitConsent = false
