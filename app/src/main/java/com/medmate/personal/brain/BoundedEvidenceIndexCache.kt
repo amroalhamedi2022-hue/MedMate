@@ -17,6 +17,7 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
     )
 
     @Volatile private var cached: Entry? = null
+    private var requestEpoch: Long = 0L // guarded by synchronized(this)
 
     /** Metadata only; never exposes the retained page text. Useful for bounded-cache diagnostics. */
     internal val retainedChapterId: String? get() = cached?.chapterId
@@ -26,35 +27,49 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
      * Run before early returns in search. Even an empty query or unreadable new
      * chapter must not leave a different PDF's cached text resident.
      */
-    fun evictIfStale(chapterId: String, pages: List<PageSource>) {
+    fun beginSearch(chapterId: String, pages: List<PageSource>): Long {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
         val textChars = pages.sumOf { it.text.length.toLong() }
-        synchronized(this) {
+        return synchronized(this) {
+            requestEpoch += 1L
             val current = cached
             if (current != null && (textChars > maxCachedChars ||
                     current.chapterId != chapterId || current.pages != pages)) {
                 cached = null
             }
+            requestEpoch
         }
     }
 
-    fun reusableIndex(chapterId: String, pages: List<PageSource>): IndexedEvidenceRetriever? {
+    /** Compatibility helper for cache-focused tests; production captures the returned epoch. */
+    fun evictIfStale(chapterId: String, pages: List<PageSource>) {
+        beginSearch(chapterId, pages)
+    }
+
+    private fun currentEpoch(): Long = synchronized(this) { requestEpoch }
+
+    fun reusableIndex(
+        chapterId: String,
+        pages: List<PageSource>,
+        requestEpoch: Long = currentEpoch()
+    ): IndexedEvidenceRetriever? {
         require(chapterId.isNotBlank()) { "Invalid chapter identity" }
         val textChars = pages.sumOf { it.text.length.toLong() }
         if (textChars > maxCachedChars) {
-            // Do not keep the previous PDF's text alive merely because this
-            // chapter is too large to cache. The caller will use its bounded
-            // uncached retrieval path for this request.
-            synchronized(this) { cached = null }
+            // Oversized input uses uncached retrieval and cannot evict a newer request.
+            synchronized(this) {
+                if (this.requestEpoch == requestEpoch) cached = null
+            }
             return null
         }
 
-        val old = cached
-        if (old != null && old.chapterId == chapterId && old.pages == pages) return old.index
         return synchronized(this) {
             val current = cached
             if (current != null && current.chapterId == chapterId && current.pages == pages) {
                 current.index
+            } else if (this.requestEpoch != requestEpoch) {
+                // A superseded request may finish locally but cannot repopulate shared state.
+                null
             } else {
                 IndexedEvidenceRetriever(PageSegmenter(850).split(pages)).also {
                     cached = Entry(chapterId, pages.toList(), it, textChars)
