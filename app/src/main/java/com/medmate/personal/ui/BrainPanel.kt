@@ -12,6 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -173,6 +176,24 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             explicitConsent = false
             error = "انتهت صلاحية الموافقة السحابية؛ راجع المقاطع ووافق من جديد."
         }
+    }
+
+    // Leaving the foreground revokes any not-yet-used approval and erases the
+    // session-only bearer token. Returning to MedMate requires reviewing the
+    // exact excerpts and approving a fresh one-shot transfer.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                cloudConsent = null
+                explicitConsent = false
+                sessionToken = ""
+                cloudPreviewReviewed = false
+                cloudPreviewExpanded = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     var lastQuestion by remember { mutableStateOf("") }
     var lastPageOnly by remember { mutableStateOf(false) }
