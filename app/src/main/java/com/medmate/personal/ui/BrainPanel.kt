@@ -198,7 +198,16 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        onDispose {
+            // Navigation can dispose this panel while the Activity remains resumed.
+            // Revoke the capability itself so a coroutine retaining the grant cannot
+            // begin a later transfer; erase the transient bearer token as well.
+            revokeCloudConsent()
+            sessionToken = ""
+            cloudPreviewReviewed = false
+            cloudPreviewExpanded = false
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
     // Any change to the reviewed source context revokes even a retained grant.
     // Full-chapter requests intentionally ignore viewport page changes.
