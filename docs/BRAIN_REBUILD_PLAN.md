@@ -1,5 +1,7 @@
 # MedMate Brain — Correction & Development Plan
 
+> **Current source — 2026-10-28:** This PR branch contains the verified sanitized MedMate Personal **v0.9.1** source restored from the checksum-pinned archive documented in `docs/IMPORT_STATUS_2026-10-23.md`. The initial v0.6 baseline paragraph below is historical context; use this v0.9.1 branch and `docs/AUTONOMOUS_ACCEPTANCE.md` as the current acceptance reference.
+
 Baseline used for this patch: last available **v0.6 source archive**, because Work's v0.6.1 source is **not present** in this conversation or the MedMate Library. v0.6.1 APK was reportedly built, but its sources are needed for a clean rebase before another release. Never install a differently signed APK over v0.6.1 in an attempt to preserve data; Android rejects different signatures, and uninstalling deletes private study data.
 
 ## Non-negotiable product gates
