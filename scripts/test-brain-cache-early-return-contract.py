@@ -9,11 +9,17 @@ cache = (root / "app/src/main/java/com/medmate/personal/brain/BoundedEvidenceInd
 guard_start = brain.index("if (identityScope.any { it.pageIndex < 0 }")
 guard_end = brain.index("// Distinguish extraction damage", guard_start)
 guard = brain[guard_start:guard_end]
-assert "indexCache.invalidate()" in guard, (
+assert "indexCache.invalidateIfCurrent(cacheRequestEpoch)" in guard, (
     "ambiguous/negative page identities must invalidate the previous PDF cache before early return"
 )
-assert guard.index("indexCache.invalidate()") < guard.index("return BrainSearchResult"), (
+assert guard.index("indexCache.invalidateIfCurrent(cacheRequestEpoch)") < guard.index("return BrainSearchResult"), (
     "cache invalidation must occur before the AMBIGUOUS_PAGE_IDENTITIES result returns"
+)
+guarded_start = cache.index("fun invalidateIfCurrent(requestEpoch: Long)")
+guarded_end = cache.index("/** Compatibility helper", guarded_start)
+guarded = cache[guarded_start:guarded_end]
+assert "this.requestEpoch != requestEpoch" in guarded and "cached = null" in guarded, (
+    "a stale ambiguous request must not purge a newer chapter's cache entry"
 )
 invalidate_start = cache.index("fun invalidate()")
 invalidate_end = cache.index("/** Compatibility helper", invalidate_start)
