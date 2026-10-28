@@ -166,3 +166,12 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **PASS — APK content boundary:** ARM64 `libllama.so` and `libllama_jni.so` are packaged; neither APK contains GGUF weights or PDF files.
 - **NOT TESTED:** physical Xiaomi Pad 5 installation, actual user-supplied GGUF inference through JNI, generated answer and page-2 citation round-trip, live HTTPS consent/denial, model load/unload on device, clinical review, RAM/thermal/latency and stable signing. This is a Debug/test pair, not a final release; native libraries and compiled instrumentation do not prove real-model acceptance.
 - No model, personal PDF, credential or signing key was uploaded; no main write or merge.
+
+## 2026-10-28 — Skip expensive traversal for superseded PDF searches (CI NOT VERIFIED)
+
+- **Production:** `BoundedEvidenceIndexCache.prepareSearch` and `reusableIndex` now check the request epoch before O(n) page-list sizing. Both paths recheck under the cache lock after sizing, so a request that becomes stale mid-traversal cannot reuse or publish an index. The existing fail-closed oversized-input eviction remains conditional on the request still owning the epoch.
+- **Regressions:** added one test where a superseded request receives an untraversable page list (any access throws), plus a second deterministic race where the list starts a newer request during sizing. Both assert that stale work does not touch or repopulate the shared cache.
+- **Source commits:** production `6576f357974d0deac0c4b010b919c4e4a786c1d2`; epoch tests `585c2fb817629a9fc6d9b3e236aba5ceaec53d90` and `6715296a226f44ffc8705c2481d06ca0f5d4e240`.
+- **PASS — isolated Kotlin/JVM harness:** compiled the cache logic with minimal retrieval-type stubs and passed stale-at-entry and superseded-during-sizing scenarios. This is not the full Android Gradle/JUnit suite.
+- **CI: NOT VERIFIED for the exact current head** `6715296a226f44ffc8705c2481d06ca0f5d4e240`; the available workflow/status adapter returned no run/check for these new commits. No new APK is claimed for this change. A targeted Android CI run is warranted because source-only/Kotlin-isolated checks cannot prove the full Gradle/Robolectric integration.
+- **NOT TESTED:** Xiaomi Pad 5, real GGUF/JNI inference, PDF page-2 grounding, live cloud allow/deny, RAM/thermal/latency and clinical review. No model, personal PDF, credential or signing key was uploaded; no main merge.
