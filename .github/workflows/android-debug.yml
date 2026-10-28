@@ -1,11 +1,10 @@
-# Optional free-tier CI; manual dispatch only, even if the GitHub repository is public.
+# Free-tier validation for draft PR updates and manual reruns.
 # No API tokens, signing keys or user PDFs are required.
 name: MedMate Android debug validation
 on:
-  workflow_dispatch:
-  push:
-    branches: [automation/medmate-v091-source-tree-20261023]
+  pull_request:
     paths-ignore: ['docs/**']
+  workflow_dispatch:
 permissions:
   contents: read
 
