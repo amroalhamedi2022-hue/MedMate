@@ -71,6 +71,20 @@ internal class BoundedEvidenceIndexCache(private val maxCachedChars: Long) {
         }
     }
 
+    /**
+     * Purge only when the caller still owns the newest request epoch.
+     * A delayed malformed/ambiguous older PDF must not clear a newer chapter's index.
+     */
+    fun invalidateIfCurrent(requestEpoch: Long): Boolean = synchronized(this) {
+        if (this.requestEpoch != requestEpoch) {
+            false
+        } else {
+            this.requestEpoch += 1L
+            cached = null
+            true
+        }
+    }
+
     /** Compatibility helper for cache-focused tests; production captures the returned epoch. */
     fun evictIfStale(chapterId: String, pages: List<PageSource>) {
         beginSearch(chapterId, pages)
