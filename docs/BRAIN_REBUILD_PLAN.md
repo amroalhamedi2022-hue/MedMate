@@ -105,3 +105,10 @@ New source versionCode=9, but **do not attempt to reinstall/upgrade a Work-signe
 
 - The current production `LlamaAndroidPort` is wired to the pinned MIT-licensed `dev.ffmpegkit.llama` Android AAR and calls its native `Llama.loadModel`, `Llama.complete`, and `Llama.releaseModel` APIs with an imported local GGUF. This is a real native-backend integration path, not `FakeLlama`; the AndroidTest acceptance class references the production port directly and binds the loaded model SHA/byte count.
 - Do **not** mark the full P2 device gate complete yet. The latest run [40596545073](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40596545073) compiled the real-model instrumentation and passed 200 JVM/Robolectric tests, but did not execute the instrumentation or load any GGUF. Upstream provenance/reproducibility audit, physical ARM64 model load, PDF page-2 round-trip, and Pad 5 RAM/thermal/latency remain open.
+
+
+## 2026-10-28 — Native backend provenance gate integrated
+
+- Pinned dependency and documented upstream provenance: `dev.ffmpegkit-maintained:llama-android:0.1.1`, public upstream `ffmpegkit-maintained/llama-android`, MIT declaration, documented llama.cpp build `b9878`.
+- CI provenance regression is wired and **PASS** on `aa2b301f203214409be7ddcc5b2774f7872a7f9a` ([run 40611008395](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40611008395)); 200 JVM/Robolectric tests, lint, Android/AndroidTest packaging and independently rehashed APK pair all passed.
+- This is a supply-chain/source wiring gate, **not** independent AAR binary attestation or real inference. Next P2 gate remains the user-supplied real GGUF on ARM64, followed by the synthetic two-page PDF citation path and explicit cloud allow/deny on Xiaomi Pad 5. Record model SHA/bytes and device memory/latency; never upload the model or personal PDFs.
