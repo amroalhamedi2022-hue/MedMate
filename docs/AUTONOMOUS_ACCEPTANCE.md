@@ -2,11 +2,12 @@
 
 ## Latest source checkpoint — 2026-10-28 (safe local GGUF storage management)
 
-- **PASS source changes committed:** the Brain panel now offers confirmed deletion for saved GGUF imports; if the selected model is active, the UI unloads it before deletion and clears model-derived transient state.
-- **Safety guard:** deletion refuses symlinks, files outside the app-private models directory, unrecognized/non-content-addressed names and a still-loaded model. Corrupted imported files can still be deleted safely to reclaim storage.
-- **Regression tests:** four new JUnit cases cover successful delete and three refusal classes.
-- **Exact functional/test head:** 6f283ea36463c1d88ed9dd45d072ed72eec2893a. Android CI run 40674500049 was queued at the last check; no pass or APK is claimed yet.
-- **NOT TESTED:** physical Pad 5, actual GGUF inference, native unload/delete behavior on-device, PDF page-two grounding, live cloud consent/denial, clinical review, RAM/thermal and final signing.
+- **PASS production:** Brain panel now exposes confirmed deletion for saved GGUF imports; deleting the active model unloads the native session first and clears model-derived transient state.
+- **PASS safety:** deletion refuses symlinks, files outside the app-private model directory, non-GGUF/unrecognized filenames, and the still-loaded model. Corrupted imports can still be removed to reclaim storage.
+- **PASS Android CI:** [run 40674871704](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704), head SHA e1e37b5db7a18e837dde2c7c57c998e994d3212b containing functional/test commit 6f283ea36463c1d88ed9dd45d072ed72eec2893a. **220 JVM/Robolectric tests passed; 0 failures, 0 ignored.** LocalModelImportTest: 19/19 passed, including all four new deletion cases. Lint, safety contracts, Debug/AndroidTest assembly, package identity/permissions and artifact packaging passed.
+- **PASS independent artifact integrity:** Debug APK 30,281,111 bytes, SHA-256 a85277079b53682f06d108350120051ac83525548c3341a7ce6a6354985eea30; AndroidTest APK 374,449 bytes, SHA-256 49454063b6e72c4f220cf126b90a54975738960ed7f3492c1ebcfe02466fe68d. Both independently re-hashed from the device-test bundle and matched SHA256SUMS.
+- **Artifacts:** [device-test bundle 12809744923](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12809744923), [Debug APK 12810676126](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12810676126), [validation reports 12810970499](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40674871704/artifacts/12810970499).
+- **NOT TESTED:** physical Pad 5, real GGUF/llama.cpp/JNI inference, live model deletion on-device, PDF page-two grounding, live cloud consent/denial, clinical review, device storage/RAM/thermal and final signing. No model weights, personal PDF, credentials or signing keys were uploaded.
 
 
 ## Latest verified checkpoint — 2026-10-28
