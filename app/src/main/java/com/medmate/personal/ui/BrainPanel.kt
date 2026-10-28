@@ -434,6 +434,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     "تكررت هوية صفحة في فهرس الـPDF أو ظهر رقم صفحة غير صالح؛ أوقفت البحث لتجنب استشهاد ملتبس. أعد فهرسة الملف قبل الشرح.",
                     color = MaterialTheme.colorScheme.error
                 )
+                BrainSearchStatus.SUPERSEDED -> Text("تغيّر المستند أو بدأ بحث أحدث؛ تجاهلت نتيجة البحث القديمة.", color = Muted, style = MaterialTheme.typography.bodySmall)
                 BrainSearchStatus.TOO_SHORT -> Text("اكتب اسم مفهوم طبي أو سؤال فيه مصطلح محدد.")
                 BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT -> Text("ما فيه نص قابل للاستخراج في النطاق المطلوب. ملفات الصور تحتاج OCR.")
                 BrainSearchStatus.CORRUPTED_PDF_TEXT -> Column {
