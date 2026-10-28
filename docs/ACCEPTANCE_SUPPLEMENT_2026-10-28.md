@@ -83,7 +83,14 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 
 
 
-## 2026-10-28 — Five-minute one-shot cloud-transfer consent (CI pending)
+## 2026-10-28 — Five-minute one-shot cloud-transfer consent (corrected test head pending)
+
+- **Production change:** `CloudTransferConsent` grants expire after five minutes using a monotonic clock. Both unsealed and evidence-sealed `permits`/`consume` paths reject expired grants; the exact question/chapter/page/evidence seal and one-use atomic claim remain required.
+- **UI:** the approval text states the one-request/five-minute limit. A lifecycle-aware timer clears a stale approval and checkbox; the outbound click also fails closed if the grant expires or the request context changes.
+- **Regression:** `CloudTransferConsentTest.evidenceSealedApprovalExpiresAfterFiveMinutes` checks the boundary just before and at expiry with a deterministic clock. Existing transport tests cover concurrent gateway calls opening at most one connection. No PDF, credential or model is used in these tests.
+- **Initial CI attempts:** [40667072623](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667072623) and [40667083596](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667083596) failed during test compilation because three new JUnit assertions used Kotlin argument order instead of JUnit 4's message-first overload. Corrected in test commit `fc1fae11ba97184ad0bf35b46e8fdf23c7c10a1c`.
+- **Current CI:** [40667993375](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667993375) and [40668001467](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40668001467) are **IN PROGRESS** on the corrected source/test SHA. No new APK or CI pass is claimed yet.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, two-page PDF page-2 citation round-trip, live HTTPS consent/denial, clinical review, RAM/thermal and final signing. The TTL is a privacy guard, not proof of model correctness. No main write or merge.
 
 - **Production change:** `CloudTransferConsent` grants now expire after five minutes using a monotonic clock. Both unsealed and evidence-sealed `permits`/`consume` paths reject expired grants; the exact question/chapter/page/evidence seal and one-use atomic claim remain required.
 - **UI:** the approval text states the one-request/five-minute limit. A lifecycle-aware timer clears a stale approval and the checkbox; the actual outbound click also fails closed if the grant expires or the request context changes.
