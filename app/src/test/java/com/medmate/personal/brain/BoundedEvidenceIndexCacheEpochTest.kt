@@ -77,6 +77,52 @@ class BoundedEvidenceIndexCacheEpochTest {
     }
 
 
+    @Test fun reusableIndexStopsReadingPagesAfterItsRequestIsSuperseded() {
+        val cache = BoundedEvidenceIndexCache(1_024)
+        val staleEpoch = cache.beginRequest("older-pdf")
+        var reads = 0
+        val pages = object : AbstractList<PageSource>() {
+            override val size: Int get() = 100
+            override fun get(index: Int): PageSource {
+                reads += 1
+                if (index == 0) cache.beginRequest("newer-pdf")
+                if (index > 0) error("superseded request read page $index")
+                return PageSource("older-pdf", 0, "Old PDF page text.")
+            }
+        }
+
+        assertNull(cache.reusableIndex("older-pdf", pages, staleEpoch))
+        assertEquals("only the page that triggered supersession may be read", 1, reads)
+        assertNull(cache.retainedChapterId)
+    }
+
+    @Test fun prepareSearchStopsSizingAfterSupersessionAndKeepsCurrentIndex() {
+        val cache = BoundedEvidenceIndexCache(1_024)
+        val chapterId = "same-pdf"
+        val originalPages = listOf(PageSource(chapterId, 0, "Current indexed page text."))
+        val initialEpoch = cache.beginRequest(chapterId)
+        cache.prepareSearch(chapterId, originalPages, initialEpoch)
+        val originalIndex = requireNotNull(cache.reusableIndex(chapterId, originalPages, initialEpoch))
+        val staleEpoch = cache.beginRequest(chapterId)
+        var reads = 0
+        val racingPages = object : AbstractList<PageSource>() {
+            override val size: Int get() = 100
+            override fun get(index: Int): PageSource {
+                reads += 1
+                if (index == 0) cache.beginRequest(chapterId)
+                if (index > 0) error("superseded preparation read page $index")
+                return PageSource(chapterId, 0, "Obsolete replacement snapshot.")
+            }
+        }
+
+        cache.prepareSearch(chapterId, racingPages, staleEpoch)
+        assertEquals("preparation stops at the first superseded boundary", 1, reads)
+        assertEquals(chapterId, cache.retainedChapterId)
+        val currentEpoch = cache.beginRequest(chapterId)
+        assertSame("obsolete preparation must not evict the current index",
+            originalIndex, cache.reusableIndex(chapterId, originalPages, currentEpoch))
+    }
+
     @Test fun requestSupersededDuringPageSizingCannotPublishIndex() {
         val cache = BoundedEvidenceIndexCache(1_024)
         val racingEpoch = cache.beginRequest("racing-pdf")
