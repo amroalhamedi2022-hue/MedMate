@@ -35,3 +35,10 @@ Import the sanitized **entire source tree** to a dedicated MedMate branch using 
 - **Next:** review PR against staging, run permitted free-tier Android CI (manual dispatch when an authorized trigger is available), inspect exact SHA build/logs, then test on Xiaomi Pad 5 and perform independent second pass. No paid API, no auto-merge or public APK release.
 
 - **GitHub Actions trigger caveat:** The imported `.github/workflows/android-debug.yml` has only `workflow_dispatch` and currently exists on the PR head, while the repository default/base branch is still docs-only. GitHub normally requires a manually dispatched workflow file to exist on the default branch. A PR alone will not run this workflow. An authorized, no-cost CI trigger/default-branch workflow setup is needed; do not bypass the no-main-write/no-workflow-edit rule silently.
+
+
+## Superseding CI note — 2026-10-28
+
+The earlier note that the imported workflow was dispatch-only is historical and no longer describes the current PR branch workflow. **Android CI run 40674871704** was triggered by the current PR synchronization and completed successfully on head e1e37b5db7a18e837dde2c7c57c998e994d3212b, including functional/test commit 6f283ea36463c1d88ed9dd45d072ed72eec2893a: 220 JVM/Robolectric tests passed, Lint and Debug/AndroidTest APK assembly and package checks passed. See docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md for independently recalculated APK hashes and artifact links.
+
+This resolves the CI-trigger caveat for the current PR branch only. It does **not** imply physical Xiaomi Pad 5 installation, genuine GGUF/llama.cpp inference, PDF citation correctness with a real model, live cloud-consent allow/deny, clinical review, or final signing; those remain NOT TESTED. No main write or merge occurred.
