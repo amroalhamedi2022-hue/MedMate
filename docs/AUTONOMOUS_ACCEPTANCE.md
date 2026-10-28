@@ -1354,3 +1354,13 @@ AUTOMATION_COMPLETE: IN_PROGRESS
 - **Source commit:** `67a99f559105e4eec6eddfffd73d7517b38af123`; contract-guard commit `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
 - **CI:** NOT VERIFIED for this exact updated source/guard head. Prior run [40683081537](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40683081537) passed 221 tests on earlier head `7514a78dba80fa8bbf98d315bf4e433e88a18a6b`, but does not validate these new changes. No new APK/pass is claimed.
 - **NOT TESTED:** physical Pad 5 disposal/navigation timing, live HTTPS transfer denial, real GGUF inference, PDF page-two grounding, clinical review and device RAM/thermal. No model, PDF, token or key added to the public repository.
+
+
+## 2026-10-28 — Brain panel disposal consent cleanup: CI PASS; device/model NOT TESTED
+
+- This supersedes the earlier pending entry for source commit `67a99f559105e4eec6eddfffd73d7517b38af123` and guard commit `5f5f3976cbe93f8016ab5a55a651da4826e99d3a`.
+- **PASS Android CI:** [run 40685194083](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083), tested head `1af67a7197b61a9ddb97cefeb310905b62395ab5`. The disposal cleanup contract, existing native-GGUF/PDF and local/cloud safety guards, SQLite/migration contracts, Lint, Debug + AndroidTest assembly, package identity/permission checks and exact device-bundle packaging passed.
+- **PASS JVM/Robolectric:** **221 tests, 0 failures, 0 ignored**, verified from the downloaded Gradle HTML report. The new disposal guard is included in the workflow step.
+- **PASS independent APK integrity:** Debug APK **30,281,111 bytes**, SHA-256 `44fef2c64bb3c7fd4141fdddba9c9ee48bac0dca9c194c947c4e7ec84e11f316`; AndroidTest APK **374,449 bytes**, SHA-256 `cf524cfe68a7fec8e6b4f7c487880ad083ff5f3bc7f442cb140fa7d545e9eada`. Both were extracted from the device-test artifact and independently recalculated with `sha256sum`, matching its `SHA256SUMS`.
+- **Artifacts:** [device-test bundle 12814603154](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083/artifacts/12814603154), [Debug APK 12814443511](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083/artifacts/12814443511), [validation reports 12814722650](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40685194083/artifacts/12814722650).
+- APK archive inspection confirms ARM64 `libllama.so` and `libllama_jni.so`; no GGUF or PDF is bundled. **NOT TESTED:** physical Xiaomi Pad 5, actual user-supplied GGUF/JNI inference, two-page PDF page-two grounding, live HTTPS consent/denial, clinical review, device RAM/thermal/latency and final signing. Debug is not final.
