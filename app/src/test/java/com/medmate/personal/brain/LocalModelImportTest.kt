@@ -274,4 +274,53 @@ class LocalModelImportTest {
         assertEquals(0, dir.listFiles().orEmpty().size)
     }
 
+    @Test fun importedModelCanBeDeletedToReclaimAppStorage() = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        assertTrue(imported.file.exists())
+        LocalModelImport.deleteImported(imported.file, dir)
+        assertFalse(imported.file.exists())
+        assertEquals(0, dir.listFiles().orEmpty().size)
+    }
+
+    @Test fun deletionRefusesTheCurrentlyLoadedModel() = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.deleteImported(imported.file, dir, loadedModelName = imported.file.name)
+        }
+        assertTrue("the active model must remain on disk", imported.file.exists())
+    }
+
+    @Test fun deletionRefusesFilesOutsideTheManagedModelDirectory() = inTempDir { dir ->
+        val otherDirectory = Files.createTempDirectory("medmate-outside-models").toFile()
+        try {
+            val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+            val outside = File(otherDirectory, imported.file.name)
+            assertTrue(imported.file.copyTo(outside).exists())
+            assertThrows(IllegalArgumentException::class.java) {
+                LocalModelImport.deleteImported(outside, dir)
+            }
+            assertTrue("outside file must remain untouched", outside.exists())
+            assertTrue("managed import must remain untouched", imported.file.exists())
+        } finally {
+            otherDirectory.deleteRecursively()
+        }
+    }
+
+    @Test fun deletionRefusesSymlinksAndUnrecognizedNames() = inTempDir { dir ->
+        val imported = LocalModelImport.import(ByteArrayInputStream(syntheticHeader()), dir)
+        val detached = File(dir, "detached.gguf")
+        assertTrue(imported.file.renameTo(detached))
+        val link = File(dir, imported.file.name)
+        Files.createSymbolicLink(link.toPath(), detached.toPath())
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.deleteImported(link, dir)
+        }
+        assertTrue(detached.exists())
+        Files.delete(link.toPath())
+        assertThrows(IllegalArgumentException::class.java) {
+            LocalModelImport.deleteImported(detached, dir)
+        }
+        assertTrue(detached.exists())
+    }
+
 }
