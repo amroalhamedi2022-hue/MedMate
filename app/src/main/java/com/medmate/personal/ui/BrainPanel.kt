@@ -166,14 +166,20 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var explicitConsent by remember { mutableStateOf(false) }
     // In-memory only; one grant authorizes one exact endpoint/model/PDF request.
     var cloudConsent by remember { mutableStateOf<CloudTransferConsent?>(null) }
+    // Revoke the capability itself, not only the Compose reference: a pending coroutine
+    // may already have captured the same object before it reaches the network boundary.
+    fun revokeCloudConsent() {
+        cloudConsent?.revoke()
+        cloudConsent = null
+        explicitConsent = false
+    }
     // The explicit grant is one-shot and short-lived; a stale checkbox must not
     // leave an old PDF transfer approval looking active indefinitely.
     LaunchedEffect(cloudConsent) {
         val grant = cloudConsent ?: return@LaunchedEffect
         delay(CloudTransferConsent.GRANT_TTL_MILLIS)
         if (cloudConsent === grant) {
-            cloudConsent = null
-            explicitConsent = false
+            revokeCloudConsent()
             error = "انتهت صلاحية الموافقة السحابية؛ راجع المقاطع ووافق من جديد."
         }
     }
@@ -185,8 +191,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
-                cloudConsent = null
-                explicitConsent = false
+                revokeCloudConsent()
                 sessionToken = ""
                 cloudPreviewReviewed = false
                 cloudPreviewExpanded = false
@@ -194,6 +199,13 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    // Any change to the reviewed source context revokes even a retained grant.
+    // Full-chapter requests intentionally ignore viewport page changes.
+    LaunchedEffect(chapter.sha256, question, pageOnly, if (pageOnly) currentPage else -1, prepared) {
+        revokeCloudConsent()
+        cloudPreviewReviewed = false
+        cloudPreviewExpanded = false
     }
     var lastQuestion by remember { mutableStateOf("") }
     var lastPageOnly by remember { mutableStateOf(false) }
@@ -279,12 +291,12 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             }
         }
 
-        OutlinedTextField(question, onValueChange = { question = it }, enabled = !busy && !localBusy,
+        OutlinedTextField(question, onValueChange = { question = it; revokeCloudConsent(); cloudPreviewReviewed = false; cloudPreviewExpanded = false }, enabled = !busy && !localBusy,
             label = { Text("شو بدك تفهم من الشبتر؟") },
             placeholder = { Text("مثلاً: اشرحلي Volkmann's contracture") },
             minLines = 2, maxLines = 4, modifier = Modifier.fillMaxWidth())
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = pageOnly, enabled = !busy && !localBusy, onCheckedChange = { pageOnly = it })
+            Checkbox(checked = pageOnly, enabled = !busy && !localBusy, onCheckedChange = { pageOnly = it; revokeCloudConsent(); cloudPreviewReviewed = false; cloudPreviewExpanded = false })
             Text("ابحث في الصفحة ${currentPage + 1} فقط", style = MaterialTheme.typography.bodySmall)
         }
         Button(onClick = {
@@ -293,7 +305,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             generatedDrafts = emptyList(); rejectedGenerated = 0; reviewedGenerated = emptySet(); generatedBy = ""
             validation = null; localAnswer = null; localCitationCheck = null; localInferenceAudit = null
             localCitationLinks = emptyList(); cloudCitationLinks = emptyList()
-            error = null; explicitConsent = false; cloudConsent = null
+            error = null; revokeCloudConsent(); cloudPreviewReviewed = false; cloudPreviewExpanded = false
             val capturedQuestion = question.trim()
             val capturedOnly = pageOnly
             val capturedPage = currentPage
@@ -723,11 +735,11 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
             Text("Cloud AI — بوابة خاصة عبر HTTPS", fontWeight = FontWeight.Bold)
             Text("اختياري فقط: أدخل رابط بوابة HTTPS مجانية تديرها بنفسك. لا يوجد مزوّد افتراضي ولا API مدفوع. لن نرسل السؤال والمقاطع إلا بعد موافقتك الصريحة.",
                 color = Muted, style = MaterialTheme.typography.bodySmall)
-            OutlinedTextField(gateway, onValueChange = { gateway = it; explicitConsent = false; cloudConsent = null }, modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(gateway, onValueChange = { gateway = it; revokeCloudConsent(); cloudPreviewReviewed = false; cloudPreviewExpanded = false }, enabled = !busy, modifier = Modifier.fillMaxWidth(),
                 label = { Text("رابط بوابتك HTTPS") }, placeholder = { Text("https://example.org/v1/chat/completions") }, singleLine = true)
-            OutlinedTextField(gatewayModel, onValueChange = { gatewayModel = it; explicitConsent = false; cloudConsent = null }, modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(gatewayModel, onValueChange = { gatewayModel = it; revokeCloudConsent(); cloudPreviewReviewed = false; cloudPreviewExpanded = false }, enabled = !busy, modifier = Modifier.fillMaxWidth(),
                 label = { Text("اسم النموذج عند البوابة") }, singleLine = true)
-            OutlinedTextField(sessionToken, onValueChange = { sessionToken = it }, modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(sessionToken, onValueChange = { sessionToken = it; revokeCloudConsent() }, enabled = !busy, modifier = Modifier.fillMaxWidth(),
                 label = { Text("رمز البوابة / مفتاح API — لهذه الجلسة فقط") }, singleLine = true,
                 visualTransformation = PasswordVisualTransformation())
             // Show the ACTUAL bounded excerpts included in PreparedPrompt, not
@@ -758,6 +770,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 style = MaterialTheme.typography.bodySmall, color = Muted)
             Row(verticalAlignment = Alignment.Top) {
                 Checkbox(checked = explicitConsent, enabled = !busy && cloudPreviewReviewed, onCheckedChange = { approved ->
+                    revokeCloudConsent()
                     val grant = if (approved && prepared != null) runCatching {
                         CloudTransferConsent.grant(gateway, gatewayModel,
                             BrainRequestIdentity(chapter.sha256, lastQuestion, lastPageOnly, lastSourcePage),
@@ -785,12 +798,13 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
                     if (!consent.permits(endpoint, selectedModel, requestIdentity,
                         CloudEvidenceSeal.of(p, requestIdentity))) {
-                        cloudConsent = null
-                        explicitConsent = false
+                        revokeCloudConsent()
                         error = "انتهت صلاحية الموافقة أو تغيّر السؤال/المصدر؛ راجع المقاطع ووافق من جديد."
                         return@Button
                     }
-                    cloudConsent = null; explicitConsent = false // one approval per transfer
+                    // Keep the object reachable until the request claims it or finishes,
+                    // so ON_STOP/context changes can revoke a grant captured by this coroutine.
+                    explicitConsent = false
                     busy = true; error = null; cloudAnswer = null; validation = null; cloudCitationLinks = emptyList()
                     scope.launch {
                         try {
@@ -802,7 +816,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 cloudCitationLinks = SourceCitationLinks.resolve(text, p.presentedEvidence)
                             }
                         } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر الحصول على الشرح" }
-                        finally { busy = false }
+                        finally { revokeCloudConsent(); busy = false }
                     }
                 }) { Text("أرسل المقاطع لشرحها") }
             OutlinedButton(enabled = !busy && explicitConsent && prepared != null &&
@@ -819,7 +833,9 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
                     if (!consent.permits(endpoint, selectedModel, requestIdentity,
                         CloudEvidenceSeal.of(p, requestIdentity))) return@OutlinedButton
-                    cloudConsent = null; explicitConsent = false // one approval per transfer
+                    // Keep the object reachable until the request claims it or finishes,
+                    // so ON_STOP/context changes can revoke a grant captured by this coroutine.
+                    explicitConsent = false
                     busy = true; error = null; generatedDrafts = emptyList(); rejectedGenerated = 0
                     reviewedGenerated = emptySet()
                     scope.launch {
@@ -832,7 +848,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                                 generatedBy = "Cloud AI"
                             }
                         } catch (e: CancellationException) { throw e } catch (e: Exception) { error = e.localizedMessage ?: "تعذّر توليد المسودات" }
-                        finally { busy = false }
+                        finally { revokeCloudConsent(); busy = false }
                     }
                 }) { Text("✨ توليد High-Yield وMCQ وFlashcards للمراجعة") }
         }
