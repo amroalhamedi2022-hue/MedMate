@@ -13,24 +13,9 @@ enum class BrainSearchStatus { FOUND, NO_MATCH, SCANNED_PDF_OR_MISSING_TEXT, COR
 
 object StudyBrain {
     // Bound retained PDF text and token maps: one active chapter at a time.
-    // Huge chapters still use the original query-only retriever, not an unbounded cache.
+    // Oversized documents evict the previous chapter before taking the uncached path.
     private const val MAX_CACHED_CHARS = 350_000L
-    private data class Cached(val chapterId: String, val pages: List<PageSource>,
-                              val index: IndexedEvidenceRetriever)
-    @Volatile private var cached: Cached? = null
-
-    private fun reusableIndex(chapterId: String, pages: List<PageSource>): IndexedEvidenceRetriever? {
-        if (pages.sumOf { it.text.length.toLong() } > MAX_CACHED_CHARS) return null
-        val old = cached
-        if (old != null && old.chapterId == chapterId && old.pages == pages) return old.index
-        return synchronized(this) {
-            val current = cached
-            if (current != null && current.chapterId == chapterId && current.pages == pages) current.index
-            else IndexedEvidenceRetriever(PageSegmenter(850).split(pages)).also {
-                cached = Cached(chapterId, pages.toList(), it)
-            }
-        }
-    }
+    private val indexCache = BoundedEvidenceIndexCache(MAX_CACHED_CHARS)
 
     fun search(chapterId: String, pages: List<PageSource>, question: String, onlyPage: Int? = null): BrainSearchResult {
         val cleaned = question.trim()
@@ -69,7 +54,7 @@ object StudyBrain {
             return BrainSearchResult(emptyList(), if (corruptInScope > 0)
                 BrainSearchStatus.CORRUPTED_PDF_TEXT else BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT,
                 0, corruptInScope, firstCorruptedPage)
-        val index = reusableIndex(chapterId, chapterPages)
+        val index = indexCache.reusableIndex(chapterId, chapterPages)
         val results = if (index != null) index.search(chapterId, cleaned, pageIndex = onlyPage, limit = 5)
             else EvidenceRetriever(PageSegmenter(850).split(valid)).search(chapterId, cleaned, limit = 5)
         return BrainSearchResult(results, if (results.isEmpty()) BrainSearchStatus.NO_MATCH else BrainSearchStatus.FOUND,
