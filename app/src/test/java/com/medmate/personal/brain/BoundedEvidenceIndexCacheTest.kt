@@ -110,4 +110,21 @@ class BoundedEvidenceIndexCacheTest {
         assertSame(currentIndex, cache.reusableIndex("current-pdf", newPages, newEpoch))
         assertEquals("current-pdf", cache.retainedChapterId)
     }
+
+    @Test fun failClosedInvalidationClearsPrivateTextAndSupersedesInflightSearches() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val privatePages = listOf(PageSource("private-pdf", 0, "Private fracture notes that must not remain cached."))
+        val requestEpoch = cache.beginSearch("private-pdf", privatePages)
+        assertNotNull(cache.reusableIndex("private-pdf", privatePages, requestEpoch))
+        assertEquals("private-pdf", cache.retainedChapterId)
+
+        // StudyBrain invokes this when duplicate/negative page identities make
+        // [S#] citation anchors ambiguous and the request must fail closed.
+        cache.invalidate()
+
+        assertNull("untrusted citation identity must purge retained PDF text", cache.retainedChapterId)
+        assertEquals(0L, cache.retainedTextChars)
+        assertNull("an older in-flight request cannot repopulate after invalidation",
+            cache.reusableIndex("private-pdf", privatePages, requestEpoch))
+    }
 }
