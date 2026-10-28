@@ -87,6 +87,8 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
         }
     }
     var savedModels by remember { mutableStateOf<List<File>>(emptyList()) }
+    var pendingDeleteModel by remember { mutableStateOf<File?>(null) }
+    var modelNotice by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(modelDirectory) {
         savedModels = withContext(Dispatchers.IO) {
             modelDirectory.listFiles()?.filter { it.isFile && it.extension == "gguf" }
@@ -472,27 +474,41 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     if (savedModels.isNotEmpty()) {
                         Text("نماذج محفوظة على جهازك (${savedModels.size})", style = MaterialTheme.typography.bodySmall)
                         savedModels.take(3).forEach { file ->
-                            OutlinedButton(enabled = arm64Capable && !busy && !localBusy,
-                                modifier = Modifier.fillMaxWidth(), onClick = {
-                                    localBusy = true; error = null
-                                    scope.launch {
-                                        try {
-                                            requireEnoughRam(file)
-                                            onDevice.loadModel(file)
-                                            localModelName = onDevice.loadedModelName
-                                            nativeProbe = null
-                                        } catch (e: CancellationException) { throw e } catch (e: Exception) {
-                                            // Preserve the visible name of a previously loaded
-                                            // model if only the new model's RAM gate failed.
-                                            localModelName = onDevice.loadedModelName
-                                            error = "تعذّر تشغيل النموذج المحفوظ: ${e.localizedMessage}"
-                                        } finally { localBusy = false }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    enabled = arm64Capable && !busy && !localBusy,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = {
+                                        localBusy = true; error = null; modelNotice = null
+                                        scope.launch {
+                                            try {
+                                                requireEnoughRam(file)
+                                                onDevice.loadModel(file)
+                                                localModelName = onDevice.loadedModelName
+                                                nativeProbe = null
+                                            } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                                                // Preserve the visible name of a previously loaded
+                                                // model if only the new model's RAM gate failed.
+                                                localModelName = onDevice.loadedModelName
+                                                error = "تعذّر تشغيل النموذج المحفوظ: ${e.localizedMessage}"
+                                            } finally { localBusy = false }
+                                        }
                                     }
-                                }) {
-                                Text("تحميل ${file.name.take(12)}… (${file.length() / 1_048_576} MB)")
+                                ) {
+                                    Text("تحميل ${file.name.take(12)}… (${file.length() / 1_048_576} MB)")
+                                }
+                                TextButton(
+                                    enabled = !busy && !localBusy,
+                                    onClick = { pendingDeleteModel = file; modelNotice = null }
+                                ) { Text("حذف") }
                             }
                         }
                     }
+                    modelNotice?.let { Text(it, color = Muted, style = MaterialTheme.typography.bodySmall) }
                     if (localModelName != null) {
                         OutlinedButton(
                             enabled = arm64Capable && !busy && !localBusy,
@@ -868,5 +884,58 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                 color = if (validation?.accepted == true) Muted else MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall)
         }
+    pendingDeleteModel?.let { target ->
+        val isLoaded = target.name == onDevice.loadedModelName
+        AlertDialog(
+            onDismissRequest = { if (!localBusy) pendingDeleteModel = null },
+            title = { Text("حذف النموذج المحلي؟") },
+            text = {
+                Text(
+                    "سيُحذف الملف (${target.length() / 1_048_576} MB) من مساحة التطبيق نهائيًا. " +
+                        if (isLoaded) "سيُفرّغ النموذج المحمّل أولًا." else "يمكنك استيراده مجددًا لاحقًا."
+                )
+            },
+            confirmButton = {
+                TextButton(enabled = !busy && !localBusy, onClick = {
+                    val deleting = pendingDeleteModel ?: return@TextButton
+                    pendingDeleteModel = null
+                    localBusy = true
+                    error = null
+                    modelNotice = null
+                    scope.launch {
+                        try {
+                            if (onDevice.loadedModelName == deleting.name) {
+                                onDevice.unload()
+                                localModelName = null
+                                nativeProbe = null
+                                localAnswer = null
+                                localCitationCheck = null
+                                localInferenceAudit = null
+                                localCitationLinks = emptyList()
+                            }
+                            withContext(Dispatchers.IO) {
+                                LocalModelImport.deleteImported(
+                                    file = deleting,
+                                    directory = modelDirectory,
+                                    loadedModelName = onDevice.loadedModelName
+                                )
+                            }
+                            savedModels = withContext(Dispatchers.IO) {
+                                modelDirectory.listFiles()?.filter { it.isFile && it.extension == "gguf" }
+                                    ?.sortedByDescending { it.lastModified() }?.take(8).orEmpty()
+                            }
+                            modelNotice = "تم حذف النموذج المحلي وتحرير مساحة التخزين."
+                        } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                            error = "تعذّر حذف النموذج المحلي: ${e.localizedMessage}"
+                        } finally { localBusy = false }
+                    }
+                }) { Text("حذف نهائي") }
+            },
+            dismissButton = {
+                TextButton(enabled = !localBusy, onClick = { pendingDeleteModel = null }) { Text("إلغاء") }
+            }
+        )
+    }
+
     }
 }
