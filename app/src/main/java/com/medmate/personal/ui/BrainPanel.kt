@@ -22,6 +22,7 @@ import com.medmate.personal.data.Chapter
 import com.medmate.personal.data.ChapterStore
 import com.medmate.personal.data.StudyStore
 import com.medmate.personal.study.StudyKind
+import kotlinx.coroutines.delay
 import com.medmate.personal.ui.theme.Muted
 import com.medmate.personal.ui.theme.Turquoise
 import kotlinx.coroutines.Dispatchers
@@ -159,6 +160,17 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
     var explicitConsent by remember { mutableStateOf(false) }
     // In-memory only; one grant authorizes one exact endpoint/model/PDF request.
     var cloudConsent by remember { mutableStateOf<CloudTransferConsent?>(null) }
+    // The explicit grant is one-shot and short-lived; a stale checkbox must not
+    // leave an old PDF transfer approval looking active indefinitely.
+    LaunchedEffect(cloudConsent) {
+        val grant = cloudConsent ?: return@LaunchedEffect
+        delay(CloudTransferConsent.GRANT_TTL_MILLIS)
+        if (cloudConsent === grant) {
+            cloudConsent = null
+            explicitConsent = false
+            error = "انتهت صلاحية الموافقة السحابية؛ راجع المقاطع ووافق من جديد."
+        }
+    }
     var lastQuestion by remember { mutableStateOf("") }
     var lastPageOnly by remember { mutableStateOf(false) }
     var lastSourcePage by remember { mutableIntStateOf(-1) }
@@ -718,7 +730,7 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     explicitConsent = grant != null
                     if (approved && grant == null) error = "تحقق من رابط HTTPS واسم النموذج والسؤال قبل الموافقة"
                 })
-                Text("أوافق على إرسال سؤالي والمقاطع المعروضة فقط إلى بوابتي السحابية. فاهم إن المحتوى ممكن يكون حساسًا وإن إجابة AI تحتاج مراجعة.",
+                Text("أوافق على إرسال سؤالي والمقاطع المعروضة فقط إلى بوابتي السحابية. الموافقة لطلب واحد وتنتهي بعد 5 دقائق؛ المحتوى قد يكون حساسًا وإجابة AI تحتاج مراجعة.",
                     style = MaterialTheme.typography.bodySmall)
             }
             Button(enabled = !busy && explicitConsent && prepared != null &&
@@ -734,7 +746,12 @@ fun BrainPanel(chapter: Chapter, currentPage: Int, store: ChapterStore, onJump: 
                     val consent = cloudConsent ?: return@Button
                     val endpoint = gateway; val selectedModel = gatewayModel; val token = sessionToken
                     if (!consent.permits(endpoint, selectedModel, requestIdentity,
-                        CloudEvidenceSeal.of(p, requestIdentity))) return@Button
+                        CloudEvidenceSeal.of(p, requestIdentity))) {
+                        cloudConsent = null
+                        explicitConsent = false
+                        error = "انتهت صلاحية الموافقة أو تغيّر السؤال/المصدر؛ راجع المقاطع ووافق من جديد."
+                        return@Button
+                    }
                     cloudConsent = null; explicitConsent = false // one approval per transfer
                     busy = true; error = null; cloudAnswer = null; validation = null; cloudCitationLinks = emptyList()
                     scope.launch {

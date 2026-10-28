@@ -75,6 +75,18 @@ class CloudTransferConsentTest {
         assertEquals("exactly one evidence-sealed PDF upload permission", 1, claims.get())
     }
 
+    @Test fun evidenceSealedApprovalExpiresAfterFiveMinutes() {
+        var now = 1_000_000L
+        val seal = "b".repeat(64)
+        val consent = CloudTransferConsent.grantForTest(endpoint, "local-model", source, seal) { now }
+        assertTrue(consent.permits(endpoint, "local-model", source, seal))
+        now += (CloudTransferConsent.GRANT_TTL_MILLIS - 1L) * 1_000_000L
+        assertTrue(consent.permits(endpoint, "local-model", source, seal), "grant remains valid just before expiry")
+        now += 1_000_000L
+        assertFalse(consent.permits(endpoint, "local-model", source, seal), "grant expires at five minutes")
+        assertFalse(consent.consume(endpoint, "local-model", source, seal), "expired grant cannot reach the network boundary")
+    }
+
     @Test fun concurrentClaimsCannotDuplicatePdfUploadPermission() {
         val consent = CloudTransferConsent.grant(endpoint, "local-model", source)
         val start = CountDownLatch(1)

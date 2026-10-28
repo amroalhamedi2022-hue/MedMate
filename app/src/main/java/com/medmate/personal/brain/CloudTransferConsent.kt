@@ -12,19 +12,22 @@ class CloudTransferConsent private constructor(
     val endpoint: String,
     val model: String,
     val request: BrainRequestIdentity,
-    private val evidenceSeal: String? = null
+    private val evidenceSeal: String? = null,
+    private val createdAtNanos: Long,
+    private val clockNanos: () -> Long
 ) {
+    private fun expired(): Boolean = clockNanos() - createdAtNanos >= GRANT_TTL_MILLIS * 1_000_000L
     // One in-memory capability must never authorize two outbound requests.
     // Atomic claiming also covers concurrent callers retaining the same grant.
     private var consumed = false
 
     @Synchronized
     fun permits(endpointInput: String, modelInput: String, current: BrainRequestIdentity): Boolean =
-        !consumed && matches(endpointInput, modelInput, current)
+        !consumed && !expired() && matches(endpointInput, modelInput, current)
 
     @Synchronized
     fun consume(endpointInput: String, modelInput: String, current: BrainRequestIdentity): Boolean {
-        if (consumed || !matches(endpointInput, modelInput, current)) return false
+        if (consumed || expired() || !matches(endpointInput, modelInput, current)) return false
         consumed = true
         return true
     }
@@ -33,12 +36,12 @@ class CloudTransferConsent private constructor(
      * Legacy unsealed grants cannot authorize a cloud request. */
     @Synchronized
     fun permits(endpointInput: String, modelInput: String, current: BrainRequestIdentity, seal: String): Boolean =
-        !consumed && evidenceSeal != null && evidenceSeal == seal &&
+        !consumed && !expired() && evidenceSeal != null && evidenceSeal == seal &&
             matches(endpointInput, modelInput, current)
 
     @Synchronized
     fun consume(endpointInput: String, modelInput: String, current: BrainRequestIdentity, seal: String): Boolean {
-        if (consumed || evidenceSeal == null || evidenceSeal != seal ||
+        if (consumed || expired() || evidenceSeal == null || evidenceSeal != seal ||
             !matches(endpointInput, modelInput, current)) return false
         consumed = true
         return true
@@ -49,17 +52,26 @@ class CloudTransferConsent private constructor(
             modelInput.trim() == model && current == request
 
     companion object {
+        internal const val GRANT_TTL_MILLIS = 5 * 60 * 1000L
+
         fun grant(endpointInput: String, modelInput: String, request: BrainRequestIdentity): CloudTransferConsent =
-            grantInternal(endpointInput, modelInput, request, null)
+            grantInternal(endpointInput, modelInput, request, null) { System.nanoTime() }
 
         fun grant(endpointInput: String, modelInput: String, request: BrainRequestIdentity,
                   evidenceSeal: String): CloudTransferConsent {
             require(evidenceSeal.matches(Regex("[a-f0-9]{64}"))) { "Invalid PDF evidence seal" }
-            return grantInternal(endpointInput, modelInput, request, evidenceSeal)
+            return grantInternal(endpointInput, modelInput, request, evidenceSeal) { System.nanoTime() }
+        }
+
+        /** Deterministic monotonic clock seam for expiry regression tests only. */
+        internal fun grantForTest(endpointInput: String, modelInput: String, request: BrainRequestIdentity,
+                                  evidenceSeal: String, clockNanos: () -> Long): CloudTransferConsent {
+            require(evidenceSeal.matches(Regex("[a-f0-9]{64}"))) { "Invalid PDF evidence seal" }
+            return grantInternal(endpointInput, modelInput, request, evidenceSeal, clockNanos)
         }
 
         private fun grantInternal(endpointInput: String, modelInput: String, request: BrainRequestIdentity,
-                                  evidenceSeal: String?): CloudTransferConsent {
+                                  evidenceSeal: String?, clockNanos: () -> Long): CloudTransferConsent {
             val endpoint = GatewayPolicy.endpoint(endpointInput)
             val model = modelInput.trim()
             require(model.length in 1..96 && model.all { it.isLetterOrDigit() || it in "._-/:" }) {
@@ -68,7 +80,8 @@ class CloudTransferConsent private constructor(
             require(request.chapterSha256.isNotBlank() && request.question.isNotBlank()) {
                 "لا يمكن إرسال طلب بدون سؤال ومصدر محددين"
             }
-            return CloudTransferConsent(endpoint, model, request, evidenceSeal)
+            val createdAtNanos = clockNanos()
+            return CloudTransferConsent(endpoint, model, request, evidenceSeal, createdAtNanos, clockNanos)
         }
     }
 }
