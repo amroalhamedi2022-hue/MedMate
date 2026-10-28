@@ -1,5 +1,14 @@
 <!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
 
+## 2026-10-28 — Superseded PDF search early-abort (source/test checkpoint)
+
+- **Production source:** StudyBrain.search now checks request-epoch ownership while traversing chapter pages, validating citation identities, filtering corrupted extraction, preparing the bounded index and before uncached segmentation. An obsolete request returns the explicit SUPERSEDED status instead of masquerading as a genuine no-match; the Compose UI displays that state honestly. Ambiguous-page cache invalidation remains conditional on ownership of the same request epoch.
+- **Regression:** BrainRetrievalRegressionTest.supersededSearchStopsBeforeTraversingRemainingPdfPages starts a newer real search while a synthetic older page list is being read and asserts the old request reads only one page, publishes no evidence and cannot prepare a model prompt. The CI source contract checks epoch allocation, fail-closed invalidation and UI handling.
+- **Source/test head:** e8c8a02f67960513acc9440b768232f6285b311b.
+- **Purposeful build question:** does the new cancellation-aware traversal compile with the production Kotlin/Compose UI, preserve citation/cache safety contracts, and pass the complete JVM/Robolectric suite? Source inspection cannot prove exhaustive enum handling or Gradle integration.
+- **Android CI:** [run 40738130980](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40738130980) is in progress. Do not claim a new APK until it finishes.
+- **NOT TESTED:** Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, real two-page PDF page-2 grounding, live cloud-consent allow/deny, clinical correctness, RAM/thermal/latency and stable signed upgrade. No personal PDF, GGUF weights, credentials or signing keys were added.
+
 ## 2026-10-28 — Same-chapter stale-epoch regression (CI PASS)
 
 - **Regression added:** an older ambiguous result cannot invalidate a newer cache index when both requests target the same chapter ID but carry different page snapshots. This closes a test-coverage gap beyond the existing cross-chapter case; production continues to enforce request-epoch ownership.
