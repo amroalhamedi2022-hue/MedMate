@@ -46,6 +46,9 @@ object StudyBrain {
         val corruptInScope = damagedPageIndices.size
         val firstCorruptedPage = damagedPageIndices.minOrNull()
         val chapterPages = scoped.filterNot { PdfCoverageAudit.likelyCorruptedText(it.text) }
+        // Evict a different/changed/oversized PDF even when the query is too short
+        // or the selected page has no readable text and search returns early below.
+        indexCache.evictIfStale(chapterId, chapterPages)
         val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
         val readablePages = valid.count { it.text.isNotBlank() }
         if (MedicalText.queryTokens(cleaned).isEmpty())
