@@ -3,9 +3,9 @@
 ## Latest source checkpoint — 2026-10-28 (BrainPanel cancellation propagation)
 
 - **PASS source audit:** 13/13 `BrainPanel.kt` generic exception handlers now rethrow coroutine cancellation before handling ordinary failures.
-- **CI regression:** `scripts/test-cancellation-propagation-contract.py` is wired into the Android workflow.
-- **CI IN PROGRESS:** [run 40670125534](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40670125534) on current head `72afe1e4e220c466e50b09f6c59da98001810082`; do not infer a pass or APK until completion.
-- **NOT TESTED:** physical Pad 5, genuine GGUF inference, PDF page-2 grounding, live cloud consent/denial, clinical accuracy and device RAM/thermal.
+- **PASS Android CI:** [run 40670578586](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40670578586), PR merge SHA `c947e2eef766d5c5ab9b2e3dd8b44d9fdfda9f4a`; 216 JVM/Robolectric tests passed, 0 failed/ignored; Lint, APK and AndroidTest assembly and safety gates passed.
+- **PASS artifact integrity:** Debug SHA-256 `ab400a4eef525b7ac8178c3d73315625ac5aeb11fb9cb7a6f53841d4ba35c4ee`; AndroidTest SHA-256 `ffa765d7afd0c42bea1fb622f5934c3bb419677e52317da0535bd00cc7477922`. See dated supplement for exact sizes and artifact links.
+- **NOT TESTED:** physical Pad 5, genuine GGUF inference, PDF page-2 grounding with a real model, live cloud consent/denial, clinical accuracy and device RAM/thermal.
 
 
 ## Latest verified checkpoint — 2026-10-28
