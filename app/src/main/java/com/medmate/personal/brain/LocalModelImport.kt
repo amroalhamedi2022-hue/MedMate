@@ -187,6 +187,34 @@ object LocalModelImport {
         }
     }
 
+    /**
+     * Remove an app-private, content-addressed import to reclaim device storage.
+     * A full hash is intentionally not required here so a corrupted imported model
+     * can still be deleted safely. Never follow links or delete outside the managed directory.
+     */
+    fun deleteImported(file: File, directory: File, loadedModelName: String? = null) {
+        require(!java.nio.file.Files.isSymbolicLink(directory.toPath())) {
+            "مجلد النماذج لا يجوز أن يكون رابطًا رمزيًا"
+        }
+        require(directory.isDirectory) { "مجلد النماذج غير موجود" }
+        val root = directory.canonicalFile
+        require(!java.nio.file.Files.isSymbolicLink(file.toPath())) {
+            "لن نحذف ملف نموذج عبر رابط رمزي"
+        }
+        val target = file.canonicalFile
+        require(target.parentFile == root) { "لن نحذف ملفًا خارج مجلد النماذج الخاص بالتطبيق" }
+        require(target.isFile && target.extension.equals("gguf", ignoreCase = true)) {
+            "الملف المحدد ليس نموذج GGUF محفوظًا"
+        }
+        require(target.nameWithoutExtension.matches(Regex("^[0-9a-f]{64}$"))) {
+            "اسم النموذج غير مطابق لبصمة الاستيراد؛ لم يُحذف الملف"
+        }
+        require(target.name != loadedModelName) {
+            "أفرغ النموذج المحمّل أولًا قبل حذفه"
+        }
+        require(target.delete()) { "تعذّر حذف ملف النموذج من مساحة التطبيق" }
+    }
+
     private fun validateHeader(head: ByteArray) {
         require(head.copyOfRange(0, 4).contentEquals(magic)) { "الملف ليس GGUF" }
         val version = (head[4].toInt() and 0xff) or ((head[5].toInt() and 0xff) shl 8) or
