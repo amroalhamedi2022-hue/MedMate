@@ -97,3 +97,13 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **Regression:** `CloudTransferConsentTest.evidenceSealedApprovalExpiresAfterFiveMinutes` checks the boundary just before and at expiry with a deterministic clock. Existing transport tests already cover concurrent gateway calls opening at most one connection. No PDF, credential or model is used in these tests.
 - **CI:** push run [40667072623](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667072623) and PR run [40667083596](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40667083596) are **IN PROGRESS** on source/test SHA `2614b4ba34143bb39daffde041e08218cc49e708`. No new APK or CI pass is claimed yet.
 - **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, two-page PDF page-2 citation round-trip, live HTTPS consent/denial, clinical review, RAM/thermal and final signing. The TTL is a privacy guard, not proof of model correctness. No main write or merge.
+
+
+## 2026-10-28 — Propagate cancellation from long-running BrainPanel actions (CI in progress)
+
+- **Production:** all 13 generic `catch (e: Exception)` handlers in `BrainPanel.kt` now rethrow `CancellationException` first. Cancellation from model import/load, local inference, PDF coverage/search and cloud requests is no longer converted into a normal UI error; ordinary exceptions retain their existing Arabic error messages and `finally` cleanup remains in place.
+- **Regression guard:** added `scripts/test-cancellation-propagation-contract.py` and wired it into `.github/workflows/android-debug.yml`. The guard requires every generic BrainPanel catch to be preceded by an explicit cancellation rethrow.
+- **Source commits:** production `673338fbdadccffa51ade371828020ef9c07a00b`; guard `8dd999682684950b79bccac2b06a25001fec74d9`; CI wiring `4a38f19766826e80783482a523e360ecb89d55a8`; corrected guard regex `72afe1e4e220c466e50b09f6c59da98001810082`.
+- **PASS — direct source contract:** 13/13 generic exception handlers have a cancellation-first branch; the corrected guard is present in the workflow. This is source inspection, not Python/Gradle execution.
+- **CI: IN PROGRESS** — [run 40670125534](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40670125534) on the current branch head. No new APK or CI pass is claimed until the run completes.
+- **NOT TESTED:** physical Xiaomi Pad 5, real GGUF/llama.cpp/JNI inference, two-page PDF page-2 citation with a real model, live HTTPS consent/denial, clinical review, device RAM/thermal and final signing. No model, personal PDF, credential or signing key was uploaded.
