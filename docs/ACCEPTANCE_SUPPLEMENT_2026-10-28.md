@@ -31,3 +31,13 @@ This dated supplement preserves the full historical `docs/AUTONOMOUS_ACCEPTANCE.
 - **Purposeful build question:** does the actual Kotlin/JUnit test compile and pass alongside the full BrainCore, Robolectric, safety-contract, Lint, Debug and AndroidTest assembly suite? Source inspection alone cannot prove the Kotlin/Gradle integration.
 - **Execution status: NOT VERIFIED.** The available workflow-run/check lookup did not return a run for this commit. Previous run 40622394327 predates the cache invalidation and stale-oversized regression; it is not evidence for this head. No new APK is claimed.
 - **NOT TESTED:** real Xiaomi Pad 5, GGUF/llama.cpp/JNI inference, two-page PDF citation round-trip, live HTTPS consent allow/deny, RAM/thermal/latency and clinical review. No private model, PDF, credential or signing key uploaded.
+
+
+## 2026-10-28 — allocate PDF cache epoch at request entry (exact-head CI NOT VERIFIED)
+
+- **Production change:** `StudyBrain.search` now captures the cache request epoch before page-identity validation and corruption auditing. The cache separates `beginRequest()` from `prepareSearch()`: content reconciliation only mutates shared cache state when the request still owns the current epoch. A delayed older call therefore cannot acquire a newer epoch simply because it reaches index preparation later.
+- **Regression coverage:** added a JUnit race test that allocates an older request, starts and indexes a newer chapter, then lets the older request reach preparation; the newer index must remain unchanged. Also retained the stale-oversized-request regression.
+- **Source commits:** cache API `a0e6b7c28865c5645c41e2617dd77e32e5ec6689`; production call ordering `d9b816272352de9c1661496628066c3586b849a6`; JUnit `b911a9d5b01698970d8c1efd01890de6b61ef297`; source-contract wiring `99404d24adc101214a7dd19a7e5e222c4097ac3a`.
+- **Purposeful build question:** does the new cache API compile across production Kotlin and JUnit, preserve all PDF/privacy contract checks, and still assemble Debug + AndroidTest APKs? Source inspection cannot establish Kotlin/Gradle integration.
+- **CI status: NOT VERIFIED.** The available GitHub run/check lookup returned no run for the new functional head. The last confirmed Android CI run `40622394327` predates these changes and cannot be used as evidence. No new APK is claimed.
+- **NOT TESTED:** Xiaomi Pad 5, actual GGUF/llama.cpp/JNI inference, real PDF page-2 citation round-trip, live cloud consent allow/deny, RAM/thermal/latency and independent clinical review. No private model, PDF, credentials or signing keys uploaded.
