@@ -95,4 +95,34 @@ class BoundedEvidenceIndexCacheEpochTest {
         assertEquals(0L, cache.retainedTextChars)
     }
 
+
+    @Test fun staleAmbiguousRequestCannotPurgeNewerIndexForSameChapter() {
+        val cache = BoundedEvidenceIndexCache(1_024)
+        val chapterId = "same-pdf-chapter"
+        val stalePages = listOf(PageSource(
+            chapterId, 0, "Older extracted page text from the same PDF chapter."
+        ))
+        val staleEpoch = cache.beginRequest(chapterId)
+        cache.prepareSearch(chapterId, stalePages, staleEpoch)
+        assertNotNull(cache.reusableIndex(chapterId, stalePages, staleEpoch))
+
+        // A newer question can target the same chapter but carry a fresh
+        // extracted-page snapshot. The old request must not invalidate it.
+        val currentPages = listOf(PageSource(
+            chapterId, 0, "Current page snapshot for the newer question."
+        ))
+        val currentEpoch = cache.beginRequest(chapterId)
+        cache.prepareSearch(chapterId, currentPages, currentEpoch)
+        val currentIndex = requireNotNull(
+            cache.reusableIndex(chapterId, currentPages, currentEpoch)
+        )
+
+        assertFalse(
+            "an old ambiguous result must not purge a newer request for the same chapter",
+            cache.invalidateIfCurrent(staleEpoch)
+        )
+        assertSame(currentIndex, cache.reusableIndex(chapterId, currentPages, currentEpoch))
+        assertEquals(chapterId, cache.retainedChapterId)
+        assertEquals(currentPages.sumOf { it.text.length.toLong() }, cache.retainedTextChars)
+    }
 }
