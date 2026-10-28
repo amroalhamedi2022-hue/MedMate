@@ -81,4 +81,33 @@ class BoundedEvidenceIndexCacheTest {
         assertNull(cache.retainedChapterId)
         assertEquals(0L, cache.retainedTextChars)
     }
+
+    @Test fun olderSearchCannotPopulateCacheAfterANewerChapterStarts() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val oldPages = listOf(PageSource("older-pdf", 0, "Older private fracture notes."))
+        val newPages = listOf(PageSource("current-pdf", 0, "Current cardiac examination notes."))
+
+        val oldEpoch = cache.beginSearch("older-pdf", oldPages)
+        val newEpoch = cache.beginSearch("current-pdf", newPages)
+
+        assertNull(cache.reusableIndex("older-pdf", oldPages, oldEpoch))
+        assertNull("superseded search must not populate the shared cache", cache.retainedChapterId)
+        assertNotNull(cache.reusableIndex("current-pdf", newPages, newEpoch))
+        assertEquals("current-pdf", cache.retainedChapterId)
+    }
+
+    @Test fun supersededSearchCannotReplaceAnAlreadyCachedNewerChapter() {
+        val cache = BoundedEvidenceIndexCache(1_000)
+        val oldPages = listOf(PageSource("older-pdf", 0, "Older private fracture notes."))
+        val newPages = listOf(PageSource("current-pdf", 0, "Current cardiac examination notes."))
+
+        val oldEpoch = cache.beginSearch("older-pdf", oldPages)
+        assertNotNull(cache.reusableIndex("older-pdf", oldPages, oldEpoch))
+        val newEpoch = cache.beginSearch("current-pdf", newPages)
+        val currentIndex = requireNotNull(cache.reusableIndex("current-pdf", newPages, newEpoch))
+
+        assertNull(cache.reusableIndex("older-pdf", oldPages, oldEpoch))
+        assertSame(currentIndex, cache.reusableIndex("current-pdf", newPages, newEpoch))
+        assertEquals("current-pdf", cache.retainedChapterId)
+    }
 }
