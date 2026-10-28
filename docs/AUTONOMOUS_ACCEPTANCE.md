@@ -1,5 +1,13 @@
 <!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
 
+## Latest source checkpoint — 2026-10-28 (BrainPanel cancellation propagation)
+
+- **PASS source audit:** 13/13 `BrainPanel.kt` generic exception handlers now rethrow coroutine cancellation before handling ordinary failures.
+- **CI regression:** `scripts/test-cancellation-propagation-contract.py` is wired into the Android workflow.
+- **CI IN PROGRESS:** [run 40670125534](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40670125534) on current head `72afe1e4e220c466e50b09f6c59da98001810082`; do not infer a pass or APK until completion.
+- **NOT TESTED:** physical Pad 5, genuine GGUF inference, PDF page-2 grounding, live cloud consent/denial, clinical accuracy and device RAM/thermal.
+
+
 ## Latest verified checkpoint — 2026-10-28
 
 - **PASS — exact native instrumentation-method gate and Android CI:** source/test SHA `4348a90084d3726f3d0a9c3a6b8ab8536b6d4dd8`; push run [40659663974](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40659663974), PR run [40659672589](https://github.com/amroalhamedi2022-hue/MedMate/actions/runs/40659672589). Full evidence and APK hashes are in [the dated acceptance supplement](ACCEPTANCE_SUPPLEMENT_2026-10-28.md).
