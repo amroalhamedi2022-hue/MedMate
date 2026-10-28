@@ -40,6 +40,7 @@ jobs:
           bash -n scripts/run-native-gguf-device-test.sh
           bash scripts/test-native-gguf-device-script.sh
           python3 scripts/test-native-gguf-pdf-acceptance-contract.py
+          python3 scripts/test-llama-android-provenance.py
           python3 scripts/test-pdf-page-limit-contract.py
           python3 scripts/test-model-load-ui-contract.py
           python3 scripts/test-model-storage-contract.py
