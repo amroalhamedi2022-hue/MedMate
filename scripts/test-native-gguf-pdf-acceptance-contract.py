@@ -58,6 +58,8 @@ assert "sha256" in device_script.lower(), "device runner must verify the supplie
 assert "trap " in device_script, "device runner must clean up the temporary model on exit"
 assert "FAILURES!!!" in device_script and "OK \\([1-9][0-9]* tests?\\)" in device_script, "runner must reject reported instrumentation failures and require a JUnit success summary"
 assert "NativeGgufDeviceAcceptanceTest" in device_script, "runner must verify the expected native acceptance class was reported"
+assert "test=realGgufLoadsAndPassesFreshSyntheticCalibration" in device_script, "runner must require the exact real GGUF/PDF acceptance method, not just any passing method in the class"
+assert "wrong-test" in script_test and "instrumentation-wrong-method" in script_test, "shell regression must reject an unrelated passing instrumentation method"
 assert "FAKE_INSTRUMENT_MODE" in script_test and "instrumentation-reported-failure" in script_test and "instrumentation-missing-summary" in script_test, "shell regression must exercise failure and incomplete AndroidJUnitRunner output"
 print("PASS: synthetic PDF → production PDFBox extraction → retrieval → real GGUF JNI → citation/page-link checks are wired.")
 print("NOT TESTED: this static guard does not execute Android instrumentation or a real GGUF model.")
