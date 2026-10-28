@@ -1,3 +1,5 @@
+<!-- Latest dated evidence: docs/ACCEPTANCE_SUPPLEMENT_2026-10-28.md; preserve the historical acceptance ledger below. -->
+
 ## 2026-10-26 — Fail-closed Android instrumentation result gate
 
 - Hardened `scripts/run-native-gguf-device-test.sh`: ADB's shell exit code is no longer treated as proof that instrumentation passed. The runner captures and prints AndroidJUnitRunner output, requires the expected `NativeGgufDeviceAcceptanceTest` class and a nonzero JUnit `OK (N test[s])` summary, and rejects `FAILURES!!!`, `INSTRUMENTATION_FAILED` and `INSTRUMENTATION_ABORTED` even if ADB itself exits zero.
