@@ -48,7 +48,7 @@ object StudyBrain {
         val chapterPages = scoped.filterNot { PdfCoverageAudit.likelyCorruptedText(it.text) }
         // Evict a different/changed/oversized PDF even when the query is too short
         // or the selected page has no readable text and search returns early below.
-        indexCache.evictIfStale(chapterId, chapterPages)
+        val cacheRequestEpoch = indexCache.beginSearch(chapterId, chapterPages)
         val valid = chapterPages.filter { onlyPage == null || it.pageIndex == onlyPage }
         val readablePages = valid.count { it.text.isNotBlank() }
         if (MedicalText.queryTokens(cleaned).isEmpty())
@@ -57,7 +57,7 @@ object StudyBrain {
             return BrainSearchResult(emptyList(), if (corruptInScope > 0)
                 BrainSearchStatus.CORRUPTED_PDF_TEXT else BrainSearchStatus.SCANNED_PDF_OR_MISSING_TEXT,
                 0, corruptInScope, firstCorruptedPage)
-        val index = indexCache.reusableIndex(chapterId, chapterPages)
+        val index = indexCache.reusableIndex(chapterId, chapterPages, cacheRequestEpoch)
         val results = if (index != null) index.search(chapterId, cleaned, pageIndex = onlyPage, limit = 5)
             else EvidenceRetriever(PageSegmenter(850).split(valid)).search(chapterId, cleaned, limit = 5)
         return BrainSearchResult(results, if (results.isEmpty()) BrainSearchStatus.NO_MATCH else BrainSearchStatus.FOUND,
